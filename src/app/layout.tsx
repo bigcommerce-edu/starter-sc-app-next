@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Source_Sans_3 } from "next/font/google";
+import { AppShell } from "@/components/layout/app-shell";
 import { BigDesignProvider } from "@/components/ui/big-design";
 import { StyledComponentsRegistry } from "@/components/ui/styled-components-registry";
 
@@ -21,7 +22,9 @@ export default function RootLayout({
     <html lang="en" className={sourceSans3.className}>
       <body>
         <StyledComponentsRegistry>
-          <BigDesignProvider>{children}</BigDesignProvider>
+          <BigDesignProvider>
+            <AppShell>{children}</AppShell>
+          </BigDesignProvider>
         </StyledComponentsRegistry>
       </body>
     </html>

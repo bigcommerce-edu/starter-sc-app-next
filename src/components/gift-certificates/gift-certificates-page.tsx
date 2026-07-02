@@ -1,0 +1,17 @@
+import { GiftCertificatesView } from "@/components/gift-certificates/gift-certificates-view";
+
+const ARTIFICIAL_DELAY_MS = 2000;
+
+export async function GiftCertificatesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  await params;
+  await searchParams;
+  await new Promise((resolve) => setTimeout(resolve, ARTIFICIAL_DELAY_MS));
+
+  return <GiftCertificatesView />;
+}

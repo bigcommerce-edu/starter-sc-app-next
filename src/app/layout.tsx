@@ -1,14 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { Source_Sans_3 } from "next/font/google";
+import { BigDesignProvider } from "@/components/ui/big-design";
+import { StyledComponentsRegistry } from "@/components/ui/styled-components-registry";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sourceSans3 = Source_Sans_3({
   subsets: ["latin"],
 });
 
@@ -23,8 +18,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+    <html lang="en" className={sourceSans3.className}>
+      <body>
+        <StyledComponentsRegistry>
+          <BigDesignProvider>{children}</BigDesignProvider>
+        </StyledComponentsRegistry>
+      </body>
     </html>
   );
 }

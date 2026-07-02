@@ -10,8 +10,8 @@ export async function GiftCertificatesPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await params;
-  await searchParams;
+  const resolvedSearchParams = await searchParams;
   await new Promise((resolve) => setTimeout(resolve, ARTIFICIAL_DELAY_MS));
 
-  return <GiftCertificatesView />;
+  return <GiftCertificatesView searchParams={resolvedSearchParams} />;
 }

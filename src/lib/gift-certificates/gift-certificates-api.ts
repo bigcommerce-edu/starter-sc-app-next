@@ -1,5 +1,11 @@
 import { getApiClient } from "@/lib/api-client/get-api-client";
-import { GIFT_CERTIFICATES_PATH, GiftCertificatesQuery, GiftCertificatesResult } from "@/lib/gift-certificates/types";
+import {
+  GIFT_CERTIFICATES_PATH,
+  GiftCertificate,
+  GiftCertificatesQuery,
+  GiftCertificatesResult,
+  getGiftCertificatePath,
+} from "@/lib/gift-certificates/types";
 
 // Domain-level adapter: translates a GiftCertificatesQuery into the request
 // shape the gift certificates endpoint expects, and delegates to whichever
@@ -17,4 +23,10 @@ export async function fetchGiftCertificates(query: GiftCertificatesQuery): Promi
       perPage: query.itemsPerPage,
     },
   });
+}
+
+export async function fetchGiftCertificate(id: number | string): Promise<GiftCertificate> {
+  const apiClient = getApiClient();
+
+  return apiClient.get<GiftCertificate>(getGiftCertificatePath(id));
 }

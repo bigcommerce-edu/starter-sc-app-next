@@ -2,6 +2,10 @@ import { TableSortDirection } from "@/components/ui/big-design";
 
 export const GIFT_CERTIFICATES_PATH = "/v2/gift_certificates";
 
+export function getGiftCertificatePath(id: number | string): string {
+  return `${GIFT_CERTIFICATES_PATH}/${id}`;
+}
+
 export type GiftCertificateStatus = "active" | "redeemed" | "expired" | "disabled" | "pending";
 
 export interface GiftCertificate {

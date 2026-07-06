@@ -1,6 +1,7 @@
-import { mockGiftCertificates } from "@/lib/gift-certificates/mock-gift-certificates";
-import { GiftCertificate } from "@/lib/gift-certificates/types";
+import { MockRouteHandler } from "@/lib/api-client/mock-client/types";
 import { ApiRequestParams } from "@/lib/api-client/types";
+import { mockGiftCertificates } from "@/lib/gift-certificates/mock/mock-gift-certificates";
+import { GIFT_CERTIFICATES_PATH, GiftCertificate } from "@/lib/gift-certificates/types";
 
 // Mirrors the shape a real gift certificates list endpoint would return:
 // a page of records plus the total count matching the filters.
@@ -21,7 +22,7 @@ function getNumberParam(params: ApiRequestParams, key: string, fallback: number)
   return Number.isInteger(value) && value > 0 ? value : fallback;
 }
 
-export function handleGiftCertificatesRequest(params: ApiRequestParams): MockGiftCertificatesResponse {
+function handleGiftCertificatesListRequest(params: ApiRequestParams): MockGiftCertificatesResponse {
   const searchTerm = getStringParam(params, "q").trim().toLowerCase();
   const sortColumnHash = getStringParam(params, "sort") || "purchaseDate";
   const sortDirection = getStringParam(params, "direction") === "ASC" ? "ASC" : "DESC";
@@ -55,3 +56,8 @@ export function handleGiftCertificatesRequest(params: ApiRequestParams): MockGif
 
   return { items, totalItems: sorted.length };
 }
+
+export const giftCertificatesListMockHandler: MockRouteHandler = {
+  pattern: new RegExp(`^${GIFT_CERTIFICATES_PATH}$`),
+  handle: (_match, params) => handleGiftCertificatesListRequest(params),
+};

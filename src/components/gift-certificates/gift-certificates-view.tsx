@@ -1,6 +1,6 @@
 import { Panel } from "@/components/ui/big-design";
 import { GiftCertificatesTable } from "@/components/gift-certificates/gift-certificates-table";
-import { fetchGiftCertificates } from "@/lib/gift-certificates/mock-gift-certificates-api";
+import { fetchGiftCertificates } from "@/lib/gift-certificates/gift-certificates-api";
 import { parseGiftCertificatesQuery } from "@/lib/gift-certificates/query";
 
 export async function GiftCertificatesView({

@@ -9,9 +9,12 @@ export async function GiftCertificatesPage({
   params: Promise<Record<string, string | string[] | undefined>>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await params;
+  const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
   await new Promise((resolve) => setTimeout(resolve, ARTIFICIAL_DELAY_MS));
 
-  return <GiftCertificatesView searchParams={resolvedSearchParams} />;
+  const storeHash = resolvedParams.storeHash;
+  const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
+
+  return <GiftCertificatesView searchParams={resolvedSearchParams} storeHash={storeHashString} />;
 }

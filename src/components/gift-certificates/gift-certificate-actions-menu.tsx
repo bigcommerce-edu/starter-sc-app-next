@@ -1,16 +1,20 @@
 "use client";
 
-import { Button, Dropdown, DropdownItem, MoreHorizIcon } from "@/components/ui/big-design";
+import { Button, Dropdown, DropdownLinkItem, MoreHorizIcon } from "@/components/ui/big-design";
 import { GiftCertificate } from "@/lib/gift-certificates/types";
 
-export function GiftCertificateActionsMenu({ certificate }: { certificate: GiftCertificate }) {
-  const items: DropdownItem[] = [
+export function GiftCertificateActionsMenu({
+  certificate,
+  detailUrl,
+}: {
+  certificate: GiftCertificate;
+  detailUrl: string;
+}) {
+  const items: DropdownLinkItem[] = [
     {
-      content: "View details",
-      onItemClick: () => {
-        // eslint-disable-next-line no-console
-        console.log("View details", certificate.certificateNumber);
-      },
+      type: "link",
+      content: "View",
+      url: detailUrl,
     },
   ];
 

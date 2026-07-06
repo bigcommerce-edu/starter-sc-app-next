@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Badge, Box, Flex, Search, Table, TableColumn } from "@/components/ui/big-design";
+import { Badge, Box, Flex, Link, Search, Table, TableColumn } from "@/components/ui/big-design";
 import { GiftCertificateActionsMenu } from "@/components/gift-certificates/gift-certificate-actions-menu";
 import { buildGiftCertificatesSearchParams } from "@/lib/gift-certificates/query";
 import { GiftCertificate, GiftCertificatesQuery, GiftCertificateStatus } from "@/lib/gift-certificates/types";
+import { getAppUrl } from "@/lib/routing/app-url";
 
 const STATUS_BADGE_VARIANT: Record<GiftCertificateStatus, "success" | "secondary" | "warning" | "danger"> = {
   active: "success",
@@ -28,76 +29,87 @@ const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
-const columns: Array<TableColumn<GiftCertificate>> = [
-  {
-    header: "Certificate #",
-    hash: "certificateNumber",
-    render: ({ certificateNumber }: GiftCertificate) => certificateNumber,
-    isSortable: true,
-  },
-  {
-    header: "Status",
-    hash: "status",
-    render: ({ status }: GiftCertificate) => (
-      <Badge label={STATUS_LABEL[status]} variant={STATUS_BADGE_VARIANT[status]} />
-    ),
-    isSortable: true,
-  },
-  {
-    header: "Original Value",
-    hash: "originalValue",
-    render: ({ originalValue }: GiftCertificate) => currencyFormatter.format(originalValue),
-    isSortable: true,
-    align: "right",
-  },
-  {
-    header: "Current Balance",
-    hash: "currentBalance",
-    render: ({ currentBalance }: GiftCertificate) => currencyFormatter.format(currentBalance),
-    isSortable: true,
-    align: "right",
-  },
-  {
-    header: "Recipient",
-    hash: "recipientName",
-    render: ({ recipientName }: GiftCertificate) => recipientName,
-    isSortable: true,
-  },
-  {
-    header: "Recipient Email",
-    hash: "recipientEmail",
-    render: ({ recipientEmail }: GiftCertificate) => recipientEmail,
-  },
-  {
-    header: "Purchase Date",
-    hash: "purchaseDate",
-    render: ({ purchaseDate }: GiftCertificate) => dateFormatter.format(new Date(purchaseDate)),
-    isSortable: true,
-  },
-  {
-    header: "Actions",
-    hash: "actions",
-    hideHeader: true,
-    align: "right",
-    render: (certificate: GiftCertificate) => <GiftCertificateActionsMenu certificate={certificate} />,
-    width: 64,
-  },
-];
+function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertificate>> {
+  return [
+    {
+      header: "Certificate #",
+      hash: "certificateNumber",
+      render: ({ id, certificateNumber }: GiftCertificate) => (
+        <Link href={getAppUrl(storeHash, `/gift-certs/${id}`)}>{certificateNumber}</Link>
+      ),
+      isSortable: true,
+    },
+    {
+      header: "Status",
+      hash: "status",
+      render: ({ status }: GiftCertificate) => (
+        <Badge label={STATUS_LABEL[status]} variant={STATUS_BADGE_VARIANT[status]} />
+      ),
+      isSortable: true,
+    },
+    {
+      header: "Original Value",
+      hash: "originalValue",
+      render: ({ originalValue }: GiftCertificate) => currencyFormatter.format(originalValue),
+      isSortable: true,
+      align: "right",
+    },
+    {
+      header: "Current Balance",
+      hash: "currentBalance",
+      render: ({ currentBalance }: GiftCertificate) => currencyFormatter.format(currentBalance),
+      isSortable: true,
+      align: "right",
+    },
+    {
+      header: "Recipient",
+      hash: "recipientName",
+      render: ({ recipientName }: GiftCertificate) => recipientName,
+      isSortable: true,
+    },
+    {
+      header: "Recipient Email",
+      hash: "recipientEmail",
+      render: ({ recipientEmail }: GiftCertificate) => recipientEmail,
+    },
+    {
+      header: "Purchase Date",
+      hash: "purchaseDate",
+      render: ({ purchaseDate }: GiftCertificate) => dateFormatter.format(new Date(purchaseDate)),
+      isSortable: true,
+    },
+    {
+      header: "Actions",
+      hash: "actions",
+      hideHeader: true,
+      align: "right",
+      render: (certificate: GiftCertificate) => (
+        <GiftCertificateActionsMenu
+          certificate={certificate}
+          detailUrl={getAppUrl(storeHash, `/gift-certs/${certificate.id}`)}
+        />
+      ),
+      width: 64,
+    },
+  ];
+}
 
 interface GiftCertificatesTableProps {
   giftCertificates: GiftCertificate[];
   totalItems: number;
   query: GiftCertificatesQuery;
+  storeHash: string | undefined;
 }
 
 // Purely presentational: renders the page of items the server already fetched
 // for the current query. Search/sort/pagination interactions navigate to a new
 // URL (via router.push) rather than holding state or fetching data themselves —
 // GiftCertificatesView reads the resulting searchParams and re-fetches server-side.
-export function GiftCertificatesTable({ giftCertificates, totalItems, query }: GiftCertificatesTableProps) {
+export function GiftCertificatesTable({ giftCertificates, totalItems, query, storeHash }: GiftCertificatesTableProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState(query.searchTerm);
+  const columns = useMemo(() => getColumns(storeHash), [storeHash]);
 
   const navigate = (nextQuery: GiftCertificatesQuery) => {
     const params = buildGiftCertificatesSearchParams(nextQuery);

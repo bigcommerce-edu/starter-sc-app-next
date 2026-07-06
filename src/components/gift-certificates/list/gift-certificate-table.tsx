@@ -5,24 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { Badge, Box, Flex, Link, Search, Table, TableColumn } from "@/components/ui/big-design";
 import { GiftCertificateActionsMenu } from "@/components/gift-certificates/list/gift-certificate-actions-menu";
 import { buildGiftCertificatesSearchParams } from "@/lib/gift-certificates/query";
-import { GiftCertificate, GiftCertificatesQuery, GiftCertificateStatus } from "@/lib/gift-certificates/types";
+import { GIFT_CERTIFICATE_STATUS_BADGE_VARIANT, GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certificates/status";
+import { GiftCertificate, GiftCertificatesQuery } from "@/lib/gift-certificates/types";
 import { getAppUrl } from "@/lib/routing/app-url";
-
-const STATUS_BADGE_VARIANT: Record<GiftCertificateStatus, "success" | "secondary" | "warning" | "danger"> = {
-  active: "success",
-  pending: "warning",
-  redeemed: "secondary",
-  disabled: "danger",
-  expired: "danger",
-};
-
-const STATUS_LABEL: Record<GiftCertificateStatus, string> = {
-  active: "Active",
-  pending: "Pending",
-  redeemed: "Redeemed",
-  disabled: "Disabled",
-  expired: "Expired",
-};
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
 
@@ -43,7 +28,7 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertif
       header: "Status",
       hash: "status",
       render: ({ status }: GiftCertificate) => (
-        <Badge label={STATUS_LABEL[status]} variant={STATUS_BADGE_VARIANT[status]} />
+        <Badge label={GIFT_CERTIFICATE_STATUS_LABEL[status]} variant={GIFT_CERTIFICATE_STATUS_BADGE_VARIANT[status]} />
       ),
       isSortable: true,
     },

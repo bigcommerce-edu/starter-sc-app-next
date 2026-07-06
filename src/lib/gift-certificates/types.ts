@@ -14,9 +14,19 @@ export interface GiftCertificate {
   status: GiftCertificateStatus;
   originalValue: number;
   currentBalance: number;
+  purchaseDate: string;
+  emailTemplate: string;
+  senderName: string;
+  senderEmail: string;
+  // Whether the sender/recipient has a registered customer account, and the
+  // current name on that account if so. These can differ from senderName/
+  // recipientName, which reflect what was entered at the time of purchase.
+  senderHasAccount: boolean;
+  senderAccountName?: string;
   recipientName: string;
   recipientEmail: string;
-  purchaseDate: string;
+  recipientHasAccount: boolean;
+  recipientAccountName?: string;
 }
 
 export interface GiftCertificatesQuery {

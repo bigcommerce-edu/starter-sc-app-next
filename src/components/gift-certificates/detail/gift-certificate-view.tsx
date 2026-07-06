@@ -30,7 +30,7 @@ function DetailField({ label, children }: { label: string; children: React.React
   );
 }
 
-export async function GiftCertificateDetailView({ id }: { id: string }) {
+export async function GiftCertificateView({ id }: { id: string }) {
   const giftCertificate = await fetchGiftCertificate(id);
 
   return (

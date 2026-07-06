@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Badge, Box, Flex, Link, Search, Table, TableColumn } from "@/components/ui/big-design";
-import { GiftCertificateActionsMenu } from "@/components/gift-certificates/gift-certificate-actions-menu";
+import { GiftCertificateActionsMenu } from "@/components/gift-certificates/list/gift-certificate-actions-menu";
 import { buildGiftCertificatesSearchParams } from "@/lib/gift-certificates/query";
 import { GiftCertificate, GiftCertificatesQuery, GiftCertificateStatus } from "@/lib/gift-certificates/types";
 import { getAppUrl } from "@/lib/routing/app-url";
@@ -94,7 +94,7 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertif
   ];
 }
 
-interface GiftCertificatesTableProps {
+interface GiftCertificateTableProps {
   giftCertificates: GiftCertificate[];
   totalItems: number;
   query: GiftCertificatesQuery;
@@ -104,8 +104,8 @@ interface GiftCertificatesTableProps {
 // Purely presentational: renders the page of items the server already fetched
 // for the current query. Search/sort/pagination interactions navigate to a new
 // URL (via router.push) rather than holding state or fetching data themselves —
-// GiftCertificatesView reads the resulting searchParams and re-fetches server-side.
-export function GiftCertificatesTable({ giftCertificates, totalItems, query, storeHash }: GiftCertificatesTableProps) {
+// GiftCertificateListView reads the resulting searchParams and re-fetches server-side.
+export function GiftCertificateTable({ giftCertificates, totalItems, query, storeHash }: GiftCertificateTableProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState(query.searchTerm);

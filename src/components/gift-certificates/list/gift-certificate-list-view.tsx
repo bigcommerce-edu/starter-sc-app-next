@@ -1,11 +1,11 @@
 import { Panel } from "@/components/ui/big-design";
-import { GiftCertificatesTable } from "@/components/gift-certificates/gift-certificates-table";
+import { GiftCertificateTable } from "@/components/gift-certificates/list/gift-certificate-table";
 import { getDataMode } from "@/lib/api-client/get-api-client";
 import { fetchGiftCertificates } from "@/lib/gift-certificates/gift-certificates-api";
 import { parseGiftCertificatesQuery } from "@/lib/gift-certificates/query";
 import { assertStoreHashForDataMode } from "@/lib/routing/assert-store-hash";
 
-export async function GiftCertificatesView({
+export async function GiftCertificateListView({
   searchParams,
   storeHash,
 }: {
@@ -19,7 +19,7 @@ export async function GiftCertificatesView({
 
   return (
     <Panel header="Gift Certificates">
-      <GiftCertificatesTable giftCertificates={items} totalItems={totalItems} query={query} storeHash={storeHash} />
+      <GiftCertificateTable giftCertificates={items} totalItems={totalItems} query={query} storeHash={storeHash} />
     </Panel>
   );
 }

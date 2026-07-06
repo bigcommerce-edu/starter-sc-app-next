@@ -1,4 +1,4 @@
-import { GiftCertificatesView } from "@/components/gift-certificates/gift-certificates-view";
+import { GiftCertificateListView } from "@/components/gift-certificates/list/gift-certificate-list-view";
 
 const ARTIFICIAL_DELAY_MS = 2000;
 
@@ -16,5 +16,5 @@ export async function GiftCertificatesPage({
   const storeHash = resolvedParams.storeHash;
   const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
 
-  return <GiftCertificatesView searchParams={resolvedSearchParams} storeHash={storeHashString} />;
+  return <GiftCertificateListView searchParams={resolvedSearchParams} storeHash={storeHashString} />;
 }

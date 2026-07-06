@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { GiftCertificatesFallback } from "@/components/gift-certificates/gift-certificates-fallback";
-import { GiftCertificatesPage } from "@/components/gift-certificates/gift-certificates-page";
+import { GiftCertificatesPage } from "@/components/gift-certificates/list/gift-certificates-page";
 
 export default function Page({
   params,

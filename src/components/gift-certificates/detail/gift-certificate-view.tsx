@@ -1,10 +1,11 @@
 import { ArrowBackIcon, Box, Flex, Link } from "@/components/ui/big-design";
 import { GiftCertificateTabs } from "@/components/gift-certificates/detail/gift-certificate-tabs";
+import { decorateGiftCertificateWithAccounts } from "@/lib/gift-certificates/decorate-with-accounts";
 import { fetchGiftCertificate } from "@/lib/gift-certificates/gift-certificates-api";
 import { getAppUrl } from "@/lib/routing/app-url";
 
 export async function GiftCertificateView({ id, storeHash }: { id: string; storeHash: string | undefined }) {
-  const giftCertificate = await fetchGiftCertificate(id);
+  const giftCertificate = await decorateGiftCertificateWithAccounts(await fetchGiftCertificate(id));
 
   return (
     <Box>

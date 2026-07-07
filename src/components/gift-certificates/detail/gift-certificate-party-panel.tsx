@@ -1,4 +1,5 @@
 import { Badge, Box, Panel, Small, Text } from "@/components/ui/big-design";
+import { Customer } from "@/lib/customers/types";
 
 function DetailField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -13,25 +14,18 @@ interface GiftCertificatePartyPanelProps {
   header: string;
   name: string;
   email: string;
-  hasAccount: boolean;
-  accountName?: string;
+  account: Customer | undefined;
 }
 
-export function GiftCertificatePartyPanel({
-  header,
-  name,
-  email,
-  hasAccount,
-  accountName,
-}: GiftCertificatePartyPanelProps) {
+export function GiftCertificatePartyPanel({ header, name, email, account }: GiftCertificatePartyPanelProps) {
   return (
     <Panel header={header}>
       <DetailField label="Name on Certificate">{name}</DetailField>
       <DetailField label="Email">{email}</DetailField>
       <DetailField label="Registered Customer">
-        <Badge label={hasAccount ? "Yes" : "No"} variant={hasAccount ? "success" : "secondary"} />
+        <Badge label={account ? "Yes" : "No"} variant={account ? "success" : "secondary"} />
       </DetailField>
-      {hasAccount && <DetailField label="Account Name">{accountName}</DetailField>}
+      {account && <DetailField label="Account Name">{`${account.firstName} ${account.lastName}`}</DetailField>}
     </Panel>
   );
 }

@@ -1,4 +1,5 @@
 import { TableSortDirection } from "@/components/ui/big-design";
+import { Customer } from "@/lib/customers/types";
 
 export const GIFT_CERTIFICATES_PATH = "/v2/gift_certificates";
 
@@ -8,6 +9,9 @@ export function getGiftCertificatePath(id: number | string): string {
 
 export type GiftCertificateStatus = "active" | "redeemed" | "expired" | "disabled" | "pending";
 
+// Shape returned by the gift certificates endpoint itself. Notably, this
+// endpoint has no notion of registered customer accounts — see
+// GiftCertificateWithAccounts for the decorated shape pages actually render.
 export interface GiftCertificate {
   id: number;
   certificateNumber: string;
@@ -18,19 +22,25 @@ export interface GiftCertificate {
   emailTemplate: string;
   senderName: string;
   senderEmail: string;
-  // Whether the sender/recipient has a registered customer account, and the
-  // current name on that account if so. These can differ from senderName/
-  // recipientName, which reflect what was entered at the time of purchase.
-  senderHasAccount: boolean;
-  senderAccountName?: string;
   recipientName: string;
   recipientEmail: string;
-  recipientHasAccount: boolean;
-  recipientAccountName?: string;
 }
 
-// "any" means the filter is not applied; "yes"/"no" narrow to a specific value.
-export type TriStateFilter = "any" | "yes" | "no";
+// A GiftCertificate decorated with whichever registered customer account
+// matches its recipient email (see lib/customers). "Has an account" is just
+// recipientAccount being defined — there's no separate boolean to keep in
+// sync, and the account's own name is available directly instead of a
+// denormalized recipientAccountName copy. The listing page only ever renders
+// recipient account info, so it only ever needs to decorate this far.
+export interface GiftCertificateWithRecipientAccount extends GiftCertificate {
+  recipientAccount: Customer | undefined;
+}
+
+// The detail page additionally renders sender account info, so it decorates
+// both sides.
+export interface GiftCertificateWithAccounts extends GiftCertificateWithRecipientAccount {
+  senderAccount: Customer | undefined;
+}
 
 export interface GiftCertificatesQuery {
   certificateNumber: string;
@@ -39,7 +49,6 @@ export interface GiftCertificatesQuery {
   balanceMax: number | undefined;
   recipientName: string;
   recipientEmail: string;
-  recipientHasAccount: TriStateFilter;
   purchasedAfter: string;
   purchasedBefore: string;
   sortColumnHash: string;

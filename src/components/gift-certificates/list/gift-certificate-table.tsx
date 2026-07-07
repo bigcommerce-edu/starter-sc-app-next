@@ -7,7 +7,7 @@ import { GiftCertificateActionsMenu } from "@/components/gift-certificates/list/
 import { GiftCertificateFilters } from "@/components/gift-certificates/list/gift-certificate-filters";
 import { buildGiftCertificatesSearchParams } from "@/lib/gift-certificates/query";
 import { GIFT_CERTIFICATE_STATUS_BADGE_VARIANT, GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certificates/status";
-import { GiftCertificate, GiftCertificatesQuery } from "@/lib/gift-certificates/types";
+import { GiftCertificatesQuery, GiftCertificateWithRecipientAccount } from "@/lib/gift-certificates/types";
 import { getAppUrl } from "@/lib/routing/app-url";
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
@@ -15,12 +15,12 @@ const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
-function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertificate>> {
+function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertificateWithRecipientAccount>> {
   return [
     {
       header: "Certificate #",
       hash: "certificateNumber",
-      render: ({ id, certificateNumber }: GiftCertificate) => (
+      render: ({ id, certificateNumber }: GiftCertificateWithRecipientAccount) => (
         <Link href={getAppUrl(storeHash, `/gift-certs/${id}`)}>{certificateNumber}</Link>
       ),
       isSortable: true,
@@ -28,7 +28,7 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertif
     {
       header: "Status",
       hash: "status",
-      render: ({ status }: GiftCertificate) => (
+      render: ({ status }: GiftCertificateWithRecipientAccount) => (
         <Badge label={GIFT_CERTIFICATE_STATUS_LABEL[status]} variant={GIFT_CERTIFICATE_STATUS_BADGE_VARIANT[status]} />
       ),
       isSortable: true,
@@ -36,39 +36,39 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertif
     {
       header: "Original Value",
       hash: "originalValue",
-      render: ({ originalValue }: GiftCertificate) => currencyFormatter.format(originalValue),
+      render: ({ originalValue }: GiftCertificateWithRecipientAccount) => currencyFormatter.format(originalValue),
       isSortable: true,
       align: "right",
     },
     {
       header: "Current Balance",
       hash: "currentBalance",
-      render: ({ currentBalance }: GiftCertificate) => currencyFormatter.format(currentBalance),
+      render: ({ currentBalance }: GiftCertificateWithRecipientAccount) => currencyFormatter.format(currentBalance),
       isSortable: true,
       align: "right",
     },
     {
       header: "Recipient",
       hash: "recipientName",
-      render: ({ recipientHasAccount, recipientName }: GiftCertificate) =>
-        recipientHasAccount ? <Link href="#">{recipientName}</Link> : recipientName,
+      render: ({ recipientAccount, recipientName }: GiftCertificateWithRecipientAccount) =>
+        recipientAccount ? <Link href="#">{recipientName}</Link> : recipientName,
       isSortable: true,
     },
     {
       header: "Recipient Email",
       hash: "recipientEmail",
-      render: ({ recipientEmail, recipientHasAccount }: GiftCertificate) =>
-        recipientHasAccount ? <Link href="#">{recipientEmail}</Link> : recipientEmail,
+      render: ({ recipientEmail, recipientAccount }: GiftCertificateWithRecipientAccount) =>
+        recipientAccount ? <Link href="#">{recipientEmail}</Link> : recipientEmail,
     },
     {
       header: "Registered Account",
-      hash: "recipientHasAccount",
-      render: ({ recipientHasAccount }: GiftCertificate) => (recipientHasAccount ? "Yes" : "No"),
+      hash: "recipientAccount",
+      render: ({ recipientAccount }: GiftCertificateWithRecipientAccount) => (recipientAccount ? "Yes" : "No"),
     },
     {
       header: "Purchase Date",
       hash: "purchaseDate",
-      render: ({ purchaseDate }: GiftCertificate) => dateFormatter.format(new Date(purchaseDate)),
+      render: ({ purchaseDate }: GiftCertificateWithRecipientAccount) => dateFormatter.format(new Date(purchaseDate)),
       isSortable: true,
     },
     {
@@ -76,7 +76,7 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertif
       hash: "actions",
       hideHeader: true,
       align: "right",
-      render: (certificate: GiftCertificate) => (
+      render: (certificate: GiftCertificateWithRecipientAccount) => (
         <GiftCertificateActionsMenu
           certificate={certificate}
           detailUrl={getAppUrl(storeHash, `/gift-certs/${certificate.id}`)}
@@ -88,7 +88,7 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertif
 }
 
 interface GiftCertificateTableProps {
-  giftCertificates: GiftCertificate[];
+  giftCertificates: GiftCertificateWithRecipientAccount[];
   totalItems: number;
   query: GiftCertificatesQuery;
   storeHash: string | undefined;

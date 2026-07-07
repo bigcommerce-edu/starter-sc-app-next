@@ -15,21 +15,14 @@ import {
   Input,
   Modal,
   MultiSelect,
-  Select,
 } from "@/components/ui/big-design";
 import { GIFT_CERTIFICATE_STATUSES, GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certificates/status";
-import { GiftCertificateStatus, GiftCertificatesQuery, TriStateFilter } from "@/lib/gift-certificates/types";
+import { GiftCertificateStatus, GiftCertificatesQuery } from "@/lib/gift-certificates/types";
 import { DEFAULT_QUERY } from "@/lib/gift-certificates/query";
 
 const STATUS_OPTIONS: Array<{ value: GiftCertificateStatus; content: string }> = GIFT_CERTIFICATE_STATUSES.map(
   (status) => ({ value: status, content: GIFT_CERTIFICATE_STATUS_LABEL[status] }),
 );
-
-const REGISTERED_ACCOUNT_OPTIONS: Array<{ value: TriStateFilter; content: string }> = [
-  { value: "any", content: "Any" },
-  { value: "yes", content: "Yes" },
-  { value: "no", content: "No" },
-];
 
 // Fields that make up the advanced filters, i.e. everything in GiftCertificatesQuery
 // except sorting/paging, which the table controls directly.
@@ -42,7 +35,6 @@ const DEFAULT_FILTERS: FilterFields = {
   balanceMax: DEFAULT_QUERY.balanceMax,
   recipientName: DEFAULT_QUERY.recipientName,
   recipientEmail: DEFAULT_QUERY.recipientEmail,
-  recipientHasAccount: DEFAULT_QUERY.recipientHasAccount,
   purchasedAfter: DEFAULT_QUERY.purchasedAfter,
   purchasedBefore: DEFAULT_QUERY.purchasedBefore,
 };
@@ -55,7 +47,6 @@ function isFilterActive(filters: FilterFields): boolean {
     filters.balanceMax !== DEFAULT_FILTERS.balanceMax ||
     filters.recipientName !== DEFAULT_FILTERS.recipientName ||
     filters.recipientEmail !== DEFAULT_FILTERS.recipientEmail ||
-    filters.recipientHasAccount !== DEFAULT_FILTERS.recipientHasAccount ||
     filters.purchasedAfter !== DEFAULT_FILTERS.purchasedAfter ||
     filters.purchasedBefore !== DEFAULT_FILTERS.purchasedBefore
   );
@@ -133,12 +124,6 @@ export function GiftCertificateFilters({ query, onChange }: GiftCertificateFilte
           )}
           {query.recipientEmail && (
             <Chip label={`Recipient email: ${query.recipientEmail}`} onDelete={() => removeFilter("recipientEmail")} />
-          )}
-          {query.recipientHasAccount !== "any" && (
-            <Chip
-              label={`Registered account: ${query.recipientHasAccount === "yes" ? "Yes" : "No"}`}
-              onDelete={() => removeFilter("recipientHasAccount")}
-            />
           )}
           {query.purchasedAfter && (
             <Chip label={`Purchased after: ${query.purchasedAfter}`} onDelete={() => removeFilter("purchasedAfter")} />
@@ -218,15 +203,6 @@ export function GiftCertificateFilters({ query, onChange }: GiftCertificateFilte
               label="Recipient email"
               onChange={(event) => setDraftField("recipientEmail", event.target.value)}
               value={draft.recipientEmail}
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Select
-              label="Registered account"
-              onOptionChange={(value) => value && setDraftField("recipientHasAccount", value)}
-              options={REGISTERED_ACCOUNT_OPTIONS}
-              value={draft.recipientHasAccount}
             />
           </FormGroup>
 

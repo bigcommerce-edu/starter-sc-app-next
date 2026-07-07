@@ -1,6 +1,6 @@
 import { TableSortDirection } from "@/components/ui/big-design";
 import { GIFT_CERTIFICATE_STATUSES } from "@/lib/gift-certificates/status";
-import { GiftCertificatesQuery, TriStateFilter } from "@/lib/gift-certificates/types";
+import { GiftCertificatesQuery } from "@/lib/gift-certificates/types";
 
 export const DEFAULT_QUERY: GiftCertificatesQuery = {
   certificateNumber: "",
@@ -9,7 +9,6 @@ export const DEFAULT_QUERY: GiftCertificatesQuery = {
   balanceMax: undefined,
   recipientName: "",
   recipientEmail: "",
-  recipientHasAccount: "any",
   purchasedAfter: "",
   purchasedBefore: "",
   sortColumnHash: "purchaseDate",
@@ -32,12 +31,6 @@ function getNumberParam(searchParams: RawSearchParams, key: string): number | un
   return Number.isFinite(value) && getParam(searchParams, key) !== undefined ? value : undefined;
 }
 
-function getTriStateParam(searchParams: RawSearchParams, key: string): TriStateFilter {
-  const value = getParam(searchParams, key);
-
-  return value === "yes" || value === "no" ? value : "any";
-}
-
 export function parseGiftCertificatesQuery(searchParams: RawSearchParams): GiftCertificatesQuery {
   const certificateNumber = getParam(searchParams, "certificateNumber") ?? DEFAULT_QUERY.certificateNumber;
 
@@ -55,7 +48,6 @@ export function parseGiftCertificatesQuery(searchParams: RawSearchParams): GiftC
 
   const recipientName = getParam(searchParams, "recipientName") ?? DEFAULT_QUERY.recipientName;
   const recipientEmail = getParam(searchParams, "recipientEmail") ?? DEFAULT_QUERY.recipientEmail;
-  const recipientHasAccount = getTriStateParam(searchParams, "recipientHasAccount");
 
   const purchasedAfter = getParam(searchParams, "purchasedAfter") ?? DEFAULT_QUERY.purchasedAfter;
   const purchasedBefore = getParam(searchParams, "purchasedBefore") ?? DEFAULT_QUERY.purchasedBefore;
@@ -77,7 +69,6 @@ export function parseGiftCertificatesQuery(searchParams: RawSearchParams): GiftC
     balanceMax,
     recipientName,
     recipientEmail,
-    recipientHasAccount,
     purchasedAfter,
     purchasedBefore,
     sortColumnHash,
@@ -112,10 +103,6 @@ export function buildGiftCertificatesSearchParams(query: GiftCertificatesQuery):
 
   if (query.recipientEmail) {
     params.set("recipientEmail", query.recipientEmail);
-  }
-
-  if (query.recipientHasAccount !== DEFAULT_QUERY.recipientHasAccount) {
-    params.set("recipientHasAccount", query.recipientHasAccount);
   }
 
   if (query.purchasedAfter) {

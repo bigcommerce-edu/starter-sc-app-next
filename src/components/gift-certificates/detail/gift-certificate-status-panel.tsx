@@ -1,6 +1,6 @@
 import { Box, Panel, Select, Small, Text } from "@/components/ui/big-design";
 import { GIFT_CERTIFICATE_STATUSES, GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certificates/status";
-import { GiftCertificate, GiftCertificateStatus } from "@/lib/gift-certificates/types";
+import { GiftCertificateStatus, GiftCertificateWithAccounts } from "@/lib/gift-certificates/types";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
@@ -20,7 +20,7 @@ function DetailField({ label, children }: { label: string; children: React.React
 }
 
 interface GiftCertificateStatusPanelProps {
-  giftCertificate: GiftCertificate;
+  giftCertificate: GiftCertificateWithAccounts;
   status: GiftCertificateStatus;
   onStatusChange(status: GiftCertificateStatus): void;
 }

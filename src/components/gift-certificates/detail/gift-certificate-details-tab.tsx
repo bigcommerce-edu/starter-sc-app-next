@@ -9,9 +9,9 @@ import {
 import { GiftCertificatePartyPanel } from "@/components/gift-certificates/detail/gift-certificate-party-panel";
 import { GiftCertificateStatusPanel } from "@/components/gift-certificates/detail/gift-certificate-status-panel";
 import { runServerAction } from "@/components/ui/action-alerts";
-import { GiftCertificate, GiftCertificateStatus } from "@/lib/gift-certificates/types";
+import { GiftCertificateStatus, GiftCertificateWithAccounts } from "@/lib/gift-certificates/types";
 
-export function GiftCertificateDetailsTab({ giftCertificate }: { giftCertificate: GiftCertificate }) {
+export function GiftCertificateDetailsTab({ giftCertificate }: { giftCertificate: GiftCertificateWithAccounts }) {
   const [status, setStatus] = useState<GiftCertificateStatus>(giftCertificate.status);
   const [isPending, startTransition] = useTransition();
   const [isResendModalOpen, setIsResendModalOpen] = useState(false);
@@ -44,8 +44,7 @@ export function GiftCertificateDetailsTab({ giftCertificate }: { giftCertificate
           header="Sender"
           name={giftCertificate.senderName}
           email={giftCertificate.senderEmail}
-          hasAccount={giftCertificate.senderHasAccount}
-          accountName={giftCertificate.senderAccountName}
+          account={giftCertificate.senderAccount}
         />
       </FlexItem>
       <FlexItem>
@@ -53,8 +52,7 @@ export function GiftCertificateDetailsTab({ giftCertificate }: { giftCertificate
           header="Recipient"
           name={giftCertificate.recipientName}
           email={giftCertificate.recipientEmail}
-          hasAccount={giftCertificate.recipientHasAccount}
-          accountName={giftCertificate.recipientAccountName}
+          account={giftCertificate.recipientAccount}
         />
       </FlexItem>
 

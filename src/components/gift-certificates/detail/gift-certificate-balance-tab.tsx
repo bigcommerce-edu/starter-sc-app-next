@@ -8,7 +8,7 @@ import {
   transferGiftCertificateBalanceToStoreCredit,
 } from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/actions";
 import { runServerAction } from "@/components/ui/action-alerts";
-import { GiftCertificate } from "@/lib/gift-certificates/types";
+import { GiftCertificateWithAccounts } from "@/lib/gift-certificates/types";
 
 type BalanceAction = "refill" | "add" | "transfer";
 
@@ -23,7 +23,7 @@ function DetailField({ label, children }: { label: string; children: React.React
   );
 }
 
-export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate: GiftCertificate }) {
+export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate: GiftCertificateWithAccounts }) {
   const [selectedAction, setSelectedAction] = useState<BalanceAction | null>(null);
   const [refillAmount, setRefillAmount] = useState(String(giftCertificate.originalValue));
   const [addAmount, setAddAmount] = useState("");
@@ -68,7 +68,7 @@ export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate
           Add to Balance
         </Button>
         <Button
-          disabled={!giftCertificate.recipientHasAccount}
+          disabled={!giftCertificate.recipientAccount}
           onClick={() => toggleAction("transfer")}
           variant={selectedAction === "transfer" ? "primary" : "secondary"}
         >

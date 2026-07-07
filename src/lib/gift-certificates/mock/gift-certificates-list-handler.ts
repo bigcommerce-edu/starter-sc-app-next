@@ -37,7 +37,6 @@ function handleGiftCertificatesListRequest(params: ApiRequestParams): MockGiftCe
   const balanceMax = getOptionalNumberParam(params, "balanceMax");
   const recipientName = getStringParam(params, "recipientName").trim().toLowerCase();
   const recipientEmail = getStringParam(params, "recipientEmail").trim().toLowerCase();
-  const recipientHasAccount = getStringParam(params, "recipientHasAccount");
   const purchasedAfter = getStringParam(params, "purchasedAfter");
   const purchasedBefore = getStringParam(params, "purchasedBefore");
   const sortColumnHash = getStringParam(params, "sort") || "purchaseDate";
@@ -67,14 +66,6 @@ function handleGiftCertificatesListRequest(params: ApiRequestParams): MockGiftCe
     }
 
     if (recipientEmail && !certificate.recipientEmail.toLowerCase().includes(recipientEmail)) {
-      return false;
-    }
-
-    if (recipientHasAccount === "yes" && !certificate.recipientHasAccount) {
-      return false;
-    }
-
-    if (recipientHasAccount === "no" && certificate.recipientHasAccount) {
       return false;
     }
 

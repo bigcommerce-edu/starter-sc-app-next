@@ -22,7 +22,6 @@ export async function fetchGiftCertificates(query: GiftCertificatesQuery): Promi
       balanceMax: query.balanceMax,
       recipientName: query.recipientName,
       recipientEmail: query.recipientEmail,
-      recipientHasAccount: query.recipientHasAccount,
       purchasedAfter: query.purchasedAfter,
       purchasedBefore: query.purchasedBefore,
       sort: query.sortColumnHash,

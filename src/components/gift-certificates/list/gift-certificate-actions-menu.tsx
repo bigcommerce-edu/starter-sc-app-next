@@ -8,7 +8,7 @@ import {
   transferGiftCertificateBalanceToStoreCredit,
 } from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/actions";
 import { runServerAction } from "@/components/ui/action-alerts";
-import { GiftCertificate } from "@/lib/gift-certificates/types";
+import { GiftCertificateWithRecipientAccount } from "@/lib/gift-certificates/types";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
@@ -20,16 +20,19 @@ const ACTION_LABEL: Record<PendingAction, string> = {
   transfer: "Transfer to Credit",
 };
 
-function getConfirmationMessage(action: PendingAction, certificate: GiftCertificate): string {
+function getConfirmationMessage(action: PendingAction, certificate: GiftCertificateWithRecipientAccount): string {
   switch (action) {
     case "resend":
       return `Re-send gift certificate email to ${certificate.recipientEmail}?`;
     case "refill":
       return `Refill balance to ${currencyFormatter.format(certificate.originalValue)}?`;
-    case "transfer":
-      return `Transfer ${currencyFormatter.format(certificate.currentBalance)} to ${
-        certificate.recipientAccountName ?? certificate.recipientName
-      }'s customer store credit balance?`;
+    case "transfer": {
+      const recipientDisplayName = certificate.recipientAccount
+        ? `${certificate.recipientAccount.firstName} ${certificate.recipientAccount.lastName}`
+        : certificate.recipientName;
+
+      return `Transfer ${currencyFormatter.format(certificate.currentBalance)} to ${recipientDisplayName}'s customer store credit balance?`;
+    }
   }
 }
 
@@ -37,7 +40,7 @@ export function GiftCertificateActionsMenu({
   certificate,
   detailUrl,
 }: {
-  certificate: GiftCertificate;
+  certificate: GiftCertificateWithRecipientAccount;
   detailUrl: string;
 }) {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
@@ -84,7 +87,7 @@ export function GiftCertificateActionsMenu({
     },
     {
       content: "Transfer to Credit",
-      disabled: !certificate.recipientHasAccount,
+      disabled: !certificate.recipientAccount,
       onItemClick: () => setPendingAction("transfer"),
     },
   ];

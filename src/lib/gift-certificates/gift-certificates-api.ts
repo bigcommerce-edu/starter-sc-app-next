@@ -16,7 +16,15 @@ export async function fetchGiftCertificates(query: GiftCertificatesQuery): Promi
 
   return apiClient.get<GiftCertificatesResult>(GIFT_CERTIFICATES_PATH, {
     params: {
-      q: query.searchTerm,
+      certificateNumber: query.certificateNumber,
+      status: query.status.join(","),
+      balanceMin: query.balanceMin,
+      balanceMax: query.balanceMax,
+      recipientName: query.recipientName,
+      recipientEmail: query.recipientEmail,
+      recipientHasAccount: query.recipientHasAccount,
+      purchasedAfter: query.purchasedAfter,
+      purchasedBefore: query.purchasedBefore,
       sort: query.sortColumnHash,
       direction: query.sortDirection,
       page: query.currentPage,

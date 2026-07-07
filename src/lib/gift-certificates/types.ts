@@ -29,8 +29,19 @@ export interface GiftCertificate {
   recipientAccountName?: string;
 }
 
+// "any" means the filter is not applied; "yes"/"no" narrow to a specific value.
+export type TriStateFilter = "any" | "yes" | "no";
+
 export interface GiftCertificatesQuery {
-  searchTerm: string;
+  certificateNumber: string;
+  status: GiftCertificateStatus[];
+  balanceMin: number | undefined;
+  balanceMax: number | undefined;
+  recipientName: string;
+  recipientEmail: string;
+  recipientHasAccount: TriStateFilter;
+  purchasedAfter: string;
+  purchasedBefore: string;
   sortColumnHash: string;
   sortDirection: TableSortDirection;
   currentPage: number;

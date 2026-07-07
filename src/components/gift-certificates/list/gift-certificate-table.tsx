@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Badge, Box, Flex, Link, Search, Table, TableColumn } from "@/components/ui/big-design";
+import { Badge, Box, Link, Table, TableColumn } from "@/components/ui/big-design";
 import { GiftCertificateActionsMenu } from "@/components/gift-certificates/list/gift-certificate-actions-menu";
+import { GiftCertificateFilters } from "@/components/gift-certificates/list/gift-certificate-filters";
 import { buildGiftCertificatesSearchParams } from "@/lib/gift-certificates/query";
 import { GIFT_CERTIFICATE_STATUS_BADGE_VARIANT, GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certificates/status";
 import { GiftCertificate, GiftCertificatesQuery } from "@/lib/gift-certificates/types";
@@ -49,13 +50,20 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertif
     {
       header: "Recipient",
       hash: "recipientName",
-      render: ({ recipientName }: GiftCertificate) => recipientName,
+      render: ({ recipientHasAccount, recipientName }: GiftCertificate) =>
+        recipientHasAccount ? <Link href="#">{recipientName}</Link> : recipientName,
       isSortable: true,
     },
     {
       header: "Recipient Email",
       hash: "recipientEmail",
-      render: ({ recipientEmail }: GiftCertificate) => recipientEmail,
+      render: ({ recipientEmail, recipientHasAccount }: GiftCertificate) =>
+        recipientHasAccount ? <Link href="#">{recipientEmail}</Link> : recipientEmail,
+    },
+    {
+      header: "Registered Account",
+      hash: "recipientHasAccount",
+      render: ({ recipientHasAccount }: GiftCertificate) => (recipientHasAccount ? "Yes" : "No"),
     },
     {
       header: "Purchase Date",
@@ -93,7 +101,6 @@ interface GiftCertificateTableProps {
 export function GiftCertificateTable({ giftCertificates, totalItems, query, storeHash }: GiftCertificateTableProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [searchTerm, setSearchTerm] = useState(query.searchTerm);
   const columns = useMemo(() => getColumns(storeHash), [storeHash]);
 
   const navigate = (nextQuery: GiftCertificatesQuery) => {
@@ -105,14 +112,7 @@ export function GiftCertificateTable({ giftCertificates, totalItems, query, stor
 
   return (
     <Box>
-      <Flex marginBottom="medium">
-        <Search
-          onChange={(event) => setSearchTerm(event.target.value)}
-          onSubmit={() => navigate({ ...query, searchTerm, currentPage: 1 })}
-          placeholder="Search by certificate #, recipient name, or email"
-          value={searchTerm}
-        />
-      </Flex>
+      <GiftCertificateFilters onChange={(filters) => navigate({ ...query, ...filters, currentPage: 1 })} query={query} />
 
       <Table
         columns={columns}

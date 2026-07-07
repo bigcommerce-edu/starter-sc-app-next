@@ -16,5 +16,8 @@ export async function GiftCertificateDetailPage({
   const id = resolvedParams.id;
   const idString = Array.isArray(id) ? id[0] : id;
 
-  return <GiftCertificateView id={idString ?? ""} />;
+  const storeHash = resolvedParams.storeHash;
+  const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
+
+  return <GiftCertificateView id={idString ?? ""} storeHash={storeHashString} />;
 }

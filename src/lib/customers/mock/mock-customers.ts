@@ -5,16 +5,16 @@ import { Customer } from "@/lib/customers/types";
 // differ from the name entered on the certificate (e.g. a middle initial) to
 // demonstrate that the two are independent.
 export const mockCustomers: Customer[] = [
-  { id: 1, firstName: "Noah", lastName: "Thompson", email: "noah.thompson@example.com" },
-  { id: 2, firstName: "Liam", lastName: "Carter", email: "liam.carter@example.com" },
-  { id: 3, firstName: "Mason", lastName: "Bennett", email: "mason.bennett@example.com" },
-  { id: 4, firstName: "Olivia B.", lastName: "Bennett", email: "olivia.bennett@example.com" },
-  { id: 5, firstName: "Lucas", lastName: "Nguyen", email: "lucas.nguyen@example.com" },
-  { id: 6, firstName: "William", lastName: "Foster", email: "william.foster@example.com" },
-  { id: 7, firstName: "Daniel", lastName: "Martinez", email: "daniel.martinez@example.com" },
-  { id: 8, firstName: "Sophia", lastName: "Martinez", email: "sophia.martinez@example.com" },
-  { id: 9, firstName: "Henry", lastName: "Cruz", email: "henry.cruz@example.com" },
-  { id: 10, firstName: "Isabella", lastName: "Cruz", email: "isabella.cruz@example.com" },
-  { id: 11, firstName: "Jack", lastName: "Sullivan", email: "jack.sullivan@example.com" },
-  { id: 12, firstName: "Mia R.", lastName: "Sullivan", email: "mia.sullivan@example.com" },
+  { id: 1, firstName: "Noah", lastName: "Thompson", email: "noah.thompson@example.com", originChannelId: 1, channelIds: [1] },
+  { id: 2, firstName: "Liam", lastName: "Carter", email: "liam.carter@example.com", originChannelId: 1, channelIds: [1, 2] },
+  { id: 3, firstName: "Mason", lastName: "Bennett", email: "mason.bennett@example.com", originChannelId: 2, channelIds: [2] },
+  { id: 4, firstName: "Olivia B.", lastName: "Bennett", email: "olivia.bennett@example.com", originChannelId: 1, channelIds: [1] },
+  { id: 5, firstName: "Lucas", lastName: "Nguyen", email: "lucas.nguyen@example.com", originChannelId: 1, channelIds: [1, 3] },
+  { id: 6, firstName: "William", lastName: "Foster", email: "william.foster@example.com", originChannelId: 3, channelIds: [3] },
+  { id: 7, firstName: "Daniel", lastName: "Martinez", email: "daniel.martinez@example.com", originChannelId: 1, channelIds: [1] },
+  { id: 8, firstName: "Sophia", lastName: "Martinez", email: "sophia.martinez@example.com", originChannelId: 2, channelIds: [1, 2] },
+  { id: 9, firstName: "Henry", lastName: "Cruz", email: "henry.cruz@example.com", originChannelId: 1, channelIds: [1] },
+  { id: 10, firstName: "Isabella", lastName: "Cruz", email: "isabella.cruz@example.com", originChannelId: 1, channelIds: [1] },
+  { id: 11, firstName: "Jack", lastName: "Sullivan", email: "jack.sullivan@example.com", originChannelId: 3, channelIds: [2, 3] },
+  { id: 12, firstName: "Mia R.", lastName: "Sullivan", email: "mia.sullivan@example.com", originChannelId: 1, channelIds: [1] },
 ];

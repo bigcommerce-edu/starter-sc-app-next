@@ -1,7 +1,5 @@
 import { GiftCertificateListView } from "@/components/gift-certificates/list/gift-certificate-list-view";
 
-const ARTIFICIAL_DELAY_MS = 2000;
-
 export async function GiftCertificatesPage({
   params,
   searchParams,
@@ -11,7 +9,6 @@ export async function GiftCertificatesPage({
 }) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
-  await new Promise((resolve) => setTimeout(resolve, ARTIFICIAL_DELAY_MS));
 
   const storeHash = resolvedParams.storeHash;
   const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;

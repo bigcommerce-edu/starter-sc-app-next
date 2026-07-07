@@ -13,6 +13,13 @@ export async function updateGiftCertificateStatus(
   console.log(`(noop) update gift certificate ${id} status to "${status}"`);
 }
 
+// Placeholder: once a real API client exists, this should trigger the actual
+// resend request instead of doing nothing.
+export async function resendGiftCertificateEmail(id: number | string): Promise<void> {
+  // eslint-disable-next-line no-console
+  console.log(`(noop) re-send gift certificate ${id} email`);
+}
+
 // Placeholders for the three balance actions. All will eventually issue a
 // real API request (and likely revalidate the detail page) instead of doing
 // nothing.

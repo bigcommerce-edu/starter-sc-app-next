@@ -1,7 +1,36 @@
 "use client";
 
-import { Button, Dropdown, DropdownLinkItem, MoreHorizIcon } from "@/components/ui/big-design";
+import { useState, useTransition } from "react";
+import { Button, Dropdown, DropdownItem, DropdownLinkItem, MoreHorizIcon, Modal, Text } from "@/components/ui/big-design";
+import {
+  refillGiftCertificateBalance,
+  resendGiftCertificateEmail,
+  transferGiftCertificateBalanceToStoreCredit,
+} from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/actions";
 import { GiftCertificate } from "@/lib/gift-certificates/types";
+
+const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+
+type PendingAction = "resend" | "refill" | "transfer";
+
+const ACTION_LABEL: Record<PendingAction, string> = {
+  resend: "Re-send",
+  refill: "Refill",
+  transfer: "Transfer to Credit",
+};
+
+function getConfirmationMessage(action: PendingAction, certificate: GiftCertificate): string {
+  switch (action) {
+    case "resend":
+      return `Re-send gift certificate email to ${certificate.recipientEmail}?`;
+    case "refill":
+      return `Refill balance to ${currencyFormatter.format(certificate.originalValue)}?`;
+    case "transfer":
+      return `Transfer ${currencyFormatter.format(certificate.currentBalance)} to ${
+        certificate.recipientAccountName ?? certificate.recipientName
+      }'s customer store credit balance?`;
+  }
+}
 
 export function GiftCertificateActionsMenu({
   certificate,
@@ -10,26 +39,85 @@ export function GiftCertificateActionsMenu({
   certificate: GiftCertificate;
   detailUrl: string;
 }) {
-  const items: DropdownLinkItem[] = [
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const closeModal = () => setPendingAction(null);
+
+  const handleConfirm = () => {
+    const action = pendingAction;
+
+    startTransition(async () => {
+      switch (action) {
+        case "resend":
+          await resendGiftCertificateEmail(certificate.id);
+          break;
+        case "refill":
+          await refillGiftCertificateBalance(certificate.id, certificate.originalValue);
+          break;
+        case "transfer":
+          await transferGiftCertificateBalanceToStoreCredit(certificate.id, certificate.currentBalance);
+          break;
+      }
+
+      closeModal();
+    });
+  };
+
+  const items: Array<DropdownItem | DropdownLinkItem> = [
     {
       type: "link",
       content: "View",
       url: detailUrl,
     },
+    {
+      content: "Re-send",
+      onItemClick: () => setPendingAction("resend"),
+    },
+    {
+      content: "Refill",
+      disabled: certificate.currentBalance === certificate.originalValue,
+      onItemClick: () => setPendingAction("refill"),
+    },
+    {
+      content: "Transfer to Credit",
+      disabled: !certificate.recipientHasAccount,
+      onItemClick: () => setPendingAction("transfer"),
+    },
   ];
 
   return (
-    <Dropdown
-      items={items}
-      maxHeight={250}
-      placement="bottom-end"
-      toggle={
-        <Button
-          aria-label={`Actions for ${certificate.certificateNumber}`}
-          iconOnly={<MoreHorizIcon />}
-          variant="subtle"
-        />
-      }
-    />
+    <>
+      <Dropdown
+        items={items}
+        maxHeight={250}
+        placement="bottom-end"
+        toggle={
+          <Button
+            aria-label={`Actions for ${certificate.certificateNumber}`}
+            iconOnly={<MoreHorizIcon />}
+            variant="subtle"
+          />
+        }
+      />
+
+      <Modal
+        actions={[
+          { text: "Cancel", variant: "subtle", onClick: closeModal },
+          {
+            text: pendingAction ? ACTION_LABEL[pendingAction] : "",
+            variant: "primary",
+            isLoading: isPending,
+            onClick: handleConfirm,
+          },
+        ]}
+        closeOnEscKey
+        header={pendingAction ? ACTION_LABEL[pendingAction] : undefined}
+        isOpen={pendingAction !== null}
+        onClose={closeModal}
+      >
+        {pendingAction && <Text marginBottom="none">{getConfirmationMessage(pendingAction, certificate)}</Text>}
+      </Modal>
+    </>
   );
 }

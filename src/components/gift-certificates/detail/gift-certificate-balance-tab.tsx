@@ -7,6 +7,7 @@ import {
   refillGiftCertificateBalance,
   transferGiftCertificateBalanceToStoreCredit,
 } from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/actions";
+import { runServerAction } from "@/components/ui/action-alerts";
 import { GiftCertificate } from "@/lib/gift-certificates/types";
 
 type BalanceAction = "refill" | "add" | "transfer";
@@ -35,19 +36,19 @@ export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate
 
   const handleRefill = () => {
     startTransition(async () => {
-      await refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount));
+      await runServerAction(() => refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount)));
     });
   };
 
   const handleAdd = () => {
     startTransition(async () => {
-      await addToGiftCertificateBalance(giftCertificate.id, Number(addAmount));
+      await runServerAction(() => addToGiftCertificateBalance(giftCertificate.id, Number(addAmount)));
     });
   };
 
   const handleTransfer = () => {
     startTransition(async () => {
-      await transferGiftCertificateBalanceToStoreCredit(giftCertificate.id, Number(transferAmount));
+      await runServerAction(() => transferGiftCertificateBalanceToStoreCredit(giftCertificate.id, Number(transferAmount)));
     });
   };
 

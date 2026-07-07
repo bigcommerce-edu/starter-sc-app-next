@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Box, Button, Flex, Panel, Select, Small, Text } from "@/components/ui/big-design";
 import { updateGiftCertificateStatus } from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/actions";
+import { runServerAction } from "@/components/ui/action-alerts";
 import { GIFT_CERTIFICATE_STATUSES, GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certificates/status";
 import { GiftCertificate, GiftCertificateStatus } from "@/lib/gift-certificates/types";
 
@@ -32,7 +33,7 @@ export function GiftCertificateStatusPanel({ giftCertificate }: { giftCertificat
 
   const handleUpdate = () => {
     startTransition(async () => {
-      await updateGiftCertificateStatus(giftCertificate.id, status);
+      await runServerAction(() => updateGiftCertificateStatus(giftCertificate.id, status));
     });
   };
 

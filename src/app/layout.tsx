@@ -3,6 +3,7 @@ import { Source_Sans_3 } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
 import { BigDesignProvider } from "@/components/ui/big-design";
 import { StyledComponentsRegistry } from "@/components/ui/styled-components-registry";
+import { ActionAlertsManager } from "@/components/ui/action-alerts";
 
 const sourceSans3 = Source_Sans_3({
   subsets: ["latin"],
@@ -24,6 +25,7 @@ export default function RootLayout({
         <StyledComponentsRegistry>
           <BigDesignProvider>
             <AppShell>{children}</AppShell>
+            <ActionAlertsManager />
           </BigDesignProvider>
         </StyledComponentsRegistry>
       </body>

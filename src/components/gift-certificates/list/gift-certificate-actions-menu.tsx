@@ -7,6 +7,7 @@ import {
   resendGiftCertificateEmail,
   transferGiftCertificateBalanceToStoreCredit,
 } from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/actions";
+import { runServerAction } from "@/components/ui/action-alerts";
 import { GiftCertificate } from "@/lib/gift-certificates/types";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -50,13 +51,15 @@ export function GiftCertificateActionsMenu({
     startTransition(async () => {
       switch (action) {
         case "resend":
-          await resendGiftCertificateEmail(certificate.id);
+          await runServerAction(() => resendGiftCertificateEmail(certificate.id));
           break;
         case "refill":
-          await refillGiftCertificateBalance(certificate.id, certificate.originalValue);
+          await runServerAction(() => refillGiftCertificateBalance(certificate.id, certificate.originalValue));
           break;
         case "transfer":
-          await transferGiftCertificateBalanceToStoreCredit(certificate.id, certificate.currentBalance);
+          await runServerAction(() =>
+            transferGiftCertificateBalanceToStoreCredit(certificate.id, certificate.currentBalance),
+          );
           break;
       }
 

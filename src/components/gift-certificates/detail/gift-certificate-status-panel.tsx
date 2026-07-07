@@ -1,9 +1,4 @@
-"use client";
-
-import { useState, useTransition } from "react";
-import { Box, Button, Flex, Panel, Select, Small, Text } from "@/components/ui/big-design";
-import { updateGiftCertificateStatus } from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/actions";
-import { runServerAction } from "@/components/ui/action-alerts";
+import { Box, Panel, Select, Small, Text } from "@/components/ui/big-design";
 import { GIFT_CERTIFICATE_STATUSES, GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certificates/status";
 import { GiftCertificate, GiftCertificateStatus } from "@/lib/gift-certificates/types";
 
@@ -24,42 +19,27 @@ function DetailField({ label, children }: { label: string; children: React.React
   );
 }
 
-export function GiftCertificateStatusPanel({ giftCertificate }: { giftCertificate: GiftCertificate }) {
-  const [status, setStatus] = useState<GiftCertificateStatus>(giftCertificate.status);
-  const [isPending, startTransition] = useTransition();
-  const isDirty = status !== giftCertificate.status;
+interface GiftCertificateStatusPanelProps {
+  giftCertificate: GiftCertificate;
+  status: GiftCertificateStatus;
+  onStatusChange(status: GiftCertificateStatus): void;
+}
 
-  const handleCancel = () => setStatus(giftCertificate.status);
-
-  const handleUpdate = () => {
-    startTransition(async () => {
-      await runServerAction(() => updateGiftCertificateStatus(giftCertificate.id, status));
-    });
-  };
-
+export function GiftCertificateStatusPanel({ giftCertificate, status, onStatusChange }: GiftCertificateStatusPanelProps) {
   return (
     <Panel header={giftCertificate.certificateNumber}>
       <DetailField label="Purchase Date">{dateFormatter.format(new Date(giftCertificate.purchaseDate))}</DetailField>
       <DetailField label="Email Template">{giftCertificate.emailTemplate}</DetailField>
       <DetailField label="Original Value">{currencyFormatter.format(giftCertificate.originalValue)}</DetailField>
 
-      <Box marginBottom="medium">
+      <Box marginBottom="none">
         <Select
           label="Status"
-          onOptionChange={(value) => value && setStatus(value)}
+          onOptionChange={(value) => value && onStatusChange(value)}
           options={STATUS_OPTIONS}
           value={status}
         />
       </Box>
-
-      <Flex flexGap="0.5rem">
-        <Button disabled={!isDirty || isPending} isLoading={isPending} onClick={handleUpdate} variant="primary">
-          Update Status
-        </Button>
-        <Button disabled={!isDirty || isPending} onClick={handleCancel} variant="subtle">
-          Cancel
-        </Button>
-      </Flex>
     </Panel>
   );
 }

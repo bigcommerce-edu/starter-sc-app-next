@@ -56,14 +56,22 @@ function getColumns(
             header: "Recipient",
             hash: "recipientName",
             render: ({ recipientAccount, recipientName }: GiftCertificateWithRecipientAccount) =>
-              recipientAccount ? <Link href="#">{recipientName}</Link> : recipientName,
+              recipientAccount ? (
+                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{recipientName}</Link>
+              ) : (
+                recipientName
+              ),
             isSortable: true,
           },
           {
             header: "Recipient Email",
             hash: "recipientEmail",
             render: ({ recipientEmail, recipientAccount }: GiftCertificateWithRecipientAccount) =>
-              recipientAccount ? <Link href="#">{recipientEmail}</Link> : recipientEmail,
+              recipientAccount ? (
+                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{recipientEmail}</Link>
+              ) : (
+                recipientEmail
+              ),
           },
           {
             header: "Registered Account",

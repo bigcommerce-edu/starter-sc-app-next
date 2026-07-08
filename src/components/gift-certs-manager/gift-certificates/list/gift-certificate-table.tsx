@@ -74,11 +74,6 @@ function getColumns(
                 to_email
               ),
           },
-          {
-            header: "Registered Account",
-            hash: "recipientAccount",
-            render: ({ recipientAccount }: GiftCertificateWithRecipientAccount) => (recipientAccount ? "Yes" : "No"),
-          },
         ]
       : []),
     {

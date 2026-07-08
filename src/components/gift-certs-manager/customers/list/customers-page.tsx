@@ -1,4 +1,6 @@
 import { CustomerListView } from "@/components/gift-certs-manager/customers/list/customer-list-view";
+import { getDataMode } from "@/lib/api-client/get-api-client";
+import { assertStoreHashForDataMode } from "@/lib/routing/assert-store-hash";
 
 export async function CustomersPage({
   params,
@@ -12,6 +14,8 @@ export async function CustomersPage({
 
   const storeHash = resolvedParams.storeHash;
   const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
+
+  assertStoreHashForDataMode(getDataMode(), storeHashString);
 
   return <CustomerListView searchParams={resolvedSearchParams} storeHash={storeHashString} />;
 }

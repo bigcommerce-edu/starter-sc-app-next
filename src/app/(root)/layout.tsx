@@ -1,4 +1,4 @@
-import { AppShell } from "@/components/layout/app-shell";
+import { AppShell } from "@/components/gift-certs-manager/app-shell";
 
 // Wraps the root-level dev routes (no [storeHash] segment) in the same
 // AppShell as the real routes, with storeHash explicitly undefined — these

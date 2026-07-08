@@ -1,4 +1,4 @@
-import { AppShell } from "@/components/layout/app-shell";
+import { AppShell } from "@/components/gift-certs-manager/app-shell";
 
 export default async function StoreLayout({
   children,

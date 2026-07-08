@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { CustomerDetailPage } from "@/components/customers/detail/customer-detail-page";
-import { CustomersFallback } from "@/components/customers/customers-fallback";
+import { CustomerDetailPage } from "@/components/gift-certs-manager/customers/detail/customer-detail-page";
+import { CustomersFallback } from "@/components/gift-certs-manager/customers/customers-fallback";
 
 export default function Page({
   params,

@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { getDataMode } from "@/lib/api-client/get-api-client";
-import { UnauthorizedRootRoute } from "@/components/layout/unauthorized-root-route";
+import { UnauthorizedRootRoute } from "@/components/gift-certs-manager/unauthorized-root-route";
 
 // Root-level routes (outside the [storeHash] segment) only exist as a
 // convenience for MOCK/STATIC development, where a request has no store

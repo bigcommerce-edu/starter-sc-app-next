@@ -1,7 +1,7 @@
 "use server";
 
 import { ActionResult } from "@/lib/actions/action-result";
-import { GiftCertificateStatus } from "@/lib/gift-certificates/types";
+import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 // Placeholder: once a real API client exists for STATIC/MULTITENANT modes,
 // this should issue the actual status update request (and probably revalidate

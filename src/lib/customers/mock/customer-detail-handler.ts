@@ -1,15 +1,16 @@
 import { MockRouteHandler } from "@/lib/api-client/mock-client/types";
+import { CustomerWireRecord } from "@/lib/customers/customers-api";
 import { mockCustomers } from "@/lib/customers/mock/mock-customers";
-import { CUSTOMERS_PATH, Customer } from "@/lib/customers/types";
+import { CUSTOMERS_PATH } from "@/lib/customers/types";
 
-function handleCustomerDetailRequest(id: string): Customer {
+function handleCustomerDetailRequest(id: string): { data: CustomerWireRecord } {
   const customer = mockCustomers.find((item) => String(item.id) === id);
 
   if (!customer) {
     throw new Error(`No customer found with id "${id}".`);
   }
 
-  return customer;
+  return { data: customer };
 }
 
 export const customerDetailMockHandler: MockRouteHandler = {

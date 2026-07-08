@@ -1,20 +1,15 @@
 import { TableSortDirection } from "@/components/ui/big-design";
-import { GIFT_CERTIFICATE_STATUSES } from "@/lib/gift-certificates/status";
 import { GiftCertificatesQuery } from "@/lib/gift-certificates/types";
 
 export const DEFAULT_QUERY: GiftCertificatesQuery = {
-  certificateNumber: "",
-  status: [],
-  balanceMin: undefined,
-  balanceMax: undefined,
-  recipientName: "",
-  recipientEmail: "",
-  purchasedAfter: "",
-  purchasedBefore: "",
-  sortColumnHash: "purchaseDate",
-  sortDirection: "DESC",
-  currentPage: 1,
-  itemsPerPage: 10,
+  code: "",
+  to_name: "",
+  to_email: "",
+  from_name: "",
+  from_email: "",
+  direction: "DESC",
+  page: 1,
+  limit: 10,
 };
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
@@ -25,108 +20,60 @@ function getParam(searchParams: RawSearchParams, key: string): string | undefine
   return Array.isArray(value) ? value[0] : value;
 }
 
-function getNumberParam(searchParams: RawSearchParams, key: string): number | undefined {
-  const value = Number(getParam(searchParams, key));
-
-  return Number.isFinite(value) && getParam(searchParams, key) !== undefined ? value : undefined;
-}
-
 export function parseGiftCertificatesQuery(searchParams: RawSearchParams): GiftCertificatesQuery {
-  const certificateNumber = getParam(searchParams, "certificateNumber") ?? DEFAULT_QUERY.certificateNumber;
+  const code = getParam(searchParams, "code") ?? DEFAULT_QUERY.code;
+  const to_name = getParam(searchParams, "to_name") ?? DEFAULT_QUERY.to_name;
+  const to_email = getParam(searchParams, "to_email") ?? DEFAULT_QUERY.to_email;
+  const from_name = getParam(searchParams, "from_name") ?? DEFAULT_QUERY.from_name;
+  const from_email = getParam(searchParams, "from_email") ?? DEFAULT_QUERY.from_email;
 
-  const statusParam = getParam(searchParams, "status");
-  const status = statusParam
-    ? statusParam
-        .split(",")
-        .filter((value): value is (typeof GIFT_CERTIFICATE_STATUSES)[number] =>
-          GIFT_CERTIFICATE_STATUSES.includes(value as (typeof GIFT_CERTIFICATE_STATUSES)[number]),
-        )
-    : DEFAULT_QUERY.status;
+  // BigCommerce only documents sort=id for this endpoint, so the only choice
+  // left to the user is direction (newest/oldest by id).
+  const directionParam = getParam(searchParams, "direction");
+  const direction: TableSortDirection = directionParam === "ASC" ? "ASC" : DEFAULT_QUERY.direction;
 
-  const balanceMin = getNumberParam(searchParams, "balanceMin");
-  const balanceMax = getNumberParam(searchParams, "balanceMax");
+  const pageParam = Number(getParam(searchParams, "page"));
+  const page = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : DEFAULT_QUERY.page;
 
-  const recipientName = getParam(searchParams, "recipientName") ?? DEFAULT_QUERY.recipientName;
-  const recipientEmail = getParam(searchParams, "recipientEmail") ?? DEFAULT_QUERY.recipientEmail;
+  const limitParam = Number(getParam(searchParams, "limit"));
+  const limit = Number.isInteger(limitParam) && limitParam > 0 ? limitParam : DEFAULT_QUERY.limit;
 
-  const purchasedAfter = getParam(searchParams, "purchasedAfter") ?? DEFAULT_QUERY.purchasedAfter;
-  const purchasedBefore = getParam(searchParams, "purchasedBefore") ?? DEFAULT_QUERY.purchasedBefore;
-
-  const sortColumnHash = getParam(searchParams, "sort") ?? DEFAULT_QUERY.sortColumnHash;
-  const sortDirectionParam = getParam(searchParams, "direction");
-  const sortDirection: TableSortDirection = sortDirectionParam === "ASC" ? "ASC" : DEFAULT_QUERY.sortDirection;
-
-  const currentPageParam = Number(getParam(searchParams, "page"));
-  const currentPage = Number.isInteger(currentPageParam) && currentPageParam > 0 ? currentPageParam : DEFAULT_QUERY.currentPage;
-
-  const itemsPerPageParam = Number(getParam(searchParams, "perPage"));
-  const itemsPerPage = Number.isInteger(itemsPerPageParam) && itemsPerPageParam > 0 ? itemsPerPageParam : DEFAULT_QUERY.itemsPerPage;
-
-  return {
-    certificateNumber,
-    status,
-    balanceMin,
-    balanceMax,
-    recipientName,
-    recipientEmail,
-    purchasedAfter,
-    purchasedBefore,
-    sortColumnHash,
-    sortDirection,
-    currentPage,
-    itemsPerPage,
-  };
+  return { code, to_name, to_email, from_name, from_email, direction, page, limit };
 }
 
 export function buildGiftCertificatesSearchParams(query: GiftCertificatesQuery): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (query.certificateNumber) {
-    params.set("certificateNumber", query.certificateNumber);
+  if (query.code) {
+    params.set("code", query.code);
   }
 
-  if (query.status.length > 0) {
-    params.set("status", query.status.join(","));
+  if (query.to_name) {
+    params.set("to_name", query.to_name);
   }
 
-  if (query.balanceMin !== undefined) {
-    params.set("balanceMin", String(query.balanceMin));
+  if (query.to_email) {
+    params.set("to_email", query.to_email);
   }
 
-  if (query.balanceMax !== undefined) {
-    params.set("balanceMax", String(query.balanceMax));
+  if (query.from_name) {
+    params.set("from_name", query.from_name);
   }
 
-  if (query.recipientName) {
-    params.set("recipientName", query.recipientName);
+  if (query.from_email) {
+    params.set("from_email", query.from_email);
   }
 
-  if (query.recipientEmail) {
-    params.set("recipientEmail", query.recipientEmail);
+  if (query.direction !== DEFAULT_QUERY.direction) {
+    params.set("direction", query.direction);
   }
 
-  if (query.purchasedAfter) {
-    params.set("purchasedAfter", query.purchasedAfter);
+  if (query.page !== DEFAULT_QUERY.page) {
+    params.set("page", String(query.page));
   }
 
-  if (query.purchasedBefore) {
-    params.set("purchasedBefore", query.purchasedBefore);
-  }
-
-  if (query.sortColumnHash !== DEFAULT_QUERY.sortColumnHash) {
-    params.set("sort", query.sortColumnHash);
-  }
-
-  if (query.sortDirection !== DEFAULT_QUERY.sortDirection) {
-    params.set("direction", query.sortDirection);
-  }
-
-  if (query.currentPage !== DEFAULT_QUERY.currentPage) {
-    params.set("page", String(query.currentPage));
-  }
-
-  if (query.itemsPerPage !== DEFAULT_QUERY.itemsPerPage) {
-    params.set("perPage", String(query.itemsPerPage));
+  if (query.limit !== DEFAULT_QUERY.limit) {
+    params.set("limit", String(query.limit));
   }
 
   return params;

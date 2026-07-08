@@ -23,10 +23,14 @@ function getColumns(
   return [
     {
       header: "Certificate #",
-      hash: "certificateNumber",
-      render: ({ id, certificateNumber }: GiftCertificateWithRecipientAccount) => (
-        <Link href={getAppUrl(storeHash, `/gift-certs/${id}`)}>{certificateNumber}</Link>
+      hash: "id",
+      render: ({ id, code }: GiftCertificateWithRecipientAccount) => (
+        <Link href={getAppUrl(storeHash, `/gift-certs/${id}`)}>{code}</Link>
       ),
+      // BigCommerce's v2 gift certificates endpoint only supports sort=id,
+      // so this is the only sortable column — id isn't otherwise displayed,
+      // but certificate numbers are assigned in id order, so sorting here
+      // reads naturally as sorting by certificate number.
       isSortable: true,
     },
     {
@@ -35,43 +39,39 @@ function getColumns(
       render: ({ status }: GiftCertificateWithRecipientAccount) => (
         <Badge label={GIFT_CERTIFICATE_STATUS_LABEL[status]} variant={GIFT_CERTIFICATE_STATUS_BADGE_VARIANT[status]} />
       ),
-      isSortable: true,
     },
     {
       header: "Original Value",
-      hash: "originalValue",
-      render: ({ originalValue }: GiftCertificateWithRecipientAccount) => currencyFormatter.format(originalValue),
-      isSortable: true,
+      hash: "amount",
+      render: ({ amount }: GiftCertificateWithRecipientAccount) => currencyFormatter.format(amount),
       align: "right",
     },
     {
       header: "Current Balance",
-      hash: "currentBalance",
-      render: ({ currentBalance }: GiftCertificateWithRecipientAccount) => currencyFormatter.format(currentBalance),
-      isSortable: true,
+      hash: "balance",
+      render: ({ balance }: GiftCertificateWithRecipientAccount) => currencyFormatter.format(balance),
       align: "right",
     },
     ...(showRecipientColumns
       ? [
           {
             header: "Recipient",
-            hash: "recipientName",
-            render: ({ recipientAccount, recipientName }: GiftCertificateWithRecipientAccount) =>
+            hash: "to_name",
+            render: ({ recipientAccount, to_name }: GiftCertificateWithRecipientAccount) =>
               recipientAccount ? (
-                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{recipientName}</Link>
+                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{to_name}</Link>
               ) : (
-                recipientName
+                to_name
               ),
-            isSortable: true,
           },
           {
             header: "Recipient Email",
-            hash: "recipientEmail",
-            render: ({ recipientEmail, recipientAccount }: GiftCertificateWithRecipientAccount) =>
+            hash: "to_email",
+            render: ({ to_email, recipientAccount }: GiftCertificateWithRecipientAccount) =>
               recipientAccount ? (
-                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{recipientEmail}</Link>
+                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{to_email}</Link>
               ) : (
-                recipientEmail
+                to_email
               ),
           },
           {
@@ -83,9 +83,9 @@ function getColumns(
       : []),
     {
       header: "Purchase Date",
-      hash: "purchaseDate",
-      render: ({ purchaseDate }: GiftCertificateWithRecipientAccount) => dateFormatter.format(new Date(purchaseDate)),
-      isSortable: true,
+      hash: "purchase_date",
+      render: ({ purchase_date }: GiftCertificateWithRecipientAccount) =>
+        dateFormatter.format(new Date(Number(purchase_date) * 1000)),
     },
     {
       header: "Actions",
@@ -165,7 +165,7 @@ export function GiftCertificateTable({
   return (
     <Box>
       {showFilters && (
-        <GiftCertificateFilters onChange={(filters) => navigate({ ...query, ...filters, currentPage: 1 })} query={query} />
+        <GiftCertificateFilters onChange={(filters) => navigate({ ...query, ...filters, page: 1 })} query={query} />
       )}
 
       <PendingOverlay isPending={isPending}>
@@ -175,17 +175,17 @@ export function GiftCertificateTable({
           keyField="id"
           itemName="gift certificates"
           sortable={{
-            columnHash: query.sortColumnHash,
-            direction: query.sortDirection,
-            onSort: (columnHash, direction) => navigate({ ...query, sortColumnHash: columnHash, sortDirection: direction }),
+            columnHash: "id",
+            direction: query.direction,
+            onSort: (_columnHash, direction) => navigate({ ...query, direction }),
           }}
           pagination={{
-            currentPage: query.currentPage,
+            currentPage: query.page,
             totalItems,
-            itemsPerPage: query.itemsPerPage,
+            itemsPerPage: query.limit,
             itemsPerPageOptions: ITEMS_PER_PAGE_OPTIONS,
-            onPageChange: (currentPage) => navigate({ ...query, currentPage }),
-            onItemsPerPageChange: (itemsPerPage) => navigate({ ...query, itemsPerPage, currentPage: 1 }),
+            onPageChange: (page) => navigate({ ...query, page }),
+            onItemsPerPageChange: (limit) => navigate({ ...query, limit, page: 1 }),
           }}
         />
       </PendingOverlay>

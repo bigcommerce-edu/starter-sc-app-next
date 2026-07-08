@@ -19,7 +19,7 @@ export function CustomerActionsMenu({ customer, detailUrl }: { customer: Custome
       placement="bottom-end"
       toggle={
         <Button
-          aria-label={`Actions for ${customer.firstName} ${customer.lastName}`}
+          aria-label={`Actions for ${customer.first_name} ${customer.last_name}`}
           iconOnly={<MoreHorizIcon />}
           variant="subtle"
         />

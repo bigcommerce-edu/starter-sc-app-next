@@ -1,54 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Chip,
-  Datepicker,
-  Fieldset,
-  Flex,
-  FilterListIcon,
-  Form,
-  FormGroup,
-  Grid,
-  Input,
-  Modal,
-  MultiSelect,
-} from "@/components/ui/big-design";
-import { GIFT_CERTIFICATE_STATUSES, GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certificates/status";
-import { GiftCertificateStatus, GiftCertificatesQuery } from "@/lib/gift-certificates/types";
+import { Box, Button, Chip, Flex, FilterListIcon, Form, FormGroup, Input, Modal } from "@/components/ui/big-design";
+import { GiftCertificatesQuery } from "@/lib/gift-certificates/types";
 import { DEFAULT_QUERY } from "@/lib/gift-certificates/query";
 
-const STATUS_OPTIONS: Array<{ value: GiftCertificateStatus; content: string }> = GIFT_CERTIFICATE_STATUSES.map(
-  (status) => ({ value: status, content: GIFT_CERTIFICATE_STATUS_LABEL[status] }),
-);
-
-// Fields that make up the advanced filters, i.e. everything in GiftCertificatesQuery
-// except sorting/paging, which the table controls directly.
-type FilterFields = Omit<GiftCertificatesQuery, "sortColumnHash" | "sortDirection" | "currentPage" | "itemsPerPage">;
+// Fields that make up the advanced filters, i.e. everything in
+// GiftCertificatesQuery except sorting/paging, which the table controls
+// directly. BigCommerce's v2 gift certificates endpoint only supports flat
+// equality filters on these five fields (code, to_name, to_email, from_name,
+// from_email) — no balance/date ranges, no status filter.
+type FilterFields = Omit<GiftCertificatesQuery, "direction" | "page" | "limit">;
 
 const DEFAULT_FILTERS: FilterFields = {
-  certificateNumber: DEFAULT_QUERY.certificateNumber,
-  status: DEFAULT_QUERY.status,
-  balanceMin: DEFAULT_QUERY.balanceMin,
-  balanceMax: DEFAULT_QUERY.balanceMax,
-  recipientName: DEFAULT_QUERY.recipientName,
-  recipientEmail: DEFAULT_QUERY.recipientEmail,
-  purchasedAfter: DEFAULT_QUERY.purchasedAfter,
-  purchasedBefore: DEFAULT_QUERY.purchasedBefore,
+  code: DEFAULT_QUERY.code,
+  to_name: DEFAULT_QUERY.to_name,
+  to_email: DEFAULT_QUERY.to_email,
+  from_name: DEFAULT_QUERY.from_name,
+  from_email: DEFAULT_QUERY.from_email,
 };
 
 function isFilterActive(filters: FilterFields): boolean {
   return (
-    filters.certificateNumber !== DEFAULT_FILTERS.certificateNumber ||
-    filters.status.length > 0 ||
-    filters.balanceMin !== DEFAULT_FILTERS.balanceMin ||
-    filters.balanceMax !== DEFAULT_FILTERS.balanceMax ||
-    filters.recipientName !== DEFAULT_FILTERS.recipientName ||
-    filters.recipientEmail !== DEFAULT_FILTERS.recipientEmail ||
-    filters.purchasedAfter !== DEFAULT_FILTERS.purchasedAfter ||
-    filters.purchasedBefore !== DEFAULT_FILTERS.purchasedBefore
+    filters.code !== DEFAULT_FILTERS.code ||
+    filters.to_name !== DEFAULT_FILTERS.to_name ||
+    filters.to_email !== DEFAULT_FILTERS.to_email ||
+    filters.from_name !== DEFAULT_FILTERS.from_name ||
+    filters.from_email !== DEFAULT_FILTERS.from_email
   );
 }
 
@@ -100,36 +78,23 @@ export function GiftCertificateFilters({ query, onChange }: GiftCertificateFilte
 
       {isFilterActive(query) && (
         <Flex alignItems="center" flexWrap="wrap" marginTop="medium">
-          {query.certificateNumber && (
+          {query.code && (
             <Chip
-              label={`Certificate #: ${query.certificateNumber}`}
-              onDelete={() => removeFilter("certificateNumber")}
+              label={`Certificate #: ${query.code}`}
+              onDelete={() => removeFilter("code")}
             />
           )}
-          {query.status.map((status) => (
-            <Chip
-              key={status}
-              label={`Status: ${GIFT_CERTIFICATE_STATUS_LABEL[status]}`}
-              onDelete={() => onChange({ ...query, status: query.status.filter((value) => value !== status) })}
-            />
-          ))}
-          {query.balanceMin !== undefined && (
-            <Chip label={`Min balance: ${query.balanceMin}`} onDelete={() => removeFilter("balanceMin")} />
+          {query.to_name && (
+            <Chip label={`Recipient: ${query.to_name}`} onDelete={() => removeFilter("to_name")} />
           )}
-          {query.balanceMax !== undefined && (
-            <Chip label={`Max balance: ${query.balanceMax}`} onDelete={() => removeFilter("balanceMax")} />
+          {query.to_email && (
+            <Chip label={`Recipient email: ${query.to_email}`} onDelete={() => removeFilter("to_email")} />
           )}
-          {query.recipientName && (
-            <Chip label={`Recipient: ${query.recipientName}`} onDelete={() => removeFilter("recipientName")} />
+          {query.from_name && (
+            <Chip label={`Sender: ${query.from_name}`} onDelete={() => removeFilter("from_name")} />
           )}
-          {query.recipientEmail && (
-            <Chip label={`Recipient email: ${query.recipientEmail}`} onDelete={() => removeFilter("recipientEmail")} />
-          )}
-          {query.purchasedAfter && (
-            <Chip label={`Purchased after: ${query.purchasedAfter}`} onDelete={() => removeFilter("purchasedAfter")} />
-          )}
-          {query.purchasedBefore && (
-            <Chip label={`Purchased before: ${query.purchasedBefore}`} onDelete={() => removeFilter("purchasedBefore")} />
+          {query.from_email && (
+            <Chip label={`Sender email: ${query.from_email}`} onDelete={() => removeFilter("from_email")} />
           )}
           <Button onClick={clearAllFilters} variant="subtle">
             Clear all filters
@@ -151,74 +116,41 @@ export function GiftCertificateFilters({ query, onChange }: GiftCertificateFilte
           <FormGroup>
             <Input
               label="Certificate #"
-              onChange={(event) => setDraftField("certificateNumber", event.target.value)}
-              value={draft.certificateNumber}
+              onChange={(event) => setDraftField("code", event.target.value)}
+              value={draft.code}
             />
-          </FormGroup>
-
-          <FormGroup>
-            <MultiSelect
-              label="Status"
-              onOptionsChange={(value) => setDraftField("status", value)}
-              options={STATUS_OPTIONS}
-              value={draft.status}
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Fieldset legend="Current balance">
-              <Grid gridColumns={{ mobile: "1fr", tablet: "1fr 1fr" }} gridGap="1rem">
-                <Input
-                  min={0}
-                  onChange={(event) =>
-                    setDraftField("balanceMin", event.target.value === "" ? undefined : Number(event.target.value))
-                  }
-                  placeholder="Min."
-                  type="number"
-                  value={draft.balanceMin ?? ""}
-                />
-                <Input
-                  min={0}
-                  onChange={(event) =>
-                    setDraftField("balanceMax", event.target.value === "" ? undefined : Number(event.target.value))
-                  }
-                  placeholder="Max."
-                  type="number"
-                  value={draft.balanceMax ?? ""}
-                />
-              </Grid>
-            </Fieldset>
           </FormGroup>
 
           <FormGroup>
             <Input
               label="Recipient name"
-              onChange={(event) => setDraftField("recipientName", event.target.value)}
-              value={draft.recipientName}
+              onChange={(event) => setDraftField("to_name", event.target.value)}
+              value={draft.to_name}
             />
           </FormGroup>
 
           <FormGroup>
             <Input
               label="Recipient email"
-              onChange={(event) => setDraftField("recipientEmail", event.target.value)}
-              value={draft.recipientEmail}
+              onChange={(event) => setDraftField("to_email", event.target.value)}
+              value={draft.to_email}
             />
           </FormGroup>
 
           <FormGroup>
-            <Grid gridColumns={{ mobile: "1fr", tablet: "1fr 1fr" }} gridGap="1rem">
-              <Datepicker
-                label="Purchased after"
-                onDateChange={(date) => setDraftField("purchasedAfter", date)}
-                value={draft.purchasedAfter || undefined}
-              />
-              <Datepicker
-                label="Purchased before"
-                onDateChange={(date) => setDraftField("purchasedBefore", date)}
-                value={draft.purchasedBefore || undefined}
-              />
-            </Grid>
+            <Input
+              label="Sender name"
+              onChange={(event) => setDraftField("from_name", event.target.value)}
+              value={draft.from_name}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Input
+              label="Sender email"
+              onChange={(event) => setDraftField("from_email", event.target.value)}
+              value={draft.from_email}
+            />
           </FormGroup>
         </Form>
       </Modal>

@@ -6,7 +6,7 @@ function findChannelById(channels: Channel[], id: number): Channel | undefined {
   return channels.find((channel) => channel.id === id);
 }
 
-// Attaches channel names to a customer's originChannelId/channelIds.
+// Attaches channel names to a customer's origin_channel_id/channel_ids.
 // Customers only ever know channels by id — this is the one place that
 // looks up what those ids actually refer to. Callers that already have the
 // full channel list on hand (e.g. because they also need it to populate a
@@ -19,8 +19,8 @@ export async function decorateCustomersWithChannels(
 
   return customers.map((customer) => ({
     ...customer,
-    originChannel: findChannelById(resolvedChannels, customer.originChannelId),
-    channels: customer.channelIds
+    originChannel: findChannelById(resolvedChannels, customer.origin_channel_id),
+    channels: customer.channel_ids
       .map((channelId) => findChannelById(resolvedChannels, channelId))
       .filter((channel): channel is Channel => channel !== undefined),
   }));

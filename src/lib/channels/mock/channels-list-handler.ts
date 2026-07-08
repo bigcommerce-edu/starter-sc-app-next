@@ -1,9 +1,21 @@
 import { MockRouteHandler } from "@/lib/api-client/mock-client/types";
-import { CHANNELS_PATH, ChannelsResult } from "@/lib/channels/types";
+import { V3ListResponse } from "@/lib/api-client/types";
+import { CHANNELS_PATH, Channel } from "@/lib/channels/types";
 import { mockChannels } from "@/lib/channels/mock/mock-channels";
 
-function handleChannelsListRequest(): ChannelsResult {
-  return { items: mockChannels };
+function handleChannelsListRequest(): V3ListResponse<Channel> {
+  return {
+    data: mockChannels,
+    meta: {
+      pagination: {
+        total: mockChannels.length,
+        count: mockChannels.length,
+        per_page: mockChannels.length,
+        current_page: 1,
+        total_pages: 1,
+      },
+    },
+  };
 }
 
 export const channelsListMockHandler: MockRouteHandler = {

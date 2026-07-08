@@ -11,12 +11,12 @@ function findAccountByEmail(customers: Customer[], email: string): Customer | un
 export async function decorateGiftCertificatesWithRecipientAccounts(
   giftCertificates: GiftCertificate[],
 ): Promise<GiftCertificateWithRecipientAccount[]> {
-  const emails = giftCertificates.map((certificate) => certificate.recipientEmail);
+  const emails = giftCertificates.map((certificate) => certificate.to_email);
   const { items: customers } = await fetchCustomersByEmail(emails);
 
   return giftCertificates.map((certificate) => ({
     ...certificate,
-    recipientAccount: findAccountByEmail(customers, certificate.recipientEmail),
+    recipientAccount: findAccountByEmail(customers, certificate.to_email),
   }));
 }
 
@@ -25,14 +25,11 @@ export async function decorateGiftCertificatesWithRecipientAccounts(
 export async function decorateGiftCertificateWithAccounts(
   giftCertificate: GiftCertificate,
 ): Promise<GiftCertificateWithAccounts> {
-  const { items: customers } = await fetchCustomersByEmail([
-    giftCertificate.senderEmail,
-    giftCertificate.recipientEmail,
-  ]);
+  const { items: customers } = await fetchCustomersByEmail([giftCertificate.from_email, giftCertificate.to_email]);
 
   return {
     ...giftCertificate,
-    senderAccount: findAccountByEmail(customers, giftCertificate.senderEmail),
-    recipientAccount: findAccountByEmail(customers, giftCertificate.recipientEmail),
+    senderAccount: findAccountByEmail(customers, giftCertificate.from_email),
+    recipientAccount: findAccountByEmail(customers, giftCertificate.to_email),
   };
 }

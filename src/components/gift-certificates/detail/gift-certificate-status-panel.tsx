@@ -27,10 +27,12 @@ interface GiftCertificateStatusPanelProps {
 
 export function GiftCertificateStatusPanel({ giftCertificate, status, onStatusChange }: GiftCertificateStatusPanelProps) {
   return (
-    <Panel header={giftCertificate.certificateNumber}>
-      <DetailField label="Purchase Date">{dateFormatter.format(new Date(giftCertificate.purchaseDate))}</DetailField>
-      <DetailField label="Email Template">{giftCertificate.emailTemplate}</DetailField>
-      <DetailField label="Original Value">{currencyFormatter.format(giftCertificate.originalValue)}</DetailField>
+    <Panel header={giftCertificate.code}>
+      <DetailField label="Purchase Date">
+        {dateFormatter.format(new Date(Number(giftCertificate.purchase_date) * 1000))}
+      </DetailField>
+      <DetailField label="Email Template">{giftCertificate.template}</DetailField>
+      <DetailField label="Original Value">{currencyFormatter.format(giftCertificate.amount)}</DetailField>
 
       <Box marginBottom="none">
         <Select

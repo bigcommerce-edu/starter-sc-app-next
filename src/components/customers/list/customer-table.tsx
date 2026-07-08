@@ -8,7 +8,7 @@ import { CustomerFilters } from "@/components/customers/list/customer-filters";
 import { PendingOverlay } from "@/components/ui/pending-overlay";
 import { Channel } from "@/lib/channels/types";
 import { buildCustomersSearchParams } from "@/lib/customers/query";
-import { CustomersQuery, CustomerWithChannels } from "@/lib/customers/types";
+import { CustomersQuery, CustomerWithChannels, sumStoreCredit } from "@/lib/customers/types";
 import { getAppUrl } from "@/lib/routing/app-url";
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
@@ -20,8 +20,8 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<CustomerWi
     {
       header: "Name",
       hash: "name",
-      render: ({ id, firstName, lastName }: CustomerWithChannels) => (
-        <Link href={getAppUrl(storeHash, `/customers/${id}`)}>{`${firstName} ${lastName}`}</Link>
+      render: ({ id, first_name, last_name }: CustomerWithChannels) => (
+        <Link href={getAppUrl(storeHash, `/customers/${id}`)}>{`${first_name} ${last_name}`}</Link>
       ),
       isSortable: true,
     },
@@ -31,18 +31,16 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<CustomerWi
       render: ({ id, email }: CustomerWithChannels) => (
         <Link href={getAppUrl(storeHash, `/customers/${id}`)}>{email}</Link>
       ),
-      isSortable: true,
     },
     {
       header: "Origin Channel",
-      hash: "originChannelId",
-      render: ({ originChannel, originChannelId }: CustomerWithChannels) => originChannel?.name ?? originChannelId,
+      hash: "origin_channel_id",
+      render: ({ originChannel, origin_channel_id }: CustomerWithChannels) => originChannel?.name ?? origin_channel_id,
     },
     {
       header: "Store Credit",
-      hash: "storeCreditBalance",
-      render: ({ storeCreditBalance }: CustomerWithChannels) => currencyFormatter.format(storeCreditBalance),
-      isSortable: true,
+      hash: "store_credit_amounts",
+      render: ({ store_credit_amounts }: CustomerWithChannels) => currencyFormatter.format(sumStoreCredit(store_credit_amounts)),
       align: "right",
     },
     {
@@ -110,7 +108,7 @@ export function CustomerTable({ customers, totalItems, query, channels, storeHas
     <Box>
       <CustomerFilters
         channels={channels}
-        onChange={(filters) => navigate({ ...query, ...filters, currentPage: 1 })}
+        onChange={(filters) => navigate({ ...query, ...filters, page: 1 })}
         query={query}
       />
 
@@ -121,17 +119,17 @@ export function CustomerTable({ customers, totalItems, query, channels, storeHas
           keyField="id"
           itemName="customers"
           sortable={{
-            columnHash: query.sortColumnHash,
-            direction: query.sortDirection,
-            onSort: (columnHash, direction) => navigate({ ...query, sortColumnHash: columnHash, sortDirection: direction }),
+            columnHash: "name",
+            direction: query.direction,
+            onSort: (_columnHash, direction) => navigate({ ...query, direction }),
           }}
           pagination={{
-            currentPage: query.currentPage,
+            currentPage: query.page,
             totalItems,
-            itemsPerPage: query.itemsPerPage,
+            itemsPerPage: query.limit,
             itemsPerPageOptions: ITEMS_PER_PAGE_OPTIONS,
-            onPageChange: (currentPage) => navigate({ ...query, currentPage }),
-            onItemsPerPageChange: (itemsPerPage) => navigate({ ...query, itemsPerPage, currentPage: 1 }),
+            onPageChange: (page) => navigate({ ...query, page }),
+            onItemsPerPageChange: (limit) => navigate({ ...query, limit, page: 1 }),
           }}
         />
       </PendingOverlay>

@@ -42,16 +42,16 @@ export function GiftCertificateDetailsTab({ giftCertificate }: { giftCertificate
       <FlexItem>
         <GiftCertificatePartyPanel
           header="Sender"
-          name={giftCertificate.senderName}
-          email={giftCertificate.senderEmail}
+          name={giftCertificate.from_name}
+          email={giftCertificate.from_email}
           account={giftCertificate.senderAccount}
         />
       </FlexItem>
       <FlexItem>
         <GiftCertificatePartyPanel
           header="Recipient"
-          name={giftCertificate.recipientName}
-          email={giftCertificate.recipientEmail}
+          name={giftCertificate.to_name}
+          email={giftCertificate.to_email}
           account={giftCertificate.recipientAccount}
         />
       </FlexItem>
@@ -80,7 +80,7 @@ export function GiftCertificateDetailsTab({ giftCertificate }: { giftCertificate
         isOpen={isResendModalOpen}
         onClose={closeResendModal}
       >
-        <Text marginBottom="none">Re-send gift certificate email to {giftCertificate.recipientEmail}?</Text>
+        <Text marginBottom="none">Re-send gift certificate email to {giftCertificate.to_email}?</Text>
       </Modal>
     </Flex>
   );

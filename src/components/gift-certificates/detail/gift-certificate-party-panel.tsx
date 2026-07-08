@@ -25,7 +25,7 @@ export function GiftCertificatePartyPanel({ header, name, email, account }: Gift
       <DetailField label="Registered Customer">
         <Badge label={account ? "Yes" : "No"} variant={account ? "success" : "secondary"} />
       </DetailField>
-      {account && <DetailField label="Account Name">{`${account.firstName} ${account.lastName}`}</DetailField>}
+      {account && <DetailField label="Account Name">{`${account.first_name} ${account.last_name}`}</DetailField>}
     </Panel>
   );
 }

@@ -1,5 +1,26 @@
 import { getApiClient } from "@/lib/api-client/get-api-client";
-import { CUSTOMERS_PATH, Customer, CustomersListResult, CustomersQuery, CustomersResult, getCustomerPath } from "@/lib/customers/types";
+import { V3ListResponse } from "@/lib/api-client/types";
+import { CUSTOMERS_PATH, Customer, CustomersQuery, getCustomerPath } from "@/lib/customers/types";
+
+export interface CustomersResult {
+  items: Customer[];
+}
+
+export interface CustomersListResult {
+  items: Customer[];
+  totalItems: number;
+}
+
+// BigCommerce's wire channel_ids is nullable; every other field on Customer
+// already matches the wire response as-is, so this is the only normalization
+// needed to match the Customer shape.
+export interface CustomerWireRecord extends Omit<Customer, "channel_ids"> {
+  channel_ids: number[] | null;
+}
+
+function parseCustomer(record: CustomerWireRecord): Customer {
+  return { ...record, channel_ids: record.channel_ids ?? [] };
+}
 
 // Looks up registered customer accounts by email. Gift certificates (and any
 // other feature that only knows an email address) use this to find out
@@ -14,34 +35,39 @@ export async function fetchCustomersByEmail(emails: string[]): Promise<Customers
   }
 
   const apiClient = getApiClient();
-
-  return apiClient.get<CustomersResult>(CUSTOMERS_PATH, {
+  const response = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: {
       "email:in": uniqueEmails.join(","),
     },
   });
+
+  return { items: response.data.map(parseCustomer) };
 }
 
-// Domain-level adapter for the customers listing page: translates a
-// CustomersQuery into the request shape the customers endpoint expects.
+// BigCommerce v3 customers endpoint uses suffix-operator filters (:like/:in)
+// and a single sort value with the direction embedded (e.g. "last_name:asc")
+// — this app only ever sorts by last_name, the sole sortable column exposed
+// in the UI.
 export async function fetchCustomers(query: CustomersQuery): Promise<CustomersListResult> {
   const apiClient = getApiClient();
 
-  return apiClient.get<CustomersListResult>(CUSTOMERS_PATH, {
+  const response = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: {
-      name: query.name,
-      email: query.email,
-      "origin_channel_id:in": query.originChannelIds.join(","),
-      sort: query.sortColumnHash,
-      direction: query.sortDirection,
-      page: query.currentPage,
-      perPage: query.itemsPerPage,
+      "name:like": query.name,
+      "email:in": query.email,
+      "origin_channel_id:in": query.origin_channel_id.join(","),
+      sort: `last_name:${query.direction.toLowerCase()}`,
+      page: query.page,
+      limit: query.limit,
     },
   });
+
+  return { items: response.data.map(parseCustomer), totalItems: response.meta.pagination.total };
 }
 
 export async function fetchCustomer(id: number | string): Promise<Customer> {
   const apiClient = getApiClient();
+  const response = await apiClient.get<{ data: CustomerWireRecord }>(getCustomerPath(id));
 
-  return apiClient.get<Customer>(getCustomerPath(id));
+  return parseCustomer(response.data);
 }

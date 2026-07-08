@@ -8,19 +8,19 @@ import { DEFAULT_QUERY } from "@/lib/customers/query";
 
 // Fields that make up the advanced filters, i.e. everything in CustomersQuery
 // except sorting/paging, which the table controls directly.
-type FilterFields = Omit<CustomersQuery, "sortColumnHash" | "sortDirection" | "currentPage" | "itemsPerPage">;
+type FilterFields = Omit<CustomersQuery, "direction" | "page" | "limit">;
 
 const DEFAULT_FILTERS: FilterFields = {
   name: DEFAULT_QUERY.name,
   email: DEFAULT_QUERY.email,
-  originChannelIds: DEFAULT_QUERY.originChannelIds,
+  origin_channel_id: DEFAULT_QUERY.origin_channel_id,
 };
 
 function isFilterActive(filters: FilterFields): boolean {
   return (
     filters.name !== DEFAULT_FILTERS.name ||
     filters.email !== DEFAULT_FILTERS.email ||
-    filters.originChannelIds.length > 0
+    filters.origin_channel_id.length > 0
   );
 }
 
@@ -78,14 +78,14 @@ export function CustomerFilters({ query, channels, onChange }: CustomerFiltersPr
         <Flex alignItems="center" flexWrap="wrap" marginTop="medium">
           {query.name && <Chip label={`Name: ${query.name}`} onDelete={() => removeFilter("name")} />}
           {query.email && <Chip label={`Email: ${query.email}`} onDelete={() => removeFilter("email")} />}
-          {query.originChannelIds.map((channelId) => (
+          {query.origin_channel_id.map((channelId) => (
             <Chip
               key={channelId}
               label={`Origin Channel: ${getChannelName(channelId)}`}
               onDelete={() =>
                 onChange({
                   ...query,
-                  originChannelIds: query.originChannelIds.filter((id) => id !== channelId),
+                  origin_channel_id: query.origin_channel_id.filter((id) => id !== channelId),
                 })
               }
             />
@@ -118,9 +118,9 @@ export function CustomerFilters({ query, channels, onChange }: CustomerFiltersPr
           <FormGroup>
             <MultiSelect
               label="Origin Channel"
-              onOptionsChange={(value) => setDraftField("originChannelIds", value)}
+              onOptionsChange={(value) => setDraftField("origin_channel_id", value)}
               options={channelOptions}
-              value={draft.originChannelIds}
+              value={draft.origin_channel_id}
             />
           </FormGroup>
         </Form>

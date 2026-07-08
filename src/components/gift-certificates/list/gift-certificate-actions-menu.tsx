@@ -23,15 +23,15 @@ const ACTION_LABEL: Record<PendingAction, string> = {
 function getConfirmationMessage(action: PendingAction, certificate: GiftCertificateWithRecipientAccount): string {
   switch (action) {
     case "resend":
-      return `Re-send gift certificate email to ${certificate.recipientEmail}?`;
+      return `Re-send gift certificate email to ${certificate.to_email}?`;
     case "refill":
-      return `Refill balance to ${currencyFormatter.format(certificate.originalValue)}?`;
+      return `Refill balance to ${currencyFormatter.format(certificate.amount)}?`;
     case "transfer": {
       const recipientDisplayName = certificate.recipientAccount
-        ? `${certificate.recipientAccount.firstName} ${certificate.recipientAccount.lastName}`
-        : certificate.recipientName;
+        ? `${certificate.recipientAccount.first_name} ${certificate.recipientAccount.last_name}`
+        : certificate.to_name;
 
-      return `Transfer ${currencyFormatter.format(certificate.currentBalance)} to ${recipientDisplayName}'s customer store credit balance?`;
+      return `Transfer ${currencyFormatter.format(certificate.balance)} to ${recipientDisplayName}'s customer store credit balance?`;
     }
   }
 }
@@ -57,11 +57,11 @@ export function GiftCertificateActionsMenu({
           await runServerAction(() => resendGiftCertificateEmail(certificate.id));
           break;
         case "refill":
-          await runServerAction(() => refillGiftCertificateBalance(certificate.id, certificate.originalValue));
+          await runServerAction(() => refillGiftCertificateBalance(certificate.id, certificate.amount));
           break;
         case "transfer":
           await runServerAction(() =>
-            transferGiftCertificateBalanceToStoreCredit(certificate.id, certificate.currentBalance),
+            transferGiftCertificateBalanceToStoreCredit(certificate.id, certificate.balance),
           );
           break;
       }
@@ -82,7 +82,7 @@ export function GiftCertificateActionsMenu({
     },
     {
       content: "Refill",
-      disabled: certificate.currentBalance >= certificate.originalValue,
+      disabled: certificate.balance >= certificate.amount,
       onItemClick: () => setPendingAction("refill"),
     },
     {
@@ -100,7 +100,7 @@ export function GiftCertificateActionsMenu({
         placement="bottom-end"
         toggle={
           <Button
-            aria-label={`Actions for ${certificate.certificateNumber}`}
+            aria-label={`Actions for ${certificate.code}`}
             iconOnly={<MoreHorizIcon />}
             variant="subtle"
           />

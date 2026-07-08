@@ -4,11 +4,10 @@ import { CustomersQuery } from "@/lib/customers/types";
 export const DEFAULT_QUERY: CustomersQuery = {
   name: "",
   email: "",
-  originChannelIds: [],
-  sortColumnHash: "name",
-  sortDirection: "ASC",
-  currentPage: 1,
-  itemsPerPage: 10,
+  origin_channel_id: [],
+  direction: "ASC",
+  page: 1,
+  limit: 10,
 };
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
@@ -23,32 +22,33 @@ export function parseCustomersQuery(searchParams: RawSearchParams): CustomersQue
   const name = getParam(searchParams, "name") ?? DEFAULT_QUERY.name;
   const email = getParam(searchParams, "email") ?? DEFAULT_QUERY.email;
 
-  const originChannelIdsParam = getParam(searchParams, "originChannelIds");
-  const originChannelIds = originChannelIdsParam
-    ? originChannelIdsParam
+  const originChannelIdParam = getParam(searchParams, "origin_channel_id");
+  const origin_channel_id = originChannelIdParam
+    ? originChannelIdParam
         .split(",")
         .map((value) => Number(value))
         .filter((value) => Number.isInteger(value))
-    : DEFAULT_QUERY.originChannelIds;
+    : DEFAULT_QUERY.origin_channel_id;
 
-  const sortColumnHash = getParam(searchParams, "sort") ?? DEFAULT_QUERY.sortColumnHash;
-  const sortDirectionParam = getParam(searchParams, "direction");
-  const sortDirection: TableSortDirection = sortDirectionParam === "DESC" ? "DESC" : DEFAULT_QUERY.sortDirection;
+  // name is the only sortable column BigCommerce supports for customers
+  // (mapped to last_name server-side — see customers-api.ts), so the only
+  // choice left to the user is direction.
+  const directionParam = getParam(searchParams, "direction");
+  const direction: TableSortDirection = directionParam === "DESC" ? "DESC" : DEFAULT_QUERY.direction;
 
-  const currentPageParam = Number(getParam(searchParams, "page"));
-  const currentPage = Number.isInteger(currentPageParam) && currentPageParam > 0 ? currentPageParam : DEFAULT_QUERY.currentPage;
+  const pageParam = Number(getParam(searchParams, "page"));
+  const page = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : DEFAULT_QUERY.page;
 
-  const itemsPerPageParam = Number(getParam(searchParams, "perPage"));
-  const itemsPerPage = Number.isInteger(itemsPerPageParam) && itemsPerPageParam > 0 ? itemsPerPageParam : DEFAULT_QUERY.itemsPerPage;
+  const limitParam = Number(getParam(searchParams, "limit"));
+  const limit = Number.isInteger(limitParam) && limitParam > 0 ? limitParam : DEFAULT_QUERY.limit;
 
   return {
     name,
     email,
-    originChannelIds,
-    sortColumnHash,
-    sortDirection,
-    currentPage,
-    itemsPerPage,
+    origin_channel_id,
+    direction,
+    page,
+    limit,
   };
 }
 
@@ -63,24 +63,20 @@ export function buildCustomersSearchParams(query: CustomersQuery): URLSearchPara
     params.set("email", query.email);
   }
 
-  if (query.originChannelIds.length > 0) {
-    params.set("originChannelIds", query.originChannelIds.join(","));
+  if (query.origin_channel_id.length > 0) {
+    params.set("origin_channel_id", query.origin_channel_id.join(","));
   }
 
-  if (query.sortColumnHash !== DEFAULT_QUERY.sortColumnHash) {
-    params.set("sort", query.sortColumnHash);
+  if (query.direction !== DEFAULT_QUERY.direction) {
+    params.set("direction", query.direction);
   }
 
-  if (query.sortDirection !== DEFAULT_QUERY.sortDirection) {
-    params.set("direction", query.sortDirection);
+  if (query.page !== DEFAULT_QUERY.page) {
+    params.set("page", String(query.page));
   }
 
-  if (query.currentPage !== DEFAULT_QUERY.currentPage) {
-    params.set("page", String(query.currentPage));
-  }
-
-  if (query.itemsPerPage !== DEFAULT_QUERY.itemsPerPage) {
-    params.set("perPage", String(query.itemsPerPage));
+  if (query.limit !== DEFAULT_QUERY.limit) {
+    params.set("limit", String(query.limit));
   }
 
   return params;

@@ -22,7 +22,7 @@ export function GiftCertificateTabs({ giftCertificate }: { giftCertificate: Gift
       ) : (
         <GiftCertificateBalanceTab
           giftCertificate={giftCertificate}
-          key={`${giftCertificate.id}-${giftCertificate.currentBalance}`}
+          key={`${giftCertificate.id}-${giftCertificate.balance}`}
         />
       )}
     </>

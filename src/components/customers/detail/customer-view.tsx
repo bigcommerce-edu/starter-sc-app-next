@@ -18,7 +18,7 @@ export async function CustomerView({
 }) {
   const rawCustomer = await fetchCustomer(id);
 
-  // recipientEmail scopes the fetch to this customer's certificates, but it's
+  // to_email scopes the fetch to this customer's certificates, but it's
   // implied by the route (not a user-chosen filter) and must never be echoed
   // into the URL, so it's kept out of the query passed down to the table.
   const query = parseGiftCertificatesQuery(searchParams);
@@ -28,7 +28,7 @@ export async function CustomerView({
   // blocking the other.
   const [customer, { items, totalItems }] = await Promise.all([
     decorateCustomerWithChannels(rawCustomer),
-    fetchGiftCertificates({ ...query, recipientEmail: rawCustomer.email }),
+    fetchGiftCertificates({ ...query, to_email: rawCustomer.email }),
   ]);
 
   // Every row's recipient is this customer, so there's no need to decorate

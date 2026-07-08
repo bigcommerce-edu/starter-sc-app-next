@@ -1,5 +1,5 @@
 import { Box, Panel, Small, Text } from "@/components/ui/big-design";
-import { CustomerWithChannels } from "@/lib/customers/types";
+import { CustomerWithChannels, sumStoreCredit } from "@/lib/customers/types";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
@@ -16,11 +16,13 @@ export function CustomerInfoPanel({ customer }: { customer: CustomerWithChannels
   const associatedChannelNames = customer.channels.map((channel) => channel.name).join(", ");
 
   return (
-    <Panel header={`${customer.firstName} ${customer.lastName}`}>
+    <Panel header={`${customer.first_name} ${customer.last_name}`}>
       <DetailField label="Email">{customer.email}</DetailField>
-      <DetailField label="Origin Channel">{customer.originChannel?.name ?? customer.originChannelId}</DetailField>
+      <DetailField label="Origin Channel">{customer.originChannel?.name ?? customer.origin_channel_id}</DetailField>
       <DetailField label="Associated Channels">{associatedChannelNames || "None"}</DetailField>
-      <DetailField label="Store Credit Balance">{currencyFormatter.format(customer.storeCreditBalance)}</DetailField>
+      <DetailField label="Store Credit Balance">
+        {currencyFormatter.format(sumStoreCredit(customer.store_credit_amounts))}
+      </DetailField>
     </Panel>
   );
 }

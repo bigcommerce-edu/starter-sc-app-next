@@ -24,15 +24,15 @@ function DetailField({ label, children }: { label: string; children: React.React
 }
 
 // Seeding refillAmount/transferAmount from props only works because the
-// caller re-keys this component on giftCertificate.currentBalance, forcing a
+// caller re-keys this component on giftCertificate.balance, forcing a
 // remount (and fresh useState initializers) whenever a balance action
 // revalidates the certificate — otherwise these would go stale after a
 // successful refill/add/transfer.
 export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate: GiftCertificateWithAccounts }) {
   const [selectedAction, setSelectedAction] = useState<BalanceAction | null>(null);
-  const [refillAmount, setRefillAmount] = useState(String(giftCertificate.originalValue));
+  const [refillAmount, setRefillAmount] = useState(String(giftCertificate.amount));
   const [addAmount, setAddAmount] = useState("");
-  const [transferAmount, setTransferAmount] = useState(String(giftCertificate.currentBalance));
+  const [transferAmount, setTransferAmount] = useState(String(giftCertificate.balance));
   const [isPending, startTransition] = useTransition();
 
   const toggleAction = (action: BalanceAction) => {
@@ -58,9 +58,9 @@ export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate
   };
 
   return (
-    <Panel header={giftCertificate.certificateNumber}>
-      <DetailField label="Original Value">{currencyFormatter.format(giftCertificate.originalValue)}</DetailField>
-      <DetailField label="Current Balance">{currencyFormatter.format(giftCertificate.currentBalance)}</DetailField>
+    <Panel header={giftCertificate.code}>
+      <DetailField label="Original Value">{currencyFormatter.format(giftCertificate.amount)}</DetailField>
+      <DetailField label="Current Balance">{currencyFormatter.format(giftCertificate.balance)}</DetailField>
 
       <Flex flexGap="0.5rem" marginBottom="medium">
         <Button
@@ -91,7 +91,7 @@ export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate
           />
           <Text>
             This will set the total active balance to this amount, up to{" "}
-            <strong>{currencyFormatter.format(giftCertificate.originalValue)}</strong>.
+            <strong>{currencyFormatter.format(giftCertificate.amount)}</strong>.
           </Text>
           <Button isLoading={isPending} onClick={handleRefill} variant="primary">
             Refill

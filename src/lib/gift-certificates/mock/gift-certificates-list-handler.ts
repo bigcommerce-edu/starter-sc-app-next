@@ -1,12 +1,16 @@
 import { MockRouteHandler } from "@/lib/api-client/mock-client/types";
 import { ApiRequestParams } from "@/lib/api-client/types";
+import { GiftCertificateWireRecord } from "@/lib/gift-certificates/gift-certificates-api";
 import { mockGiftCertificates } from "@/lib/gift-certificates/mock/mock-gift-certificates";
-import { GIFT_CERTIFICATES_PATH, GiftCertificate } from "@/lib/gift-certificates/types";
+import { GIFT_CERTIFICATES_PATH } from "@/lib/gift-certificates/types";
 
-// Mirrors the shape a real gift certificates list endpoint would return:
-// a page of records plus the total count matching the filters.
+// Mirrors the shape a real gift certificates list endpoint would return: a
+// page of records plus the total count. Real BigCommerce v2 endpoints report
+// the total via Link/X-Total-Count response headers rather than a body
+// field — this mock keeps the count in the body since ApiClient doesn't
+// expose headers, but that's a mock-only convenience, not a real API shape.
 export interface MockGiftCertificatesResponse {
-  items: GiftCertificate[];
+  items: GiftCertificateWireRecord[];
   totalItems: number;
 }
 
@@ -22,77 +26,45 @@ function getNumberParam(params: ApiRequestParams, key: string, fallback: number)
   return Number.isInteger(value) && value > 0 ? value : fallback;
 }
 
-function getOptionalNumberParam(params: ApiRequestParams, key: string): number | undefined {
-  const value = params[key];
-
-  return value === undefined || value === "" ? undefined : Number(value);
-}
-
+// BigCommerce's v2 gift certificates endpoint only supports flat equality
+// filters on these fields (code, to_name, to_email, from_name, from_email)
+// and sorting by id — no balance/date ranges, no status filter, no
+// arbitrary-column sort.
 function handleGiftCertificatesListRequest(params: ApiRequestParams): MockGiftCertificatesResponse {
-  const certificateNumber = getStringParam(params, "certificateNumber").trim().toLowerCase();
-  const statuses = getStringParam(params, "status")
-    .split(",")
-    .filter((value) => value !== "");
-  const balanceMin = getOptionalNumberParam(params, "balanceMin");
-  const balanceMax = getOptionalNumberParam(params, "balanceMax");
-  const recipientName = getStringParam(params, "recipientName").trim().toLowerCase();
-  const recipientEmail = getStringParam(params, "recipientEmail").trim().toLowerCase();
-  const purchasedAfter = getStringParam(params, "purchasedAfter");
-  const purchasedBefore = getStringParam(params, "purchasedBefore");
-  const sortColumnHash = getStringParam(params, "sort") || "purchaseDate";
-  const sortDirection = getStringParam(params, "direction") === "ASC" ? "ASC" : "DESC";
+  const code = getStringParam(params, "code").trim().toLowerCase();
+  const toName = getStringParam(params, "to_name").trim().toLowerCase();
+  const toEmail = getStringParam(params, "to_email").trim().toLowerCase();
+  const fromName = getStringParam(params, "from_name").trim().toLowerCase();
+  const fromEmail = getStringParam(params, "from_email").trim().toLowerCase();
+  const direction = getStringParam(params, "direction") === "asc" ? "asc" : "desc";
   const currentPage = getNumberParam(params, "page", 1);
-  const itemsPerPage = getNumberParam(params, "perPage", 10);
+  const itemsPerPage = getNumberParam(params, "limit", 10);
 
   const filtered = mockGiftCertificates.filter((certificate) => {
-    if (certificateNumber && !certificate.certificateNumber.toLowerCase().includes(certificateNumber)) {
+    if (code && !certificate.code.toLowerCase().includes(code)) {
       return false;
     }
 
-    if (statuses.length > 0 && !statuses.includes(certificate.status)) {
+    if (toName && !certificate.to_name.toLowerCase().includes(toName)) {
       return false;
     }
 
-    if (balanceMin !== undefined && certificate.currentBalance < balanceMin) {
+    if (toEmail && !certificate.to_email.toLowerCase().includes(toEmail)) {
       return false;
     }
 
-    if (balanceMax !== undefined && certificate.currentBalance > balanceMax) {
+    if (fromName && !certificate.from_name.toLowerCase().includes(fromName)) {
       return false;
     }
 
-    if (recipientName && !certificate.recipientName.toLowerCase().includes(recipientName)) {
-      return false;
-    }
-
-    if (recipientEmail && !certificate.recipientEmail.toLowerCase().includes(recipientEmail)) {
-      return false;
-    }
-
-    if (purchasedAfter && certificate.purchaseDate < purchasedAfter) {
-      return false;
-    }
-
-    if (purchasedBefore && certificate.purchaseDate > purchasedBefore) {
+    if (fromEmail && !certificate.from_email.toLowerCase().includes(fromEmail)) {
       return false;
     }
 
     return true;
   });
 
-  const sortKey = sortColumnHash as keyof GiftCertificate;
-  const sorted = [...filtered].sort((a, b) => {
-    const aValue = a[sortKey];
-    const bValue = b[sortKey];
-
-    if (typeof aValue === "number" && typeof bValue === "number") {
-      return sortDirection === "ASC" ? aValue - bValue : bValue - aValue;
-    }
-
-    const comparison = String(aValue).localeCompare(String(bValue));
-
-    return sortDirection === "ASC" ? comparison : -comparison;
-  });
+  const sorted = [...filtered].sort((a, b) => (direction === "asc" ? a.id - b.id : b.id - a.id));
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const items = sorted.slice(startIndex, startIndex + itemsPerPage);

@@ -107,23 +107,25 @@ export function GiftCertificateActionsMenu({
         }
       />
 
-      <Modal
-        actions={[
-          { text: "Cancel", variant: "subtle", onClick: closeModal },
-          {
-            text: pendingAction ? ACTION_LABEL[pendingAction] : "",
-            variant: "primary",
-            isLoading: isPending,
-            onClick: handleConfirm,
-          },
-        ]}
-        closeOnEscKey
-        header={pendingAction ? ACTION_LABEL[pendingAction] : undefined}
-        isOpen={pendingAction !== null}
-        onClose={closeModal}
-      >
-        {pendingAction && <Text marginBottom="none">{getConfirmationMessage(pendingAction, certificate)}</Text>}
-      </Modal>
+      {pendingAction && (
+        <Modal
+          actions={[
+            { text: "Cancel", variant: "subtle", onClick: closeModal },
+            {
+              text: ACTION_LABEL[pendingAction],
+              variant: "primary",
+              isLoading: isPending,
+              onClick: handleConfirm,
+            },
+          ]}
+          closeOnEscKey
+          header={ACTION_LABEL[pendingAction]}
+          isOpen
+          onClose={closeModal}
+        >
+          <Text marginBottom="none">{getConfirmationMessage(pendingAction, certificate)}</Text>
+        </Modal>
+      )}
     </>
   );
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Source_Sans_3 } from "next/font/google";
-import { AppShell } from "@/components/layout/app-shell";
 import { BigDesignProvider } from "@/components/ui/big-design";
 import { StyledComponentsRegistry } from "@/components/ui/styled-components-registry";
 import { ActionAlertsManager } from "@/components/ui/action-alerts";
@@ -24,7 +23,7 @@ export default function RootLayout({
       <body>
         <StyledComponentsRegistry>
           <BigDesignProvider>
-            <AppShell>{children}</AppShell>
+            {children}
             <ActionAlertsManager />
           </BigDesignProvider>
         </StyledComponentsRegistry>

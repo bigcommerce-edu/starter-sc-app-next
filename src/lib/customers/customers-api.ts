@@ -1,5 +1,5 @@
 import { getApiClient } from "@/lib/api-client/get-api-client";
-import { CUSTOMERS_PATH, CustomersResult } from "@/lib/customers/types";
+import { CUSTOMERS_PATH, Customer, CustomersListResult, CustomersQuery, CustomersResult, getCustomerPath } from "@/lib/customers/types";
 
 // Looks up registered customer accounts by email. Gift certificates (and any
 // other feature that only knows an email address) use this to find out
@@ -20,4 +20,28 @@ export async function fetchCustomersByEmail(emails: string[]): Promise<Customers
       "email:in": uniqueEmails.join(","),
     },
   });
+}
+
+// Domain-level adapter for the customers listing page: translates a
+// CustomersQuery into the request shape the customers endpoint expects.
+export async function fetchCustomers(query: CustomersQuery): Promise<CustomersListResult> {
+  const apiClient = getApiClient();
+
+  return apiClient.get<CustomersListResult>(CUSTOMERS_PATH, {
+    params: {
+      name: query.name,
+      email: query.email,
+      "origin_channel_id:in": query.originChannelIds.join(","),
+      sort: query.sortColumnHash,
+      direction: query.sortDirection,
+      page: query.currentPage,
+      perPage: query.itemsPerPage,
+    },
+  });
+}
+
+export async function fetchCustomer(id: number | string): Promise<Customer> {
+  const apiClient = getApiClient();
+
+  return apiClient.get<Customer>(getCustomerPath(id));
 }

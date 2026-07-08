@@ -23,6 +23,11 @@ function DetailField({ label, children }: { label: string; children: React.React
   );
 }
 
+// Seeding refillAmount/transferAmount from props only works because the
+// caller re-keys this component on giftCertificate.currentBalance, forcing a
+// remount (and fresh useState initializers) whenever a balance action
+// revalidates the certificate — otherwise these would go stale after a
+// successful refill/add/transfer.
 export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate: GiftCertificateWithAccounts }) {
   const [selectedAction, setSelectedAction] = useState<BalanceAction | null>(null);
   const [refillAmount, setRefillAmount] = useState(String(giftCertificate.originalValue));

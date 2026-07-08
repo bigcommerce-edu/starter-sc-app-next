@@ -20,7 +20,10 @@ export function GiftCertificateTabs({ giftCertificate }: { giftCertificate: Gift
       {activeTab === "details" ? (
         <GiftCertificateDetailsTab giftCertificate={giftCertificate} />
       ) : (
-        <GiftCertificateBalanceTab giftCertificate={giftCertificate} />
+        <GiftCertificateBalanceTab
+          giftCertificate={giftCertificate}
+          key={`${giftCertificate.id}-${giftCertificate.currentBalance}`}
+        />
       )}
     </>
   );

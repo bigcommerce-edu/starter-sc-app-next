@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Box, Link, Table, TableColumn } from "@/components/ui/big-design";
 import { CustomerActionsMenu } from "@/components/customers/list/customer-actions-menu";
 import { CustomerFilters } from "@/components/customers/list/customer-filters";
+import { PendingOverlay } from "@/components/ui/pending-overlay";
 import { Channel } from "@/lib/channels/types";
 import { buildCustomersSearchParams } from "@/lib/customers/query";
 import { CustomersQuery, CustomerWithChannels } from "@/lib/customers/types";
@@ -73,11 +74,35 @@ export function CustomerTable({ customers, totalItems, query, channels, storeHas
   const router = useRouter();
   const pathname = usePathname();
   const columns = useMemo(() => getColumns(storeHash), [storeHash]);
+  const [isPending, setIsPending] = useState(false);
+  const [lastQuery, setLastQuery] = useState(query);
 
+  // query is derived server-side from the URL and passed back down once the
+  // navigation below resolves, so a change here (vs. the query we were last
+  // rendered with) is the signal that the pending request finished. Adjusted
+  // directly during render (React's documented pattern for this) rather than
+  // in an effect, since setting state from an effect here would cause an
+  // extra, avoidable re-render.
+  if (query !== lastQuery) {
+    setLastQuery(query);
+    setIsPending(false);
+  }
+
+  // router.push re-renders this route's Server Components in place rather
+  // than remounting them, so the <Suspense> boundary around the page (which
+  // only shows its fallback on first mount) never fires again here. isPending
+  // gives us our own lightweight "refreshing" state instead, without losing
+  // the table that's already on screen. This intentionally avoids wrapping
+  // router.push in useTransition/startTransition: doing so here causes React
+  // to throw a "removeChild: not a child of this node" error when the table
+  // re-renders, seemingly due to the per-row Dropdown/Modal portals (in
+  // CustomerActionsMenu) being torn down while React treats the update as
+  // interruptible.
   const navigate = (nextQuery: CustomersQuery) => {
     const params = buildCustomersSearchParams(nextQuery);
     const queryString = params.toString();
 
+    setIsPending(true);
     router.push(queryString ? `${pathname}?${queryString}` : pathname);
   };
 
@@ -89,25 +114,27 @@ export function CustomerTable({ customers, totalItems, query, channels, storeHas
         query={query}
       />
 
-      <Table
-        columns={columns}
-        items={customers}
-        keyField="id"
-        itemName="customers"
-        sortable={{
-          columnHash: query.sortColumnHash,
-          direction: query.sortDirection,
-          onSort: (columnHash, direction) => navigate({ ...query, sortColumnHash: columnHash, sortDirection: direction }),
-        }}
-        pagination={{
-          currentPage: query.currentPage,
-          totalItems,
-          itemsPerPage: query.itemsPerPage,
-          itemsPerPageOptions: ITEMS_PER_PAGE_OPTIONS,
-          onPageChange: (currentPage) => navigate({ ...query, currentPage }),
-          onItemsPerPageChange: (itemsPerPage) => navigate({ ...query, itemsPerPage, currentPage: 1 }),
-        }}
-      />
+      <PendingOverlay isPending={isPending}>
+        <Table
+          columns={columns}
+          items={customers}
+          keyField="id"
+          itemName="customers"
+          sortable={{
+            columnHash: query.sortColumnHash,
+            direction: query.sortDirection,
+            onSort: (columnHash, direction) => navigate({ ...query, sortColumnHash: columnHash, sortDirection: direction }),
+          }}
+          pagination={{
+            currentPage: query.currentPage,
+            totalItems,
+            itemsPerPage: query.itemsPerPage,
+            itemsPerPageOptions: ITEMS_PER_PAGE_OPTIONS,
+            onPageChange: (currentPage) => navigate({ ...query, currentPage }),
+            onItemsPerPageChange: (itemsPerPage) => navigate({ ...query, itemsPerPage, currentPage: 1 }),
+          }}
+        />
+      </PendingOverlay>
     </Box>
   );
 }

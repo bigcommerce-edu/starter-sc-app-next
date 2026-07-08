@@ -61,10 +61,21 @@ function handleCustomersListRequest(params: ApiRequestParams): CustomersListResu
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    const aValue = sortColumnHash === "name" ? getFullName(a) : String(a[sortColumnHash as keyof Customer]);
-    const bValue = sortColumnHash === "name" ? getFullName(b) : String(b[sortColumnHash as keyof Customer]);
+    if (sortColumnHash === "name") {
+      const comparison = getFullName(a).localeCompare(getFullName(b));
 
-    const comparison = aValue.localeCompare(bValue);
+      return sortDirection === "ASC" ? comparison : -comparison;
+    }
+
+    const sortKey = sortColumnHash as keyof Customer;
+    const aValue = a[sortKey];
+    const bValue = b[sortKey];
+
+    if (typeof aValue === "number" && typeof bValue === "number") {
+      return sortDirection === "ASC" ? aValue - bValue : bValue - aValue;
+    }
+
+    const comparison = String(aValue).localeCompare(String(bValue));
 
     return sortDirection === "ASC" ? comparison : -comparison;
   });

@@ -12,6 +12,8 @@ import { getAppUrl } from "@/lib/routing/app-url";
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
 
+const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+
 function getColumns(storeHash: string | undefined): Array<TableColumn<CustomerWithChannels>> {
   return [
     {
@@ -34,6 +36,13 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<CustomerWi
       header: "Origin Channel",
       hash: "originChannelId",
       render: ({ originChannel, originChannelId }: CustomerWithChannels) => originChannel?.name ?? originChannelId,
+    },
+    {
+      header: "Store Credit",
+      hash: "storeCreditBalance",
+      render: ({ storeCreditBalance }: CustomerWithChannels) => currencyFormatter.format(storeCreditBalance),
+      isSortable: true,
+      align: "right",
     },
     {
       header: "Actions",

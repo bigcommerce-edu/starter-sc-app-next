@@ -56,6 +56,8 @@ export async function fetchCustomers(query: CustomersQuery): Promise<CustomersLi
       "name:like": query.name,
       "email:in": query.email,
       "origin_channel_id:in": query.origin_channel_id.join(","),
+      "date_created:min": query.date_created_min,
+      "date_created:max": query.date_created_max,
       sort: `last_name:${query.direction.toLowerCase()}`,
       page: query.page,
       limit: query.limit,

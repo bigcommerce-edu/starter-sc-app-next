@@ -14,6 +14,7 @@ import { getAppUrl } from "@/lib/routing/app-url";
 const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
 
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
 function getColumns(storeHash: string | undefined): Array<TableColumn<CustomerWithChannels>> {
   return [
@@ -42,6 +43,11 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<CustomerWi
       hash: "store_credit_amounts",
       render: ({ store_credit_amounts }: CustomerWithChannels) => currencyFormatter.format(sumStoreCredit(store_credit_amounts)),
       align: "right",
+    },
+    {
+      header: "Customer Since",
+      hash: "date_created",
+      render: ({ date_created }: CustomerWithChannels) => dateFormatter.format(new Date(date_created)),
     },
     {
       header: "Actions",

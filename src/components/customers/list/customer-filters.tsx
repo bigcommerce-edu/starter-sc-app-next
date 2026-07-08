@@ -1,7 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Button, Chip, Flex, FilterListIcon, Form, FormGroup, Input, Modal, MultiSelect } from "@/components/ui/big-design";
+import {
+  Box,
+  Button,
+  Chip,
+  Datepicker,
+  Flex,
+  FilterListIcon,
+  Form,
+  FormGroup,
+  Input,
+  Modal,
+  MultiSelect,
+} from "@/components/ui/big-design";
 import { Channel } from "@/lib/channels/types";
 import { CustomersQuery } from "@/lib/customers/types";
 import { DEFAULT_QUERY } from "@/lib/customers/query";
@@ -14,13 +26,25 @@ const DEFAULT_FILTERS: FilterFields = {
   name: DEFAULT_QUERY.name,
   email: DEFAULT_QUERY.email,
   origin_channel_id: DEFAULT_QUERY.origin_channel_id,
+  date_created_min: DEFAULT_QUERY.date_created_min,
+  date_created_max: DEFAULT_QUERY.date_created_max,
 };
+
+// Datepicker's onDateChange always fires with a full ISO datetime string
+// regardless of dateFormat (that prop only affects the input's display text),
+// but BigCommerce's date_created:min/:max filters (and this query) only need
+// a plain date.
+function toDateOnly(date: string): string {
+  return date.slice(0, 10);
+}
 
 function isFilterActive(filters: FilterFields): boolean {
   return (
     filters.name !== DEFAULT_FILTERS.name ||
     filters.email !== DEFAULT_FILTERS.email ||
-    filters.origin_channel_id.length > 0
+    filters.origin_channel_id.length > 0 ||
+    filters.date_created_min !== DEFAULT_FILTERS.date_created_min ||
+    filters.date_created_max !== DEFAULT_FILTERS.date_created_max
   );
 }
 
@@ -90,6 +114,18 @@ export function CustomerFilters({ query, channels, onChange }: CustomerFiltersPr
               }
             />
           ))}
+          {query.date_created_min && (
+            <Chip
+              label={`Registered after: ${query.date_created_min}`}
+              onDelete={() => removeFilter("date_created_min")}
+            />
+          )}
+          {query.date_created_max && (
+            <Chip
+              label={`Registered before: ${query.date_created_max}`}
+              onDelete={() => removeFilter("date_created_max")}
+            />
+          )}
           <Button onClick={clearAllFilters} variant="subtle">
             Clear all filters
           </Button>
@@ -121,6 +157,24 @@ export function CustomerFilters({ query, channels, onChange }: CustomerFiltersPr
               onOptionsChange={(value) => setDraftField("origin_channel_id", value)}
               options={channelOptions}
               value={draft.origin_channel_id}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Datepicker
+              dateFormat="yyyy-MM-dd"
+              label="Registered after"
+              onDateChange={(date) => setDraftField("date_created_min", toDateOnly(date))}
+              value={draft.date_created_min || undefined}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Datepicker
+              dateFormat="yyyy-MM-dd"
+              label="Registered before"
+              onDateChange={(date) => setDraftField("date_created_max", toDateOnly(date))}
+              value={draft.date_created_max || undefined}
             />
           </FormGroup>
         </Form>

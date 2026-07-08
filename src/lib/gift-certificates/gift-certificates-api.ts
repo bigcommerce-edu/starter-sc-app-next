@@ -29,11 +29,9 @@ interface GiftCertificatesApiResponse {
   totalItems: number;
 }
 
-// Domain-level adapter: BigCommerce's v2 gift certificates endpoint only
-// supports flat equality filters (code, to_name, to_email, from_name,
-// from_email) and sort=id — query already matches the request shape field
-// for field, so the only translation needed is lowercasing direction to
-// match the wire's asc/desc.
+// Domain-level adapter: query already matches the request shape field for
+// field, so the only translation needed is lowercasing direction to match
+// the wire's asc/desc.
 export async function fetchGiftCertificates(query: GiftCertificatesQuery): Promise<GiftCertificatesResult> {
   const apiClient = getApiClient();
 

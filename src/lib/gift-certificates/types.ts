@@ -49,22 +49,20 @@ export interface GiftCertificateWithAccounts extends GiftCertificateWithRecipien
   senderAccount: Customer | undefined;
 }
 
-// BigCommerce's v2 gift certificates endpoint only supports flat equality
-// filters (code, to_name, to_email, from_name, from_email) and sorting by
-// id — no balance/date range filters, no status filter, no arbitrary-column
-// sort. Field names match the request params fetchGiftCertificates sends
-// directly (page/limit are the real query param names too), so there's no
-// separate translation step between this and the wire request. direction is
-// the one exception: it's kept as BigDesign's own uppercase
-// TableSortDirection since that's what the Table component's sort control
-// binds to directly — fetchGiftCertificates lowercases it for the actual
-// request, the same kind of value-format conversion as amount/balance.
+// BigCommerce's v2 gift certificates endpoint also supports from_name/
+// from_email filters, but this app only exposes code/to_name/to_email as
+// filters — sender name/email aren't shown as grid columns, so filtering on
+// them would be confusing. Field names match the request params
+// fetchGiftCertificates sends directly (page/limit are the real query param
+// names too), so there's no separate translation step between this and the
+// wire request. direction is the one exception: it's kept as BigDesign's own
+// uppercase TableSortDirection since that's what the Table component's sort
+// control binds to directly — fetchGiftCertificates lowercases it for the
+// actual request, the same kind of value-format conversion as amount/balance.
 export interface GiftCertificatesQuery {
   code: string;
   to_name: string;
   to_email: string;
-  from_name: string;
-  from_email: string;
   direction: TableSortDirection;
   page: number;
   limit: number;

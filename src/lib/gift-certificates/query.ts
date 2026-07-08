@@ -5,8 +5,6 @@ export const DEFAULT_QUERY: GiftCertificatesQuery = {
   code: "",
   to_name: "",
   to_email: "",
-  from_name: "",
-  from_email: "",
   direction: "DESC",
   page: 1,
   limit: 10,
@@ -24,8 +22,6 @@ export function parseGiftCertificatesQuery(searchParams: RawSearchParams): GiftC
   const code = getParam(searchParams, "code") ?? DEFAULT_QUERY.code;
   const to_name = getParam(searchParams, "to_name") ?? DEFAULT_QUERY.to_name;
   const to_email = getParam(searchParams, "to_email") ?? DEFAULT_QUERY.to_email;
-  const from_name = getParam(searchParams, "from_name") ?? DEFAULT_QUERY.from_name;
-  const from_email = getParam(searchParams, "from_email") ?? DEFAULT_QUERY.from_email;
 
   // BigCommerce only documents sort=id for this endpoint, so the only choice
   // left to the user is direction (newest/oldest by id).
@@ -38,7 +34,7 @@ export function parseGiftCertificatesQuery(searchParams: RawSearchParams): GiftC
   const limitParam = Number(getParam(searchParams, "limit"));
   const limit = Number.isInteger(limitParam) && limitParam > 0 ? limitParam : DEFAULT_QUERY.limit;
 
-  return { code, to_name, to_email, from_name, from_email, direction, page, limit };
+  return { code, to_name, to_email, direction, page, limit };
 }
 
 export function buildGiftCertificatesSearchParams(query: GiftCertificatesQuery): URLSearchParams {
@@ -54,14 +50,6 @@ export function buildGiftCertificatesSearchParams(query: GiftCertificatesQuery):
 
   if (query.to_email) {
     params.set("to_email", query.to_email);
-  }
-
-  if (query.from_name) {
-    params.set("from_name", query.from_name);
-  }
-
-  if (query.from_email) {
-    params.set("from_email", query.from_email);
   }
 
   if (query.direction !== DEFAULT_QUERY.direction) {

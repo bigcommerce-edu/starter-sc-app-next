@@ -7,26 +7,21 @@ import { DEFAULT_QUERY } from "@/lib/gift-certificates/query";
 
 // Fields that make up the advanced filters, i.e. everything in
 // GiftCertificatesQuery except sorting/paging, which the table controls
-// directly. BigCommerce's v2 gift certificates endpoint only supports flat
-// equality filters on these five fields (code, to_name, to_email, from_name,
-// from_email) — no balance/date ranges, no status filter.
+// directly. Sender name/email aren't exposed here since they aren't shown as
+// grid columns, so filtering on them would be confusing.
 type FilterFields = Omit<GiftCertificatesQuery, "direction" | "page" | "limit">;
 
 const DEFAULT_FILTERS: FilterFields = {
   code: DEFAULT_QUERY.code,
   to_name: DEFAULT_QUERY.to_name,
   to_email: DEFAULT_QUERY.to_email,
-  from_name: DEFAULT_QUERY.from_name,
-  from_email: DEFAULT_QUERY.from_email,
 };
 
 function isFilterActive(filters: FilterFields): boolean {
   return (
     filters.code !== DEFAULT_FILTERS.code ||
     filters.to_name !== DEFAULT_FILTERS.to_name ||
-    filters.to_email !== DEFAULT_FILTERS.to_email ||
-    filters.from_name !== DEFAULT_FILTERS.from_name ||
-    filters.from_email !== DEFAULT_FILTERS.from_email
+    filters.to_email !== DEFAULT_FILTERS.to_email
   );
 }
 
@@ -90,12 +85,6 @@ export function GiftCertificateFilters({ query, onChange }: GiftCertificateFilte
           {query.to_email && (
             <Chip label={`Recipient email: ${query.to_email}`} onDelete={() => removeFilter("to_email")} />
           )}
-          {query.from_name && (
-            <Chip label={`Sender: ${query.from_name}`} onDelete={() => removeFilter("from_name")} />
-          )}
-          {query.from_email && (
-            <Chip label={`Sender email: ${query.from_email}`} onDelete={() => removeFilter("from_email")} />
-          )}
           <Button onClick={clearAllFilters} variant="subtle">
             Clear all filters
           </Button>
@@ -134,22 +123,6 @@ export function GiftCertificateFilters({ query, onChange }: GiftCertificateFilte
               label="Recipient email"
               onChange={(event) => setDraftField("to_email", event.target.value)}
               value={draft.to_email}
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Input
-              label="Sender name"
-              onChange={(event) => setDraftField("from_name", event.target.value)}
-              value={draft.from_name}
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Input
-              label="Sender email"
-              onChange={(event) => setDraftField("from_email", event.target.value)}
-              value={draft.from_email}
             />
           </FormGroup>
         </Form>

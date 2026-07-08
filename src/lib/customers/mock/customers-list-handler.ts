@@ -65,6 +65,8 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
     .filter((value) => value !== "")
     .map((value) => Number(value))
     .filter((value) => Number.isInteger(value));
+  const dateCreatedMin = getStringParam(params, "date_created:min");
+  const dateCreatedMax = getStringParam(params, "date_created:max");
 
   // sort is a single value with the direction embedded, e.g. "last_name:asc"
   // — the only field BigCommerce supports sorting customers by is last_name
@@ -85,6 +87,14 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
     }
 
     if (originChannelIds.length > 0 && !originChannelIds.includes(customer.origin_channel_id)) {
+      return false;
+    }
+
+    if (dateCreatedMin && customer.date_created < dateCreatedMin) {
+      return false;
+    }
+
+    if (dateCreatedMax && customer.date_created > dateCreatedMax) {
       return false;
     }
 

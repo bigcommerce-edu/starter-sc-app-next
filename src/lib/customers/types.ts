@@ -14,7 +14,8 @@ export function getCustomerPath(id: number | string): string {
 // to always be an array (see customers-api.ts). store_credit_amounts is left
 // as the raw per-currency array the API returns — sumStoreCredit() below
 // collapses it into a single number at render time, since this demo assumes
-// a single-currency store.
+// a single-currency store. date_created is left as the raw ISO 8601 string
+// the API returns — components format it for display at render time.
 export interface Customer {
   id: number;
   first_name: string;
@@ -25,6 +26,7 @@ export interface Customer {
   origin_channel_id: number;
   channel_ids: number[];
   store_credit_amounts: Array<{ amount: string }>;
+  date_created: string;
 }
 
 export function sumStoreCredit(amounts: Array<{ amount: string }>): number {
@@ -39,16 +41,20 @@ export interface CustomerWithChannels extends Customer {
   channels: Channel[];
 }
 
-// BigCommerce's v3 customers endpoint supports name:like, email:in, and
-// origin_channel_id:in filters, plus sorting — this app only ever sorts by
-// last_name (the sole sortable column exposed in the UI), so there's no
-// separate sort-column field to track. Field names match the request params
-// fetchCustomers sends directly, so there's no separate translation step
-// between this and the wire request.
+// BigCommerce's v3 customers endpoint supports name:like, email:in,
+// origin_channel_id:in, and date_created:min/date_created:max filters, plus
+// sorting — this app only ever sorts by last_name (the sole sortable column
+// exposed in the UI), so there's no separate sort-column field to track.
+// Field names match the request params fetchCustomers sends directly
+// (with ":min"/":max" replaced by "_min"/"_max", since those aren't valid
+// identifier characters), so there's no separate translation step beyond
+// that between this and the wire request.
 export interface CustomersQuery {
   name: string;
   email: string;
   origin_channel_id: number[];
+  date_created_min: string;
+  date_created_max: string;
   direction: TableSortDirection;
   page: number;
   limit: number;

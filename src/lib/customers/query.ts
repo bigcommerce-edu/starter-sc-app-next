@@ -5,6 +5,8 @@ export const DEFAULT_QUERY: CustomersQuery = {
   name: "",
   email: "",
   origin_channel_id: [],
+  date_created_min: "",
+  date_created_max: "",
   direction: "ASC",
   page: 1,
   limit: 10,
@@ -30,6 +32,9 @@ export function parseCustomersQuery(searchParams: RawSearchParams): CustomersQue
         .filter((value) => Number.isInteger(value))
     : DEFAULT_QUERY.origin_channel_id;
 
+  const date_created_min = getParam(searchParams, "date_created_min") ?? DEFAULT_QUERY.date_created_min;
+  const date_created_max = getParam(searchParams, "date_created_max") ?? DEFAULT_QUERY.date_created_max;
+
   // name is the only sortable column BigCommerce supports for customers
   // (mapped to last_name server-side — see customers-api.ts), so the only
   // choice left to the user is direction.
@@ -46,6 +51,8 @@ export function parseCustomersQuery(searchParams: RawSearchParams): CustomersQue
     name,
     email,
     origin_channel_id,
+    date_created_min,
+    date_created_max,
     direction,
     page,
     limit,
@@ -65,6 +72,14 @@ export function buildCustomersSearchParams(query: CustomersQuery): URLSearchPara
 
   if (query.origin_channel_id.length > 0) {
     params.set("origin_channel_id", query.origin_channel_id.join(","));
+  }
+
+  if (query.date_created_min) {
+    params.set("date_created_min", query.date_created_min);
+  }
+
+  if (query.date_created_max) {
+    params.set("date_created_max", query.date_created_max);
   }
 
   if (query.direction !== DEFAULT_QUERY.direction) {

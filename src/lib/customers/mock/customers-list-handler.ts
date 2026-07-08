@@ -29,7 +29,9 @@ function handleCustomersListRequest(params: ApiRequestParams): CustomersListResu
   // takes priority over the listing page's own filters/pagination — the two
   // callers never combine both in a single request.
   if (emailIn.length > 0) {
-    return { items: mockCustomers.filter((customer) => emailIn.includes(customer.email.toLowerCase())), totalItems: 0 };
+    const matches = mockCustomers.filter((customer) => emailIn.includes(customer.email.toLowerCase()));
+
+    return { items: matches, totalItems: matches.length };
   }
 
   const name = getStringParam(params, "name").trim().toLowerCase();

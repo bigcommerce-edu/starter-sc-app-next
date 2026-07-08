@@ -18,8 +18,11 @@ export async function CustomerView({
 }) {
   const customer = await decorateCustomerWithChannels(await fetchCustomer(id));
 
-  const query = { ...parseGiftCertificatesQuery(searchParams), recipientEmail: customer.email };
-  const { items, totalItems } = await fetchGiftCertificates(query);
+  // recipientEmail scopes the fetch to this customer's certificates, but it's
+  // implied by the route (not a user-chosen filter) and must never be echoed
+  // into the URL, so it's kept out of the query passed down to the table.
+  const query = parseGiftCertificatesQuery(searchParams);
+  const { items, totalItems } = await fetchGiftCertificates({ ...query, recipientEmail: customer.email });
 
   // Every row's recipient is this customer, so there's no need to decorate
   // via a separate customer lookup — the account is already known.

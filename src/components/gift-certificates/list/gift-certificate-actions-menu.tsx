@@ -82,7 +82,7 @@ export function GiftCertificateActionsMenu({
     },
     {
       content: "Refill",
-      disabled: certificate.currentBalance === certificate.originalValue,
+      disabled: certificate.currentBalance >= certificate.originalValue,
       onItemClick: () => setPendingAction("refill"),
     },
     {

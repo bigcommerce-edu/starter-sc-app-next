@@ -25,13 +25,11 @@ export function MainNav({ storeHash }: { storeHash: string | undefined }) {
   const router = useRouter();
   const activeSection = getActiveSection(pathname, storeHash);
 
-  // Customers doesn't have a route yet (see the customers page feature), so
-  // clicking that tab is still a no-op for now.
-  const handleTabClick = (tabId: string) => {
-    if (tabId === "gift-certs") {
-      router.push(getAppUrl(storeHash, `/${tabId}`));
-    }
-  };
-
-  return <Tabs activeTab={activeSection} items={NAV_ITEMS} onTabClick={handleTabClick} />;
+  return (
+    <Tabs
+      activeTab={activeSection}
+      items={NAV_ITEMS}
+      onTabClick={(tabId) => router.push(getAppUrl(storeHash, `/${tabId}`))}
+    />
+  );
 }

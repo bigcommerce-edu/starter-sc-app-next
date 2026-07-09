@@ -73,7 +73,7 @@ export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate
           Add to Balance
         </Button>
         <Button
-          disabled={!giftCertificate.recipientAccount}
+          disabled={!giftCertificate.recipientAccount || giftCertificate.balance <= 0}
           onClick={() => toggleAction("transfer")}
           variant={selectedAction === "transfer" ? "primary" : "secondary"}
         >

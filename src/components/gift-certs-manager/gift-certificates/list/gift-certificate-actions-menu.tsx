@@ -87,7 +87,7 @@ export function GiftCertificateActionsMenu({
     },
     {
       content: "Transfer to Credit",
-      disabled: !certificate.recipientAccount,
+      disabled: !certificate.recipientAccount || certificate.balance <= 0,
       onItemClick: () => setPendingAction("transfer"),
     },
   ];

@@ -1,18 +1,26 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { getDataMode } from "@/lib/api-client/get-api-client";
+import { getStoreCredentials } from "@/lib/api-client/store-credentials";
 import { ActionResult } from "@/lib/actions/action-result";
-import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
+import { updateGiftCertificateStatus as updateGiftCertificateStatusRequest } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
+import { GiftCertificate, GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
+import { getAppUrl } from "@/lib/routing/app-url";
 
-// Placeholder: once a real API client exists for STATIC/MULTITENANT modes,
-// this should issue the actual status update request (and probably revalidate
-// the detail page) instead of doing nothing.
 export async function updateGiftCertificateStatus(
-  id: number | string,
+  giftCertificate: GiftCertificate,
   status: GiftCertificateStatus,
+  urlStoreHash: string | undefined,
 ): Promise<ActionResult> {
-  // eslint-disable-next-line no-console
-  console.log(`(noop) update gift certificate ${id} status to "${status}"`);
+  const apiCredentials = getStoreCredentials(urlStoreHash);
+
+  await updateGiftCertificateStatusRequest(giftCertificate, status, apiCredentials);
+
+  // TODO: switch to revalidateTag once the detail page's fetch is cached
+  // (e.g. via `use cache`) with a tag — revalidatePath is the coarser tool
+  // available today, since nothing is cached yet for a tag to attach to.
+  revalidatePath(getAppUrl(urlStoreHash, `/gift-certs/${giftCertificate.id}`));
 
   return { success: true, message: "Gift certificate status updated." };
 }

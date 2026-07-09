@@ -12,7 +12,13 @@ import { runServerAction } from "@/components/ui/action-alerts";
 import { GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certs-manager/gift-certificates/status";
 import { GiftCertificateStatus, GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 
-export function GiftCertificateDetailsTab({ giftCertificate }: { giftCertificate: GiftCertificateWithAccounts }) {
+export function GiftCertificateDetailsTab({
+  giftCertificate,
+  urlStoreHash,
+}: {
+  giftCertificate: GiftCertificateWithAccounts;
+  urlStoreHash: string | undefined;
+}) {
   const [status, setStatus] = useState<GiftCertificateStatus>(giftCertificate.status);
   const [isPending, startTransition] = useTransition();
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -25,7 +31,7 @@ export function GiftCertificateDetailsTab({ giftCertificate }: { giftCertificate
 
   const handleUpdate = () => {
     startTransition(async () => {
-      await runServerAction(() => updateGiftCertificateStatus(giftCertificate.id, status));
+      await runServerAction(() => updateGiftCertificateStatus(giftCertificate, status, urlStoreHash));
       closeUpdateModal();
     });
   };

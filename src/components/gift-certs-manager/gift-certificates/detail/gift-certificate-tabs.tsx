@@ -11,14 +11,20 @@ const TAB_ITEMS = [
   { id: "balance", title: "Balance" },
 ];
 
-export function GiftCertificateTabs({ giftCertificate }: { giftCertificate: GiftCertificateWithAccounts }) {
+export function GiftCertificateTabs({
+  giftCertificate,
+  urlStoreHash,
+}: {
+  giftCertificate: GiftCertificateWithAccounts;
+  urlStoreHash: string | undefined;
+}) {
   const [activeTab, setActiveTab] = useState("details");
 
   return (
     <>
       <Tabs activeTab={activeTab} items={TAB_ITEMS} onTabClick={setActiveTab} />
       {activeTab === "details" ? (
-        <GiftCertificateDetailsTab giftCertificate={giftCertificate} />
+        <GiftCertificateDetailsTab giftCertificate={giftCertificate} urlStoreHash={urlStoreHash} />
       ) : (
         <GiftCertificateBalanceTab
           giftCertificate={giftCertificate}

@@ -6,6 +6,7 @@ import {
   GiftCertificate,
   GiftCertificatesQuery,
   GiftCertificatesResult,
+  GiftCertificateStatus,
   getGiftCertificatePath,
 } from "@/lib/gift-certs-manager/gift-certificates/types";
 
@@ -80,4 +81,47 @@ export async function fetchGiftCertificate(
   const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id));
 
   return parseGiftCertificate(record);
+}
+
+// BigCommerce's v2 PUT is a full-object replacement rather than a partial
+// patch, but to_name/to_email/from_name/from_email/amount are the only
+// fields it actually requires on every request — everything else only needs
+// to be included when that's the field actually being changed. Pulling these
+// off the existing certificate (rather than sending the whole object) means
+// each update function below only has to name the field(s) it's changing.
+function getRequiredFields(giftCertificate: GiftCertificate): Pick<
+  GiftCertificateWireRecord,
+  "to_name" | "to_email" | "from_name" | "from_email" | "amount"
+> {
+  return {
+    to_name: giftCertificate.to_name,
+    to_email: giftCertificate.to_email,
+    from_name: giftCertificate.from_name,
+    from_email: giftCertificate.from_email,
+    amount: String(giftCertificate.amount),
+  };
+}
+
+// Shared by every gift certificate update — callers pass only the field(s)
+// they're actually changing (e.g. { status } or { balance }), and this fills
+// in the required fields from the certificate's current state.
+async function updateGiftCertificate(
+  giftCertificate: GiftCertificate,
+  fields: Partial<Omit<GiftCertificateWireRecord, "id">>,
+  apiCredentials: StoreCredentials,
+): Promise<GiftCertificate> {
+  const apiClient = getApiClient(apiCredentials);
+  const { data: record } = await apiClient.put<GiftCertificateWireRecord>(getGiftCertificatePath(giftCertificate.id), {
+    body: { ...getRequiredFields(giftCertificate), ...fields },
+  });
+
+  return parseGiftCertificate(record);
+}
+
+export async function updateGiftCertificateStatus(
+  giftCertificate: GiftCertificate,
+  status: GiftCertificateStatus,
+  apiCredentials: StoreCredentials,
+): Promise<GiftCertificate> {
+  return updateGiftCertificate(giftCertificate, { status }, apiCredentials);
 }

@@ -12,6 +12,11 @@ import { runServerAction } from "@/components/ui/action-alerts";
 import { GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certs-manager/gift-certificates/status";
 import { GiftCertificateStatus, GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 
+// Seeding status from props only works because the caller re-keys this
+// component on giftCertificate.status, forcing a remount (and a fresh
+// useState initializer) whenever a status update revalidates the
+// certificate — otherwise this would go stale after a successful update
+// (see gift-certificate-balance-tab.tsx for the same pattern).
 export function GiftCertificateDetailsTab({
   giftCertificate,
   urlStoreHash,
@@ -31,7 +36,7 @@ export function GiftCertificateDetailsTab({
 
   const handleUpdate = () => {
     startTransition(async () => {
-      await runServerAction(() => updateGiftCertificateStatus(giftCertificate, status, urlStoreHash));
+      await runServerAction(() => updateGiftCertificateStatus(giftCertificate.id, status, urlStoreHash));
       closeUpdateModal();
     });
   };

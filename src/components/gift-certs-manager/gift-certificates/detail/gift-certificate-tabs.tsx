@@ -24,11 +24,16 @@ export function GiftCertificateTabs({
     <>
       <Tabs activeTab={activeTab} items={TAB_ITEMS} onTabClick={setActiveTab} />
       {activeTab === "details" ? (
-        <GiftCertificateDetailsTab giftCertificate={giftCertificate} urlStoreHash={urlStoreHash} />
+        <GiftCertificateDetailsTab
+          giftCertificate={giftCertificate}
+          key={`${giftCertificate.id}-${giftCertificate.status}`}
+          urlStoreHash={urlStoreHash}
+        />
       ) : (
         <GiftCertificateBalanceTab
           giftCertificate={giftCertificate}
           key={`${giftCertificate.id}-${giftCertificate.balance}`}
+          urlStoreHash={urlStoreHash}
         />
       )}
     </>

@@ -125,3 +125,18 @@ export async function updateGiftCertificateStatus(
 ): Promise<GiftCertificate> {
   return updateGiftCertificate(giftCertificate, { status }, apiCredentials);
 }
+
+// Refilling always (re-)activates the certificate — the caller (the action
+// layer) has already confirmed status was active/expired going in, and a
+// refill of a previously-expired certificate should make it usable again.
+export async function refillGiftCertificateBalance(
+  giftCertificate: GiftCertificate,
+  newBalance: number,
+  apiCredentials: StoreCredentials,
+): Promise<GiftCertificate> {
+  return updateGiftCertificate(
+    giftCertificate,
+    { balance: String(newBalance), status: "active" },
+    apiCredentials,
+  );
+}

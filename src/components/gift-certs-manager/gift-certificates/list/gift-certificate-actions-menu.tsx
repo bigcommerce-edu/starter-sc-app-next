@@ -39,9 +39,11 @@ function getConfirmationMessage(action: PendingAction, certificate: GiftCertific
 export function GiftCertificateActionsMenu({
   certificate,
   detailUrl,
+  urlStoreHash,
 }: {
   certificate: GiftCertificateWithRecipientAccount;
   detailUrl: string;
+  urlStoreHash: string | undefined;
 }) {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -57,7 +59,7 @@ export function GiftCertificateActionsMenu({
           await runServerAction(() => resendGiftCertificateEmail(certificate.id));
           break;
         case "refill":
-          await runServerAction(() => refillGiftCertificateBalance(certificate.id, certificate.amount));
+          await runServerAction(() => refillGiftCertificateBalance(certificate.id, certificate.amount, urlStoreHash));
           break;
         case "transfer":
           await runServerAction(() =>
@@ -82,7 +84,10 @@ export function GiftCertificateActionsMenu({
     },
     {
       content: "Refill",
-      disabled: certificate.balance >= certificate.amount,
+      disabled:
+        certificate.balance >= certificate.amount ||
+        certificate.status === "pending" ||
+        certificate.status === "disabled",
       onItemClick: () => setPendingAction("refill"),
     },
     {

@@ -50,7 +50,13 @@ function getConfirmationMessage(action: BalanceAction, giftCertificate: GiftCert
 // remount (and fresh useState initializers) whenever a balance action
 // revalidates the certificate — otherwise these would go stale after a
 // successful refill/add/transfer.
-export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate: GiftCertificateWithAccounts }) {
+export function GiftCertificateBalanceTab({
+  giftCertificate,
+  urlStoreHash,
+}: {
+  giftCertificate: GiftCertificateWithAccounts;
+  urlStoreHash: string | undefined;
+}) {
   const [selectedAction, setSelectedAction] = useState<BalanceAction | null>(null);
   const [pendingAction, setPendingAction] = useState<BalanceAction | null>(null);
   const [refillAmount, setRefillAmount] = useState(String(giftCertificate.amount));
@@ -70,7 +76,9 @@ export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate
     startTransition(async () => {
       switch (action) {
         case "refill":
-          await runServerAction(() => refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount)));
+          await runServerAction(() =>
+            refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount), urlStoreHash),
+          );
           break;
         case "add":
           await runServerAction(() => addToGiftCertificateBalance(giftCertificate.id, Number(addAmount)));
@@ -95,6 +103,7 @@ export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate
 
       <Flex flexGap="0.5rem" marginBottom="medium">
         <Button
+          disabled={giftCertificate.status === "pending" || giftCertificate.status === "disabled"}
           onClick={() => toggleAction("refill")}
           variant={selectedAction === "refill" ? "primary" : "secondary"}
         >

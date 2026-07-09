@@ -91,6 +91,7 @@ function getColumns(
         <GiftCertificateActionsMenu
           certificate={certificate}
           detailUrl={getAppUrl(urlStoreHash, `/gift-certs/${certificate.id}`)}
+          urlStoreHash={urlStoreHash}
         />
       ),
       width: 64,

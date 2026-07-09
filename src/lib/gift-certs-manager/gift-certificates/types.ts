@@ -70,5 +70,10 @@ export interface GiftCertificatesQuery {
 
 export interface GiftCertificatesResult {
   items: GiftCertificate[];
-  totalItems: number;
+  // BigCommerce's v2 gift certificates endpoint reports no total count
+  // anywhere, so there's no accurate way to know how many pages exist —
+  // only whether there's at least one more (see resolveHasNextPage in
+  // gift-certificates-api.ts). The table's pagination is stateless (next/
+  // previous only, no page count) to match what's actually knowable here.
+  hasNextPage: boolean;
 }

@@ -1,4 +1,6 @@
+import { ApiClient } from "@/lib/api-client/types";
 import { getApiClient } from "@/lib/api-client/get-api-client";
+import { StoreCredentials } from "@/lib/api-client/store-credentials";
 import {
   GIFT_CERTIFICATES_PATH,
   GiftCertificate,
@@ -19,23 +21,11 @@ function parseGiftCertificate(record: GiftCertificateWireRecord): GiftCertificat
   return { ...record, amount: Number(record.amount), balance: Number(record.balance) };
 }
 
-// BigCommerce v2 list endpoints return a bare array and communicate the
-// total count via the Link/X-Total-Count response headers rather than a
-// body field — ApiClient doesn't expose headers today, so the mock client
-// (see mock/gift-certificates-list-handler.ts) reports totalItems out of
-// band via a header the real STATIC/MULTITENANT client would need to read.
-interface GiftCertificatesApiResponse {
-  items: GiftCertificateWireRecord[];
-  totalItems: number;
-}
-
-// Domain-level adapter: query already matches the request shape field for
-// field, so the only translation needed is lowercasing direction to match
-// the wire's asc/desc.
-export async function fetchGiftCertificates(query: GiftCertificatesQuery): Promise<GiftCertificatesResult> {
-  const apiClient = getApiClient();
-
-  const response = await apiClient.get<GiftCertificatesApiResponse>(GIFT_CERTIFICATES_PATH, {
+async function fetchGiftCertificatesPage(
+  apiClient: ApiClient,
+  query: GiftCertificatesQuery,
+): Promise<GiftCertificateWireRecord[]> {
+  const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
     params: {
       ...query,
       sort: "id",
@@ -43,12 +33,51 @@ export async function fetchGiftCertificates(query: GiftCertificatesQuery): Promi
     },
   });
 
-  return { items: response.items.map(parseGiftCertificate), totalItems: response.totalItems };
+  return items;
 }
 
-export async function fetchGiftCertificate(id: number | string): Promise<GiftCertificate> {
-  const apiClient = getApiClient();
-  const record = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id));
+// BigCommerce's v2 gift certificates endpoint reports no total count
+// anywhere (not in the body, not in a header) — the only way to know if
+// there's another page is to ask for it. A full page (items.length === limit)
+// means there might be more, so peek at page + 1 with a limit of 1 to find
+// out for sure. This is all the table's stateless pagination needs: whether
+// to enable "next", not how many pages exist in total.
+// TODO: once server-side response caching lands, this peek request becomes
+// effectively free on repeat navigations to the same page.
+async function resolveHasNextPage(
+  apiClient: ApiClient,
+  query: GiftCertificatesQuery,
+  items: GiftCertificateWireRecord[],
+): Promise<boolean> {
+  if (items.length < query.limit) {
+    return false;
+  }
+
+  const nextPage = await fetchGiftCertificatesPage(apiClient, { ...query, page: query.page + 1, limit: 1 });
+
+  return nextPage.length > 0;
+}
+
+// Domain-level adapter: query already matches the request shape field for
+// field, so the only translation needed is lowercasing direction to match
+// the wire's asc/desc.
+export async function fetchGiftCertificates(
+  query: GiftCertificatesQuery,
+  apiCredentials: StoreCredentials,
+): Promise<GiftCertificatesResult> {
+  const apiClient = getApiClient(apiCredentials);
+  const items = await fetchGiftCertificatesPage(apiClient, query);
+  const hasNextPage = await resolveHasNextPage(apiClient, query, items);
+
+  return { items: items.map(parseGiftCertificate), hasNextPage };
+}
+
+export async function fetchGiftCertificate(
+  id: number | string,
+  apiCredentials: StoreCredentials,
+): Promise<GiftCertificate> {
+  const apiClient = getApiClient(apiCredentials);
+  const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id));
 
   return parseGiftCertificate(record);
 }

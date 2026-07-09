@@ -15,14 +15,14 @@ export async function GiftCertificateListView({
   apiCredentials: StoreCredentials;
 }) {
   const query = parseGiftCertificatesQuery(searchParams);
-  const { items, totalItems } = await fetchGiftCertificates(query, apiCredentials);
+  const { items, hasNextPage } = await fetchGiftCertificates(query, apiCredentials);
   const decoratedItems = await decorateGiftCertificatesWithRecipientAccounts(items, apiCredentials);
 
   return (
     <Panel header="Gift Certificates">
       <GiftCertificateTable
         giftCertificates={decoratedItems}
-        totalItems={totalItems}
+        hasNextPage={hasNextPage}
         query={query}
         urlStoreHash={urlStoreHash}
       />

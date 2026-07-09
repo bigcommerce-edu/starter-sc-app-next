@@ -29,7 +29,7 @@ export async function CustomerView({
   // Channel decoration and the gift-certificates fetch are independent once
   // rawCustomer.email is known, so they run concurrently rather than one
   // blocking the other.
-  const [customer, { items, totalItems }] = await Promise.all([
+  const [customer, { items, hasNextPage }] = await Promise.all([
     decorateCustomerWithChannels(rawCustomer, apiCredentials),
     fetchGiftCertificates({ ...query, to_email: rawCustomer.email }, apiCredentials),
   ]);
@@ -56,11 +56,11 @@ export async function CustomerView({
       <Panel header="Gift Certificates">
         <GiftCertificateTable
           giftCertificates={decoratedItems}
+          hasNextPage={hasNextPage}
           query={query}
           showFilters={false}
           showRecipientColumns={false}
           urlStoreHash={urlStoreHash}
-          totalItems={totalItems}
         />
       </Panel>
     </Box>

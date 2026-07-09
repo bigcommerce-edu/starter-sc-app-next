@@ -1,4 +1,4 @@
-import { DataModeBanner } from "@/components/layout/data-mode-banner";
+import { AppShell } from "@/components/gift-certs-manager/app-shell";
 
 export default async function StoreLayout({
   children,
@@ -7,12 +7,7 @@ export default async function StoreLayout({
   children: React.ReactNode;
   params: Promise<{ storeHash: string }>;
 }) {
-  await params;
+  const { storeHash } = await params;
 
-  return (
-    <div>
-      <DataModeBanner />
-      {children}
-    </div>
-  );
+  return <AppShell storeHash={storeHash}>{children}</AppShell>;
 }

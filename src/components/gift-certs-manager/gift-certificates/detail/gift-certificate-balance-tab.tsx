@@ -81,7 +81,9 @@ export function GiftCertificateBalanceTab({
           );
           break;
         case "add":
-          await runServerAction(() => addToGiftCertificateBalance(giftCertificate.id, Number(addAmount)));
+          await runServerAction(() =>
+            addToGiftCertificateBalance(giftCertificate.id, Number(addAmount), urlStoreHash),
+          );
           break;
         case "transfer":
           await runServerAction(() =>
@@ -109,7 +111,11 @@ export function GiftCertificateBalanceTab({
         >
           Refill
         </Button>
-        <Button onClick={() => toggleAction("add")} variant={selectedAction === "add" ? "primary" : "secondary"}>
+        <Button
+          disabled={giftCertificate.status === "pending" || giftCertificate.status === "disabled"}
+          onClick={() => toggleAction("add")}
+          variant={selectedAction === "add" ? "primary" : "secondary"}
+        >
           Add to Balance
         </Button>
         <Button
@@ -143,7 +149,7 @@ export function GiftCertificateBalanceTab({
         <Box>
           <Input label="Amount" onChange={(event) => setAddAmount(event.target.value)} type="number" value={addAmount} />
           <Text>This amount will be added to the current balance.</Text>
-          <Button onClick={() => setPendingAction("add")} variant="primary">
+          <Button disabled={addAmount === ""} onClick={() => setPendingAction("add")} variant="primary">
             Add to Balance
           </Button>
         </Box>

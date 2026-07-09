@@ -5,6 +5,7 @@ import { getDataMode } from "@/lib/api-client/get-api-client";
 import { getStoreCredentials } from "@/lib/api-client/store-credentials";
 import { ActionResult } from "@/lib/actions/action-result";
 import {
+  addToGiftCertificateBalance as addToGiftCertificateBalanceRequest,
   fetchGiftCertificate,
   refillGiftCertificateBalance as refillGiftCertificateBalanceRequest,
   updateGiftCertificateStatus as updateGiftCertificateStatusRequest,
@@ -79,9 +80,26 @@ export async function refillGiftCertificateBalance(
   return { success: true, message: "Gift certificate balance refilled." };
 }
 
-export async function addToGiftCertificateBalance(id: number | string, amount: number): Promise<ActionResult> {
-  // eslint-disable-next-line no-console
-  console.log(`(noop) add ${amount} to gift certificate ${id} balance`);
+// Same usability restriction as refilling (active/expired only), but unlike
+// refilling there's no ceiling on the resulting balance — adding is allowed
+// to push it above the certificate's original amount. Validated against a
+// fresh fetch of the certificate for the same reason as refillGiftCertificateBalance:
+// status is not something a caller should be able to forge to bypass this.
+export async function addToGiftCertificateBalance(
+  id: number | string,
+  amount: number,
+  urlStoreHash: string | undefined,
+): Promise<ActionResult> {
+  const apiCredentials = getStoreCredentials(urlStoreHash);
+  const giftCertificate = await fetchGiftCertificate(id, apiCredentials);
+
+  if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
+    return { success: false, message: "Only active or expired gift certificates can have balance added." };
+  }
+
+  await addToGiftCertificateBalanceRequest(giftCertificate, amount, apiCredentials);
+
+  revalidatePath(getAppUrl(urlStoreHash, `/gift-certs/${id}`));
 
   return { success: true, message: "Amount added to gift certificate balance." };
 }

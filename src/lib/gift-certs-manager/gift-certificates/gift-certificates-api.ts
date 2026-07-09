@@ -140,3 +140,19 @@ export async function refillGiftCertificateBalance(
     apiCredentials,
   );
 }
+
+// Adding to balance always (re-)activates the certificate, same as refilling
+// — the caller has already confirmed status was active/expired going in.
+// Unlike refilling, the resulting balance is never capped at the original
+// amount (the caller doesn't validate that here either).
+export async function addToGiftCertificateBalance(
+  giftCertificate: GiftCertificate,
+  amount: number,
+  apiCredentials: StoreCredentials,
+): Promise<GiftCertificate> {
+  return updateGiftCertificate(
+    giftCertificate,
+    { balance: String(giftCertificate.balance + amount), status: "active" },
+    apiCredentials,
+  );
+}

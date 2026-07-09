@@ -1,5 +1,6 @@
 "use server";
 
+import { getDataMode } from "@/lib/api-client/get-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
 
@@ -16,13 +17,18 @@ export async function updateGiftCertificateStatus(
   return { success: true, message: "Gift certificate status updated." };
 }
 
-// Placeholder: once a real API client exists, this should trigger the actual
-// resend request instead of doing nothing.
+// Re-send is only meaningful in MULTITENANT mode (MOCK/STATIC have no real
+// recipient to email), and MULTITENANT itself isn't implemented yet.
 export async function resendGiftCertificateEmail(id: number | string): Promise<ActionResult> {
-  // eslint-disable-next-line no-console
-  console.log(`(noop) re-send gift certificate ${id} email`);
+  void id;
 
-  return { success: true, message: "Gift certificate email re-sent." };
+  const dataMode = getDataMode();
+
+  if (dataMode !== "MULTITENANT") {
+    throw new Error(`Re-send is not available in ${dataMode} mode.`);
+  }
+
+  throw new Error("Re-send not yet implemented.");
 }
 
 // Placeholders for the three balance actions. All will eventually issue a

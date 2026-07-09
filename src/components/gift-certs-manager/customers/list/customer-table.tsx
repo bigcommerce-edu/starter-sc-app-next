@@ -6,7 +6,6 @@ import { Box, Link, Table, TableColumn } from "@/components/ui/big-design";
 import { CustomerActionsMenu } from "@/components/gift-certs-manager/customers/list/customer-actions-menu";
 import { CustomerFilters } from "@/components/gift-certs-manager/customers/list/customer-filters";
 import { PendingOverlay } from "@/components/ui/pending-overlay";
-import { Channel } from "@/lib/gift-certs-manager/channels/types";
 import { buildCustomersSearchParams } from "@/lib/gift-certs-manager/customers/query";
 import { CustomersQuery, CustomerWithChannels, sumStoreCredit } from "@/lib/gift-certs-manager/customers/types";
 import { getAppUrl } from "@/lib/routing/app-url";
@@ -16,13 +15,13 @@ const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
-function getColumns(storeHash: string | undefined): Array<TableColumn<CustomerWithChannels>> {
+function getColumns(urlStoreHash: string | undefined): Array<TableColumn<CustomerWithChannels>> {
   return [
     {
       header: "Name",
       hash: "name",
       render: ({ id, first_name, last_name }: CustomerWithChannels) => (
-        <Link href={getAppUrl(storeHash, `/customers/${id}`)}>{`${first_name} ${last_name}`}</Link>
+        <Link href={getAppUrl(urlStoreHash, `/customers/${id}`)}>{`${first_name} ${last_name}`}</Link>
       ),
       isSortable: true,
     },
@@ -30,7 +29,7 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<CustomerWi
       header: "Email",
       hash: "email",
       render: ({ id, email }: CustomerWithChannels) => (
-        <Link href={getAppUrl(storeHash, `/customers/${id}`)}>{email}</Link>
+        <Link href={getAppUrl(urlStoreHash, `/customers/${id}`)}>{email}</Link>
       ),
     },
     {
@@ -55,7 +54,7 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<CustomerWi
       hideHeader: true,
       align: "right",
       render: (customer: CustomerWithChannels) => (
-        <CustomerActionsMenu customer={customer} detailUrl={getAppUrl(storeHash, `/customers/${customer.id}`)} />
+        <CustomerActionsMenu customer={customer} detailUrl={getAppUrl(urlStoreHash, `/customers/${customer.id}`)} />
       ),
       width: 64,
     },
@@ -66,18 +65,17 @@ interface CustomerTableProps {
   customers: CustomerWithChannels[];
   totalItems: number;
   query: CustomersQuery;
-  channels: Channel[];
-  storeHash: string | undefined;
+  urlStoreHash: string | undefined;
 }
 
 // Purely presentational: renders the page of items the server already fetched
 // for the current query. Search/sort/pagination interactions navigate to a new
 // URL (via router.push) rather than holding state or fetching data themselves —
 // CustomerListView reads the resulting searchParams and re-fetches server-side.
-export function CustomerTable({ customers, totalItems, query, channels, storeHash }: CustomerTableProps) {
+export function CustomerTable({ customers, totalItems, query, urlStoreHash }: CustomerTableProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const columns = useMemo(() => getColumns(storeHash), [storeHash]);
+  const columns = useMemo(() => getColumns(urlStoreHash), [urlStoreHash]);
   const [isPending, setIsPending] = useState(false);
   const [lastQuery, setLastQuery] = useState(query);
 
@@ -112,11 +110,7 @@ export function CustomerTable({ customers, totalItems, query, channels, storeHas
 
   return (
     <Box>
-      <CustomerFilters
-        channels={channels}
-        onChange={(filters) => navigate({ ...query, ...filters, page: 1 })}
-        query={query}
-      />
+      <CustomerFilters onChange={(filters) => navigate({ ...query, ...filters, page: 1 })} query={query} />
 
       <PendingOverlay isPending={isPending}>
         <Table

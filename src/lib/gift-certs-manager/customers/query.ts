@@ -3,7 +3,6 @@ import { CustomersQuery, SortDirection } from "@/lib/gift-certs-manager/customer
 export const DEFAULT_QUERY: CustomersQuery = {
   name: "",
   email: "",
-  origin_channel_id: [],
   date_created_min: "",
   date_created_max: "",
   direction: "ASC",
@@ -23,14 +22,6 @@ export function parseCustomersQuery(searchParams: RawSearchParams): CustomersQue
   const name = getParam(searchParams, "name") ?? DEFAULT_QUERY.name;
   const email = getParam(searchParams, "email") ?? DEFAULT_QUERY.email;
 
-  const originChannelIdParam = getParam(searchParams, "origin_channel_id");
-  const origin_channel_id = originChannelIdParam
-    ? originChannelIdParam
-        .split(",")
-        .map((value) => Number(value))
-        .filter((value) => Number.isInteger(value))
-    : DEFAULT_QUERY.origin_channel_id;
-
   const date_created_min = getParam(searchParams, "date_created_min") ?? DEFAULT_QUERY.date_created_min;
   const date_created_max = getParam(searchParams, "date_created_max") ?? DEFAULT_QUERY.date_created_max;
 
@@ -49,7 +40,6 @@ export function parseCustomersQuery(searchParams: RawSearchParams): CustomersQue
   return {
     name,
     email,
-    origin_channel_id,
     date_created_min,
     date_created_max,
     direction,
@@ -67,10 +57,6 @@ export function buildCustomersSearchParams(query: CustomersQuery): URLSearchPara
 
   if (query.email) {
     params.set("email", query.email);
-  }
-
-  if (query.origin_channel_id.length > 0) {
-    params.set("origin_channel_id", query.origin_channel_id.join(","));
   }
 
   if (query.date_created_min) {

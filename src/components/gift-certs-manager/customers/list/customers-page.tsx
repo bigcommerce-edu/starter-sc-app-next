@@ -1,5 +1,6 @@
 import { CustomerListView } from "@/components/gift-certs-manager/customers/list/customer-list-view";
 import { getDataMode } from "@/lib/api-client/get-api-client";
+import { getStoreCredentials } from "@/lib/api-client/store-credentials";
 import { assertStoreHashForDataMode } from "@/lib/routing/assert-store-hash";
 
 export async function CustomersPage({
@@ -12,10 +13,20 @@ export async function CustomersPage({
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
 
-  const storeHash = resolvedParams.storeHash;
-  const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
+  const urlStoreHash = resolvedParams.storeHash;
+  const urlStoreHashString = Array.isArray(urlStoreHash) ? urlStoreHash[0] : urlStoreHash;
 
-  assertStoreHashForDataMode(getDataMode(), storeHashString);
+  const dataMode = getDataMode();
 
-  return <CustomerListView searchParams={resolvedSearchParams} storeHash={storeHashString} />;
+  assertStoreHashForDataMode(dataMode, urlStoreHashString);
+
+  const apiCredentials = getStoreCredentials(urlStoreHashString);
+
+  return (
+    <CustomerListView
+      searchParams={resolvedSearchParams}
+      urlStoreHash={urlStoreHashString}
+      apiCredentials={apiCredentials}
+    />
+  );
 }

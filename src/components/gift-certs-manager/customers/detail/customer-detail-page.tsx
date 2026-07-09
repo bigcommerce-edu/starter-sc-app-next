@@ -1,4 +1,5 @@
 import { CustomerView } from "@/components/gift-certs-manager/customers/detail/customer-view";
+import { getStoreCredentials } from "@/lib/api-client/store-credentials";
 
 export async function CustomerDetailPage({
   params,
@@ -13,8 +14,17 @@ export async function CustomerDetailPage({
   const id = resolvedParams.id;
   const idString = Array.isArray(id) ? id[0] : id;
 
-  const storeHash = resolvedParams.storeHash;
-  const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
+  const urlStoreHash = resolvedParams.storeHash;
+  const urlStoreHashString = Array.isArray(urlStoreHash) ? urlStoreHash[0] : urlStoreHash;
 
-  return <CustomerView id={idString ?? ""} searchParams={resolvedSearchParams} storeHash={storeHashString} />;
+  const apiCredentials = getStoreCredentials(urlStoreHashString);
+
+  return (
+    <CustomerView
+      id={idString ?? ""}
+      searchParams={resolvedSearchParams}
+      urlStoreHash={urlStoreHashString}
+      apiCredentials={apiCredentials}
+    />
+  );
 }

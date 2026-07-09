@@ -1,3 +1,4 @@
+import { StoreCredentials } from "@/lib/api-client/store-credentials";
 import { fetchChannels } from "@/lib/gift-certs-manager/channels/channels-api";
 import { Channel } from "@/lib/gift-certs-manager/channels/types";
 import { Customer, CustomerWithChannels } from "@/lib/gift-certs-manager/customers/types";
@@ -13,9 +14,10 @@ function findChannelById(channels: Channel[], id: number): Channel | undefined {
 // filter) can pass it in directly to avoid fetching it twice.
 export async function decorateCustomersWithChannels(
   customers: Customer[],
+  apiCredentials: StoreCredentials,
   channels?: Channel[],
 ): Promise<CustomerWithChannels[]> {
-  const resolvedChannels = channels ?? (await fetchChannels()).items;
+  const resolvedChannels = channels ?? (await fetchChannels(apiCredentials)).items;
 
   return customers.map((customer) => ({
     ...customer,
@@ -26,8 +28,12 @@ export async function decorateCustomersWithChannels(
   }));
 }
 
-export async function decorateCustomerWithChannels(customer: Customer, channels?: Channel[]): Promise<CustomerWithChannels> {
-  const [decorated] = await decorateCustomersWithChannels([customer], channels);
+export async function decorateCustomerWithChannels(
+  customer: Customer,
+  apiCredentials: StoreCredentials,
+  channels?: Channel[],
+): Promise<CustomerWithChannels> {
+  const [decorated] = await decorateCustomersWithChannels([customer], apiCredentials, channels);
 
   return decorated;
 }

@@ -1,20 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Chip,
-  Datepicker,
-  Flex,
-  FilterListIcon,
-  Form,
-  FormGroup,
-  Input,
-  Modal,
-  MultiSelect,
-} from "@/components/ui/big-design";
-import { Channel } from "@/lib/gift-certs-manager/channels/types";
+import { Box, Button, Chip, Datepicker, Flex, FilterListIcon, Form, FormGroup, Input, Modal } from "@/components/ui/big-design";
 import { CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
 import { DEFAULT_QUERY } from "@/lib/gift-certs-manager/customers/query";
 
@@ -25,7 +12,6 @@ type FilterFields = Omit<CustomersQuery, "direction" | "page" | "limit">;
 const DEFAULT_FILTERS: FilterFields = {
   name: DEFAULT_QUERY.name,
   email: DEFAULT_QUERY.email,
-  origin_channel_id: DEFAULT_QUERY.origin_channel_id,
   date_created_min: DEFAULT_QUERY.date_created_min,
   date_created_max: DEFAULT_QUERY.date_created_max,
 };
@@ -42,7 +28,6 @@ function isFilterActive(filters: FilterFields): boolean {
   return (
     filters.name !== DEFAULT_FILTERS.name ||
     filters.email !== DEFAULT_FILTERS.email ||
-    filters.origin_channel_id.length > 0 ||
     filters.date_created_min !== DEFAULT_FILTERS.date_created_min ||
     filters.date_created_max !== DEFAULT_FILTERS.date_created_max
   );
@@ -50,7 +35,6 @@ function isFilterActive(filters: FilterFields): boolean {
 
 interface CustomerFiltersProps {
   query: CustomersQuery;
-  channels: Channel[];
   onChange(filters: FilterFields): void;
 }
 
@@ -58,11 +42,9 @@ interface CustomerFiltersProps {
 // Filter button opens a modal with every filterable field, applied filters
 // render as removable chips, and nothing takes effect until Apply/chip
 // delete/Clear all. CustomerTable owns the actual query/navigation.
-export function CustomerFilters({ query, channels, onChange }: CustomerFiltersProps) {
+export function CustomerFilters({ query, onChange }: CustomerFiltersProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draft, setDraft] = useState<FilterFields>(query);
-
-  const channelOptions = channels.map((channel) => ({ value: channel.id, content: channel.name }));
 
   const setDraftField = <K extends keyof FilterFields>(key: K, value: FilterFields[K]) => {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -88,8 +70,6 @@ export function CustomerFilters({ query, channels, onChange }: CustomerFiltersPr
     onChange({ ...query, [key]: DEFAULT_FILTERS[key] });
   };
 
-  const getChannelName = (channelId: number) => channels.find((channel) => channel.id === channelId)?.name ?? channelId;
-
   return (
     <Box marginBottom="medium">
       <Flex justifyContent="flex-end">
@@ -102,18 +82,6 @@ export function CustomerFilters({ query, channels, onChange }: CustomerFiltersPr
         <Flex alignItems="center" flexWrap="wrap" marginTop="medium">
           {query.name && <Chip label={`Name: ${query.name}`} onDelete={() => removeFilter("name")} />}
           {query.email && <Chip label={`Email: ${query.email}`} onDelete={() => removeFilter("email")} />}
-          {query.origin_channel_id.map((channelId) => (
-            <Chip
-              key={channelId}
-              label={`Origin Channel: ${getChannelName(channelId)}`}
-              onDelete={() =>
-                onChange({
-                  ...query,
-                  origin_channel_id: query.origin_channel_id.filter((id) => id !== channelId),
-                })
-              }
-            />
-          ))}
           {query.date_created_min && (
             <Chip
               label={`Registered after: ${query.date_created_min}`}
@@ -149,15 +117,6 @@ export function CustomerFilters({ query, channels, onChange }: CustomerFiltersPr
 
           <FormGroup>
             <Input label="Email" onChange={(event) => setDraftField("email", event.target.value)} value={draft.email} />
-          </FormGroup>
-
-          <FormGroup>
-            <MultiSelect
-              label="Origin Channel"
-              onOptionsChange={(value) => setDraftField("origin_channel_id", value)}
-              options={channelOptions}
-              value={draft.origin_channel_id}
-            />
           </FormGroup>
 
           <FormGroup>

@@ -1,6 +1,7 @@
 import { ArrowBackIcon, Box, Flex, Link, Panel } from "@/components/ui/big-design";
 import { CustomerInfoPanel } from "@/components/gift-certs-manager/customers/detail/customer-info-panel";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
+import { StoreCredentials } from "@/lib/api-client/store-credentials";
 import { decorateCustomerWithChannels } from "@/lib/gift-certs-manager/customers/decorate-with-channels";
 import { fetchCustomer } from "@/lib/gift-certs-manager/customers/customers-api";
 import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
@@ -10,13 +11,15 @@ import { getAppUrl } from "@/lib/routing/app-url";
 export async function CustomerView({
   id,
   searchParams,
-  storeHash,
+  urlStoreHash,
+  apiCredentials,
 }: {
   id: string;
   searchParams: Record<string, string | string[] | undefined>;
-  storeHash: string | undefined;
+  urlStoreHash: string | undefined;
+  apiCredentials: StoreCredentials;
 }) {
-  const rawCustomer = await fetchCustomer(id);
+  const rawCustomer = await fetchCustomer(id, apiCredentials);
 
   // to_email scopes the fetch to this customer's certificates, but it's
   // implied by the route (not a user-chosen filter) and must never be echoed
@@ -27,8 +30,8 @@ export async function CustomerView({
   // rawCustomer.email is known, so they run concurrently rather than one
   // blocking the other.
   const [customer, { items, totalItems }] = await Promise.all([
-    decorateCustomerWithChannels(rawCustomer),
-    fetchGiftCertificates({ ...query, to_email: rawCustomer.email }),
+    decorateCustomerWithChannels(rawCustomer, apiCredentials),
+    fetchGiftCertificates({ ...query, to_email: rawCustomer.email }, apiCredentials),
   ]);
 
   // Every row's recipient is this customer, so there's no need to decorate
@@ -38,7 +41,7 @@ export async function CustomerView({
   return (
     <Box>
       <Box marginBottom="medium">
-        <Link href={getAppUrl(storeHash, "/customers")}>
+        <Link href={getAppUrl(urlStoreHash, "/customers")}>
           <Flex alignItems="center" flexGap="0.25rem">
             <ArrowBackIcon size="small" />
             Back to Customers
@@ -56,7 +59,7 @@ export async function CustomerView({
           query={query}
           showFilters={false}
           showRecipientColumns={false}
-          storeHash={storeHash}
+          urlStoreHash={urlStoreHash}
           totalItems={totalItems}
         />
       </Panel>

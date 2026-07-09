@@ -1,5 +1,5 @@
 import { mockRouteHandlers } from "@/lib/api-client/mock-client/handler-registry";
-import { ApiClient, ApiRequestOptions } from "@/lib/api-client/types";
+import { ApiClient, ApiRequestOptions, ApiResponse } from "@/lib/api-client/types";
 
 // Simulates real network latency so loading/Suspense states are visible
 // during local development and demos. Absent (or invalid) env vars mean no
@@ -25,7 +25,7 @@ function randomDelayMs(min: number, max: number): number {
 // registered externally (see handler-registry.ts) and matched here purely
 // by pattern.
 export class MockApiClient implements ApiClient {
-  async get<TResponse>(path: string, options: ApiRequestOptions = {}): Promise<TResponse> {
+  async get<TResponse>(path: string, options: ApiRequestOptions = {}): Promise<ApiResponse<TResponse>> {
     const delayRange = getMockRequestDelayRangeMs();
 
     if (delayRange) {
@@ -38,7 +38,9 @@ export class MockApiClient implements ApiClient {
       const match = path.match(handler.pattern);
 
       if (match) {
-        return handler.handle(match, params) as TResponse;
+        const { data, headers } = handler.handle(match, params);
+
+        return { data: data as TResponse, headers: new Headers(headers) };
       }
     }
 

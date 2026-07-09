@@ -1,4 +1,5 @@
 import { GiftCertificateView } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-view";
+import { getStoreCredentials } from "@/lib/api-client/store-credentials";
 
 export async function GiftCertificateDetailPage({
   params,
@@ -13,8 +14,12 @@ export async function GiftCertificateDetailPage({
   const id = resolvedParams.id;
   const idString = Array.isArray(id) ? id[0] : id;
 
-  const storeHash = resolvedParams.storeHash;
-  const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
+  const urlStoreHash = resolvedParams.storeHash;
+  const urlStoreHashString = Array.isArray(urlStoreHash) ? urlStoreHash[0] : urlStoreHash;
 
-  return <GiftCertificateView id={idString ?? ""} storeHash={storeHashString} />;
+  const apiCredentials = getStoreCredentials(urlStoreHashString);
+
+  return (
+    <GiftCertificateView id={idString ?? ""} urlStoreHash={urlStoreHashString} apiCredentials={apiCredentials} />
+  );
 }

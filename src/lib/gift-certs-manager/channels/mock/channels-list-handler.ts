@@ -1,4 +1,4 @@
-import { MockRouteHandler } from "@/lib/api-client/mock-client/types";
+import { MockRouteHandler, MockRouteResponse } from "@/lib/api-client/mock-client/types";
 import { V3ListResponse } from "@/lib/api-client/types";
 import { CHANNELS_PATH, Channel } from "@/lib/gift-certs-manager/channels/types";
 import { mockChannels } from "@/lib/gift-certs-manager/channels/mock/mock-channels";
@@ -20,5 +20,5 @@ function handleChannelsListRequest(): V3ListResponse<Channel> {
 
 export const channelsListMockHandler: MockRouteHandler = {
   pattern: new RegExp(`^${CHANNELS_PATH}$`),
-  handle: () => handleChannelsListRequest(),
+  handle: (): MockRouteResponse => ({ data: handleChannelsListRequest() }),
 };

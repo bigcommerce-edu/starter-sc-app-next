@@ -17,7 +17,7 @@ const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", cu
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
 function getColumns(
-  storeHash: string | undefined,
+  urlStoreHash: string | undefined,
   showRecipientColumns: boolean,
 ): Array<TableColumn<GiftCertificateWithRecipientAccount>> {
   return [
@@ -25,7 +25,7 @@ function getColumns(
       header: "Certificate #",
       hash: "id",
       render: ({ id, code }: GiftCertificateWithRecipientAccount) => (
-        <Link href={getAppUrl(storeHash, `/gift-certs/${id}`)}>{code}</Link>
+        <Link href={getAppUrl(urlStoreHash, `/gift-certs/${id}`)}>{code}</Link>
       ),
       // BigCommerce's v2 gift certificates endpoint only supports sort=id,
       // so this is the only sortable column — id isn't otherwise displayed,
@@ -59,7 +59,7 @@ function getColumns(
             hash: "to_name",
             render: ({ recipientAccount, to_name }: GiftCertificateWithRecipientAccount) =>
               recipientAccount ? (
-                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{to_name}</Link>
+                <Link href={getAppUrl(urlStoreHash, `/customers/${recipientAccount.id}`)}>{to_name}</Link>
               ) : (
                 to_name
               ),
@@ -69,7 +69,7 @@ function getColumns(
             hash: "to_email",
             render: ({ to_email, recipientAccount }: GiftCertificateWithRecipientAccount) =>
               recipientAccount ? (
-                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{to_email}</Link>
+                <Link href={getAppUrl(urlStoreHash, `/customers/${recipientAccount.id}`)}>{to_email}</Link>
               ) : (
                 to_email
               ),
@@ -90,7 +90,7 @@ function getColumns(
       render: (certificate: GiftCertificateWithRecipientAccount) => (
         <GiftCertificateActionsMenu
           certificate={certificate}
-          detailUrl={getAppUrl(storeHash, `/gift-certs/${certificate.id}`)}
+          detailUrl={getAppUrl(urlStoreHash, `/gift-certs/${certificate.id}`)}
         />
       ),
       width: 64,
@@ -102,7 +102,7 @@ interface GiftCertificateTableProps {
   giftCertificates: GiftCertificateWithRecipientAccount[];
   totalItems: number;
   query: GiftCertificatesQuery;
-  storeHash: string | undefined;
+  urlStoreHash: string | undefined;
   // The customer detail page reuses this table, pre-scoped to one customer's
   // gift certificates, without exposing the general-purpose filter UI or the
   // recipient columns (every row already shares the same, known recipient).
@@ -118,13 +118,13 @@ export function GiftCertificateTable({
   giftCertificates,
   totalItems,
   query,
-  storeHash,
+  urlStoreHash,
   showFilters = true,
   showRecipientColumns = true,
 }: GiftCertificateTableProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const columns = useMemo(() => getColumns(storeHash, showRecipientColumns), [storeHash, showRecipientColumns]);
+  const columns = useMemo(() => getColumns(urlStoreHash, showRecipientColumns), [urlStoreHash, showRecipientColumns]);
   const [isPending, setIsPending] = useState(false);
   const [lastQuery, setLastQuery] = useState(query);
 

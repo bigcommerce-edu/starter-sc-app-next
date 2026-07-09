@@ -1,3 +1,4 @@
+import { Box, InlineMessage } from "@/components/ui/big-design";
 import { getDataMode } from "@/lib/api-client/get-api-client";
 
 const DATA_MODE_LABEL: Record<"MOCK" | "STATIC", string> = {
@@ -13,9 +14,16 @@ export function DataModeBanner() {
   }
 
   return (
-    <div style={{ padding: "1rem" }}>
-      <p style={{ fontWeight: "bold" }}>{`Data fetching is in ${DATA_MODE_LABEL[dataMode]} mode`}</p>
-      <p>All routes are unprotected. Never deploy the app to production in this configuration.</p>
-    </div>
+    <Box paddingHorizontal="large" paddingTop="large">
+      <InlineMessage
+        header={`Data fetching is in ${DATA_MODE_LABEL[dataMode]} mode`}
+        messages={[
+          {
+            text: "All routes are unprotected. Never deploy the app to production in this configuration.",
+          },
+        ]}
+        type="warning"
+      />
+    </Box>
   );
 }

@@ -1,15 +1,26 @@
+import { Box, ErrorIcon, Flex, H1, Panel, Text } from "@/components/ui/big-design";
+
 export function UnauthorizedRootRoute() {
   return (
-    <div style={{ maxWidth: "560px", margin: "0 auto", padding: "2rem", textAlign: "center" }}>
-      <h1>Unauthorized</h1>
-      <p>
-        This page is not accessible when the app is running in multi-tenant mode. Every request in multi-tenant
-        mode must include a store hash in the URL and be authenticated accordingly.
-      </p>
-      <p>
-        This root-level route only exists for mock and static-token development. Never deploy the app to
-        production with a configuration that serves it.
-      </p>
-    </div>
+    <Flex justifyContent="center" paddingVertical="xxxLarge">
+      <Box style={{ maxWidth: "560px", width: "100%" }}>
+        <Panel>
+          <Flex flexDirection="column" alignItems="center" marginBottom="medium">
+            <ErrorIcon color="danger50" size="xLarge" />
+            <H1 marginTop="small" marginBottom="none">
+              Unauthorized
+            </H1>
+          </Flex>
+          <Text>
+            This page is not accessible when the app is running in multi-tenant mode. Every request in
+            multi-tenant mode must include a store hash in the URL and be authenticated accordingly.
+          </Text>
+          <Text marginBottom="none">
+            This root-level route only exists for mock and static-token development. Never deploy the app to
+            production with a configuration that serves it.
+          </Text>
+        </Panel>
+      </Box>
+    </Flex>
   );
 }

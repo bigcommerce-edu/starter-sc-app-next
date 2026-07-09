@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Box, Button, Flex, Input, Panel, Small, Text } from "@/components/ui/big-design";
+import { Box, Button, Flex, Input, Modal, Panel, Small, Text } from "@/components/ui/big-design";
 import {
   addToGiftCertificateBalance,
   refillGiftCertificateBalance,
@@ -11,6 +11,12 @@ import { runServerAction } from "@/components/ui/action-alerts";
 import { GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 type BalanceAction = "refill" | "add" | "transfer";
+
+const ACTION_LABEL: Record<BalanceAction, string> = {
+  refill: "Refill",
+  add: "Add to Balance",
+  transfer: "Transfer to Store Credit",
+};
 
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
@@ -23,6 +29,22 @@ function DetailField({ label, children }: { label: string; children: React.React
   );
 }
 
+function getConfirmationMessage(action: BalanceAction, giftCertificate: GiftCertificateWithAccounts, amount: number): string {
+  switch (action) {
+    case "refill":
+      return `Refill balance to ${currencyFormatter.format(amount)}?`;
+    case "add":
+      return `Add ${currencyFormatter.format(amount)} to the current balance?`;
+    case "transfer": {
+      const recipientDisplayName = giftCertificate.recipientAccount
+        ? `${giftCertificate.recipientAccount.first_name} ${giftCertificate.recipientAccount.last_name}`
+        : giftCertificate.to_name;
+
+      return `Transfer ${currencyFormatter.format(amount)} to ${recipientDisplayName}'s customer store credit balance?`;
+    }
+  }
+}
+
 // Seeding refillAmount/transferAmount from props only works because the
 // caller re-keys this component on giftCertificate.balance, forcing a
 // remount (and fresh useState initializers) whenever a balance action
@@ -30,6 +52,7 @@ function DetailField({ label, children }: { label: string; children: React.React
 // successful refill/add/transfer.
 export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate: GiftCertificateWithAccounts }) {
   const [selectedAction, setSelectedAction] = useState<BalanceAction | null>(null);
+  const [pendingAction, setPendingAction] = useState<BalanceAction | null>(null);
   const [refillAmount, setRefillAmount] = useState(String(giftCertificate.amount));
   const [addAmount, setAddAmount] = useState("");
   const [transferAmount, setTransferAmount] = useState(String(giftCertificate.balance));
@@ -39,23 +62,31 @@ export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate
     setSelectedAction((current) => (current === action ? null : action));
   };
 
-  const handleRefill = () => {
+  const closeConfirmModal = () => setPendingAction(null);
+
+  const handleConfirm = () => {
+    const action = pendingAction;
+
     startTransition(async () => {
-      await runServerAction(() => refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount)));
+      switch (action) {
+        case "refill":
+          await runServerAction(() => refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount)));
+          break;
+        case "add":
+          await runServerAction(() => addToGiftCertificateBalance(giftCertificate.id, Number(addAmount)));
+          break;
+        case "transfer":
+          await runServerAction(() =>
+            transferGiftCertificateBalanceToStoreCredit(giftCertificate.id, Number(transferAmount)),
+          );
+          break;
+      }
+
+      closeConfirmModal();
     });
   };
 
-  const handleAdd = () => {
-    startTransition(async () => {
-      await runServerAction(() => addToGiftCertificateBalance(giftCertificate.id, Number(addAmount)));
-    });
-  };
-
-  const handleTransfer = () => {
-    startTransition(async () => {
-      await runServerAction(() => transferGiftCertificateBalanceToStoreCredit(giftCertificate.id, Number(transferAmount)));
-    });
-  };
+  const pendingAmount = pendingAction === "refill" ? refillAmount : pendingAction === "add" ? addAmount : transferAmount;
 
   return (
     <Panel header={giftCertificate.code}>
@@ -93,7 +124,7 @@ export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate
             This will set the total active balance to this amount, up to{" "}
             <strong>{currencyFormatter.format(giftCertificate.amount)}</strong>.
           </Text>
-          <Button isLoading={isPending} onClick={handleRefill} variant="primary">
+          <Button onClick={() => setPendingAction("refill")} variant="primary">
             Refill
           </Button>
         </Box>
@@ -103,7 +134,7 @@ export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate
         <Box>
           <Input label="Amount" onChange={(event) => setAddAmount(event.target.value)} type="number" value={addAmount} />
           <Text>This amount will be added to the current balance.</Text>
-          <Button isLoading={isPending} onClick={handleAdd} variant="primary">
+          <Button onClick={() => setPendingAction("add")} variant="primary">
             Add to Balance
           </Button>
         </Box>
@@ -121,10 +152,32 @@ export function GiftCertificateBalanceTab({ giftCertificate }: { giftCertificate
             The gift certificate balance will be reduced by this amount, and the customer&apos;s store credit
             balance will be increased accordingly.
           </Text>
-          <Button isLoading={isPending} onClick={handleTransfer} variant="primary">
+          <Button onClick={() => setPendingAction("transfer")} variant="primary">
             Transfer to Store Credit
           </Button>
         </Box>
+      )}
+
+      {pendingAction && (
+        <Modal
+          actions={[
+            { text: "Cancel", variant: "subtle", onClick: closeConfirmModal },
+            {
+              text: ACTION_LABEL[pendingAction],
+              variant: "primary",
+              isLoading: isPending,
+              onClick: handleConfirm,
+            },
+          ]}
+          closeOnEscKey
+          header={ACTION_LABEL[pendingAction]}
+          isOpen
+          onClose={closeConfirmModal}
+        >
+          <Text marginBottom="none">
+            {getConfirmationMessage(pendingAction, giftCertificate, Number(pendingAmount))}
+          </Text>
+        </Modal>
       )}
     </Panel>
   );

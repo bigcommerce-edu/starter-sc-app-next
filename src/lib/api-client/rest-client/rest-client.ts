@@ -1,4 +1,4 @@
-import { ApiClient, ApiRequestOptions, ApiResponse } from "@/lib/api-client/types";
+import { ApiClient, ApiMutationOptions, ApiRequestOptions, ApiResponse } from "@/lib/api-client/types";
 import { StoreCredentials } from "@/lib/api-client/store-credentials";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
@@ -22,12 +22,18 @@ function buildUrl(storeHash: string, path: string, params: ApiRequestOptions["pa
 export class RestApiClient implements ApiClient {
   constructor(private readonly credentials: StoreCredentials) {}
 
-  async get<TResponse>(path: string, options: ApiRequestOptions = {}): Promise<ApiResponse<TResponse>> {
+  private getCredentialsOrThrow(): { storeHash: string; apiToken: string } {
     const { storeHash, apiToken } = this.credentials;
 
     if (!storeHash || !apiToken) {
       throw new Error("A store hash and API token are required to make a request.");
     }
+
+    return { storeHash, apiToken };
+  }
+
+  async get<TResponse>(path: string, options: ApiRequestOptions = {}): Promise<ApiResponse<TResponse>> {
+    const { storeHash, apiToken } = this.getCredentialsOrThrow();
 
     const response = await fetch(buildUrl(storeHash, path, options.params), {
       headers: {
@@ -41,5 +47,45 @@ export class RestApiClient implements ApiClient {
     }
 
     return { data: (await response.json()) as TResponse, headers: response.headers };
+  }
+
+  private async mutate<TResponse>(
+    method: "POST" | "PUT" | "DELETE",
+    path: string,
+    options: ApiMutationOptions = {},
+  ): Promise<ApiResponse<TResponse>> {
+    const { storeHash, apiToken } = this.getCredentialsOrThrow();
+
+    const response = await fetch(buildUrl(storeHash, path, undefined), {
+      method,
+      headers: {
+        "X-Auth-Token": apiToken,
+        Accept: "application/json",
+        ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      },
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    });
+
+    if (!response.ok) {
+      throw new Error(`BigCommerce API request to "${path}" failed with status ${response.status}.`);
+    }
+
+    // DELETE responses are typically 204 No Content — parsing an empty body
+    // as JSON would throw, so only attempt it when there's actually a body.
+    const data = response.status === 204 ? undefined : ((await response.json()) as TResponse);
+
+    return { data: data as TResponse, headers: response.headers };
+  }
+
+  async post<TResponse>(path: string, options: ApiMutationOptions = {}): Promise<ApiResponse<TResponse>> {
+    return this.mutate<TResponse>("POST", path, options);
+  }
+
+  async put<TResponse>(path: string, options: ApiMutationOptions = {}): Promise<ApiResponse<TResponse>> {
+    return this.mutate<TResponse>("PUT", path, options);
+  }
+
+  async delete<TResponse>(path: string, options: ApiMutationOptions = {}): Promise<ApiResponse<TResponse>> {
+    return this.mutate<TResponse>("DELETE", path, options);
   }
 }

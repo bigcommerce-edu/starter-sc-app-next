@@ -46,4 +46,16 @@ export class MockApiClient implements ApiClient {
 
     throw new Error(`MockApiClient has no handler for path "${path}"`);
   }
+
+  async post<TResponse>(): Promise<ApiResponse<TResponse>> {
+    throw new Error("Mutating operations are not supported in mock mode.");
+  }
+
+  async put<TResponse>(): Promise<ApiResponse<TResponse>> {
+    throw new Error("Mutating operations are not supported in mock mode.");
+  }
+
+  async delete<TResponse>(): Promise<ApiResponse<TResponse>> {
+    throw new Error("Mutating operations are not supported in mock mode.");
+  }
 }

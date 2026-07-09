@@ -30,6 +30,10 @@ export interface ApiRequestOptions {
   params?: ApiRequestParams;
 }
 
+export interface ApiMutationOptions {
+  body?: unknown;
+}
+
 // v2 list endpoints (e.g. gift certificates) report their total count via
 // response headers rather than a body field, so callers that need it have to
 // read headers alongside the parsed body — see gift-certificates-api.ts.
@@ -41,7 +45,12 @@ export interface ApiResponse<TResponse> {
 // Modeled on the BigCommerce REST API: every request is a path (e.g.
 // "/v2/gift_certificates") plus optional query params, and returns a raw JSON
 // body plus response headers. Callers are responsible for shaping the body
-// into domain types.
+// into domain types. post/put/delete are for mutating requests — MockApiClient
+// rejects all three, since there's no mock store to mutate (see
+// mock-client.ts).
 export interface ApiClient {
   get<TResponse>(path: string, options?: ApiRequestOptions): Promise<ApiResponse<TResponse>>;
+  post<TResponse>(path: string, options?: ApiMutationOptions): Promise<ApiResponse<TResponse>>;
+  put<TResponse>(path: string, options?: ApiMutationOptions): Promise<ApiResponse<TResponse>>;
+  delete<TResponse>(path: string, options?: ApiMutationOptions): Promise<ApiResponse<TResponse>>;
 }

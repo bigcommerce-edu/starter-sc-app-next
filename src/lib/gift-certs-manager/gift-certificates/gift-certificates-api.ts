@@ -61,7 +61,9 @@ async function resolveHasNextPage(
 
 // Domain-level adapter: query already matches the request shape field for
 // field, so the only translation needed is lowercasing direction to match
-// the wire's asc/desc.
+// the wire's asc/desc. Caching lives in the calling *View component (see
+// GiftCertificateListView/CustomerView), not here, so the whole rendered
+// view is cached together rather than just this fetch.
 export async function fetchGiftCertificates(
   query: GiftCertificatesQuery,
   apiCredentials: StoreCredentials,
@@ -73,6 +75,8 @@ export async function fetchGiftCertificates(
   return { items: items.map(parseGiftCertificate), hasNextPage };
 }
 
+// See fetchGiftCertificates — caching lives in the calling *View component
+// (GiftCertificateView), not here.
 export async function fetchGiftCertificate(
   id: number | string,
   apiCredentials: StoreCredentials,

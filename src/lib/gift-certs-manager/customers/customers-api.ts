@@ -30,7 +30,8 @@ function parseCustomer(record: CustomerWireRecord): Customer {
 // other feature that only knows an email address) use this to find out
 // whether that email belongs to a registered customer, and if so, their
 // account details — this data intentionally does not come back from the
-// gift certificates endpoint itself.
+// gift certificates endpoint itself. Caching lives in the calling *View
+// component, not here, so the whole rendered view is cached together.
 export async function fetchCustomersByEmail(
   emails: string[],
   apiCredentials: StoreCredentials,
@@ -61,6 +62,7 @@ const SORT_FIELD: Record<CustomersQuery["sortColumn"], string> = {
 
 // BigCommerce v3 customers endpoint uses suffix-operator filters (:like/:in)
 // and a single sort value with the direction embedded (e.g. "last_name:asc").
+// See fetchCustomersByEmail — caching lives in the calling *View component.
 export async function fetchCustomers(
   query: CustomersQuery,
   apiCredentials: StoreCredentials,
@@ -85,7 +87,8 @@ export async function fetchCustomers(
 
 // BigCommerce's v3 customers endpoint has no single-resource path (unlike
 // gift certificates/channels) — GET /v3/customers?id:in={id} is the
-// documented way to fetch one customer by id.
+// documented way to fetch one customer by id. See fetchCustomersByEmail —
+// caching lives in the calling *View component (CustomerView).
 export async function fetchCustomer(id: number | string, apiCredentials: StoreCredentials): Promise<Customer> {
   const apiClient = getApiClient(apiCredentials);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {

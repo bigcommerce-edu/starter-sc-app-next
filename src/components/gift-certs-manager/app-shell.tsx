@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { Box, Flex, FlexItem } from "@/components/ui/big-design";
 import { DataModeBanner } from "@/components/layout/data-mode-banner";
 import { DeveloperInfoPanel } from "@/components/layout/developer-info-panel";
@@ -6,21 +5,31 @@ import { MainNav } from "@/components/gift-certs-manager/main-nav";
 
 const SIDEBAR_WIDTH = "280px";
 
-export function AppShell({ children, storeHash }: { children: React.ReactNode; storeHash: string | undefined }) {
+// Unpacks storeHash itself (same pattern as every *Page component) rather
+// than having each layout that renders this do it and pass the result down —
+// so [storeHash]/layout.tsx and (root)/layout.tsx can just forward params
+// straight through. The layout wraps this whole component in a Suspense
+// boundary, since awaiting params here is itself a dynamic read under
+// cacheComponents — but by the time that await resolves and MainNav renders,
+// storeHash is already a plain resolved value, not a pending read, so
+// MainNav doesn't need (and can't benefit from) a Suspense boundary of its
+// own.
+export async function AppShell({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedParams = await params;
+  const urlStoreHash = resolvedParams.storeHash;
+  const urlStoreHashString = Array.isArray(urlStoreHash) ? urlStoreHash[0] : urlStoreHash;
+
   return (
     <Box>
       <DataModeBanner />
       <Box paddingHorizontal="large" paddingTop="large">
-        {/* MainNav is a client component, and the layouts that render AppShell
-            pass it a storeHash derived from a dynamic route param (or from
-            [storeHash]/layout.tsx awaiting `params`) — under cacheComponents,
-            that makes it "uncached data" that must be isolated in its own
-            Suspense boundary so it doesn't block the whole shell from
-            rendering while the real per-page data fetch (already inside its
-            own Suspense, see each *Page's route file) is in flight. */}
-        <Suspense fallback={null}>
-          <MainNav storeHash={storeHash} />
-        </Suspense>
+        <MainNav storeHash={urlStoreHashString} />
       </Box>
       <Flex padding="large" flexGap="1rem" alignItems="flex-start">
         <FlexItem flexGrow={1} flexShrink={1}>

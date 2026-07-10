@@ -14,6 +14,24 @@ function buildUrl(storeHash: string, path: string, params: ApiRequestOptions["pa
   return url.toString();
 }
 
+// This is also the app's cache-observability signal: a fetch only happens on
+// a `use cache` miss (or a mutation, which never goes through `use cache` at
+// all), so a logged request means the calling *View's cache entry was
+// missing/expired, and no log on a repeat visit means it was served from
+// cache. Off by default since it's a developer diagnostic, not something a
+// deployed app should log unconditionally.
+function isApiRequestLoggingEnabled(): boolean {
+  return process.env.LOG_API_REQUESTS === "true";
+}
+
+function logApiRequest(method: string, url: string, status: number, durationMs: number): void {
+  if (!isApiRequestLoggingEnabled()) {
+    return;
+  }
+
+  console.log(`[BigCommerce API] ${method} ${url} -> ${status} (${durationMs.toFixed(0)}ms)`);
+}
+
 // Talks to the real BigCommerce Admin REST API. Used by both STATIC and
 // (eventually) MULTITENANT modes — they differ only in how storeHash/apiToken
 // are resolved (see get-api-client.ts), not in how requests are made, so
@@ -33,13 +51,17 @@ export class RestApiClient implements ApiClient {
 
   async get<TResponse>(path: string, options: ApiRequestOptions = {}): Promise<ApiResponse<TResponse>> {
     const { storeHash, apiToken } = this.getCredentialsOrThrow();
+    const url = buildUrl(storeHash, path, options.params);
 
-    const response = await fetch(buildUrl(storeHash, path, options.params), {
+    const startedAt = performance.now();
+    const response = await fetch(url, {
       headers: {
         "X-Auth-Token": apiToken,
         Accept: "application/json",
       },
     });
+
+    logApiRequest("GET", url, response.status, performance.now() - startedAt);
 
     if (!response.ok) {
       throw new Error(`BigCommerce API request to "${path}" failed with status ${response.status}.`);
@@ -61,8 +83,10 @@ export class RestApiClient implements ApiClient {
     options: ApiMutationOptions = {},
   ): Promise<ApiResponse<TResponse>> {
     const { storeHash, apiToken } = this.getCredentialsOrThrow();
+    const url = buildUrl(storeHash, path, undefined);
 
-    const response = await fetch(buildUrl(storeHash, path, undefined), {
+    const startedAt = performance.now();
+    const response = await fetch(url, {
       method,
       headers: {
         "X-Auth-Token": apiToken,
@@ -71,6 +95,8 @@ export class RestApiClient implements ApiClient {
       },
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     });
+
+    logApiRequest(method, url, response.status, performance.now() - startedAt);
 
     if (!response.ok) {
       throw new Error(`BigCommerce API request to "${path}" failed with status ${response.status}.`);

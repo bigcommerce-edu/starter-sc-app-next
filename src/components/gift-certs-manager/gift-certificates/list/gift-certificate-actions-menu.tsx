@@ -63,7 +63,7 @@ export function GiftCertificateActionsMenu({
           break;
         case "transfer":
           await runServerAction(() =>
-            transferGiftCertificateBalanceToStoreCredit(certificate.id, certificate.balance),
+            transferGiftCertificateBalanceToStoreCredit(certificate.id, certificate.balance, urlStoreHash),
           );
           break;
       }
@@ -92,7 +92,7 @@ export function GiftCertificateActionsMenu({
     },
     {
       content: "Transfer to Credit",
-      disabled: !certificate.recipientAccount || certificate.balance <= 0,
+      disabled: !certificate.recipientAccount || certificate.balance <= 0 || certificate.status !== "active",
       onItemClick: () => setPendingAction("transfer"),
     },
   ];

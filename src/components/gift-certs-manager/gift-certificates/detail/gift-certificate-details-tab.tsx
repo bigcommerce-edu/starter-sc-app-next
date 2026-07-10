@@ -69,6 +69,8 @@ export function GiftCertificateDetailsTab({
           name={giftCertificate.to_name}
           email={giftCertificate.to_email}
           account={giftCertificate.recipientAccount}
+          isRecipient
+          urlStoreHash={urlStoreHash}
         />
       </FlexItem>
 

@@ -4,10 +4,13 @@ import { revalidatePath } from "next/cache";
 import { getDataMode } from "@/lib/api-client/get-api-client";
 import { getStoreCredentials } from "@/lib/api-client/store-credentials";
 import { ActionResult } from "@/lib/actions/action-result";
+import { addToCustomerStoreCredit, fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";
 import {
   addToGiftCertificateBalance as addToGiftCertificateBalanceRequest,
+  debitGiftCertificateForTransfer,
   fetchGiftCertificate,
   refillGiftCertificateBalance as refillGiftCertificateBalanceRequest,
+  restoreGiftCertificateBalance,
   updateGiftCertificateStatus as updateGiftCertificateStatusRequest,
 } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
@@ -104,12 +107,75 @@ export async function addToGiftCertificateBalance(
   return { success: true, message: "Amount added to gift certificate balance." };
 }
 
+// Transferring requires the certificate to be active (not pending/disabled/
+// already expired — there's no balance left on an expired certificate to
+// transfer), the amount to be no more than what's actually on the
+// certificate, and a registered customer account to receive the credit
+// (looked up by recipient email — never trusted from the client). All three
+// are validation failures rather than API errors.
+//
+// This is two independent API calls with no shared transaction: the
+// certificate is debited first, then the customer is credited. Ordering it
+// this way means a failure on the *second* call leaves the certificate
+// already debited with nothing credited yet — worse for the customer than
+// the reverse order, but it avoids ever creating store credit that isn't
+// backed by an actual debit, which is the more dangerous failure mode (an
+// admin can always manually grant a missed credit; reclaiming an
+// over-granted one is a much harder conversation). If the second call does
+// fail, one compensating call attempts to restore the certificate's prior
+// balance/status; if that also fails, the error message says exactly what
+// state was left so it can be reconciled by hand.
 export async function transferGiftCertificateBalanceToStoreCredit(
   id: number | string,
   amount: number,
+  urlStoreHash: string | undefined,
 ): Promise<ActionResult> {
-  // eslint-disable-next-line no-console
-  console.log(`(noop) transfer ${amount} from gift certificate ${id} to store credit`);
+  const apiCredentials = getStoreCredentials(urlStoreHash);
+  const giftCertificate = await fetchGiftCertificate(id, apiCredentials);
+
+  if (giftCertificate.status !== "active") {
+    return { success: false, message: "Only active gift certificates can be transferred to store credit." };
+  }
+
+  if (amount > giftCertificate.balance) {
+    return { success: false, message: "Transfer amount cannot exceed the current gift certificate balance." };
+  }
+
+  const { items: customers } = await fetchCustomersByEmail([giftCertificate.to_email], apiCredentials);
+  const customer = customers.find((item) => item.email.toLowerCase() === giftCertificate.to_email.toLowerCase());
+
+  if (!customer) {
+    return { success: false, message: "The gift certificate recipient has no registered customer account." };
+  }
+
+  const previousBalance = giftCertificate.balance;
+  const previousStatus = giftCertificate.status;
+
+  await debitGiftCertificateForTransfer(giftCertificate, amount, apiCredentials);
+
+  try {
+    await addToCustomerStoreCredit(customer, amount, apiCredentials);
+  } catch {
+    try {
+      await restoreGiftCertificateBalance(giftCertificate, previousBalance, previousStatus, apiCredentials);
+    } catch {
+      revalidatePath(getAppUrl(urlStoreHash, `/gift-certs/${id}`));
+
+      return {
+        success: false,
+        message: `Critical: gift certificate ${id} was debited ${amount} but the store credit grant to customer ${customer.id} failed, and reverting the certificate also failed. Manual reconciliation is required.`,
+      };
+    }
+
+    revalidatePath(getAppUrl(urlStoreHash, `/gift-certs/${id}`));
+
+    return {
+      success: false,
+      message: "The store credit grant failed, but the gift certificate balance was restored. No changes were made.",
+    };
+  }
+
+  revalidatePath(getAppUrl(urlStoreHash, `/gift-certs/${id}`));
 
   return { success: true, message: "Gift certificate balance transferred to store credit." };
 }

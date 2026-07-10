@@ -95,3 +95,35 @@ export async function fetchCustomer(id: number | string, apiCredentials: StoreCr
 
   return parseCustomer(record);
 }
+
+// BigCommerce's v3 customers PUT is a bulk endpoint (an array of updates,
+// keyed by id) even though this app only ever updates one customer at a
+// time, and only id is actually required per item — unlike gift
+// certificates' v2 PUT, there's no need to resend every other field.
+// store_credit_amounts is append-only from the caller's perspective: BigCommerce
+// collapses the store's existing per-currency entries plus this new one into
+// a single summed amount on the next fetch, so the request just adds one
+// more entry to the array rather than replacing it.
+export async function addToCustomerStoreCredit(
+  customer: Customer,
+  amount: number,
+  apiCredentials: StoreCredentials,
+): Promise<Customer> {
+  const apiClient = getApiClient(apiCredentials);
+  const { data: body } = await apiClient.put<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    body: [
+      {
+        id: customer.id,
+        store_credit_amounts: [...customer.store_credit_amounts, { amount: String(amount) }],
+      },
+    ],
+  });
+
+  const record = body.data[0];
+
+  if (!record) {
+    throw new Error(`No customer found with id "${customer.id}".`);
+  }
+
+  return parseCustomer(record);
+}

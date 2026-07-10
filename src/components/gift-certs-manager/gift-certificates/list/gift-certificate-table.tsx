@@ -57,12 +57,11 @@ function getColumns(
           {
             header: "Recipient",
             hash: "to_name",
-            render: ({ recipientAccount, to_name }: GiftCertificateWithRecipientAccount) =>
-              recipientAccount ? (
-                <Link href={getAppUrl(urlStoreHash, `/customers/${recipientAccount.id}`)}>{to_name}</Link>
-              ) : (
-                to_name
-              ),
+            // Not a link: this is the name typed on the certificate, which
+            // may not match the registered account's actual name — only
+            // the email column (unambiguously the account's identifier)
+            // links to the customer.
+            render: ({ to_name }: GiftCertificateWithRecipientAccount) => to_name,
           },
           {
             header: "Recipient Email",

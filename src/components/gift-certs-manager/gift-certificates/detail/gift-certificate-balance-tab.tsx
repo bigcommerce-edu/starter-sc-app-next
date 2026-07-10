@@ -87,7 +87,7 @@ export function GiftCertificateBalanceTab({
           break;
         case "transfer":
           await runServerAction(() =>
-            transferGiftCertificateBalanceToStoreCredit(giftCertificate.id, Number(transferAmount)),
+            transferGiftCertificateBalanceToStoreCredit(giftCertificate.id, Number(transferAmount), urlStoreHash),
           );
           break;
       }
@@ -119,7 +119,11 @@ export function GiftCertificateBalanceTab({
           Add to Balance
         </Button>
         <Button
-          disabled={!giftCertificate.recipientAccount || giftCertificate.balance <= 0}
+          disabled={
+            !giftCertificate.recipientAccount ||
+            giftCertificate.balance <= 0 ||
+            giftCertificate.status !== "active"
+          }
           onClick={() => toggleAction("transfer")}
           variant={selectedAction === "transfer" ? "primary" : "secondary"}
         >

@@ -156,3 +156,43 @@ export async function addToGiftCertificateBalance(
     apiCredentials,
   );
 }
+
+// Debits the certificate by exactly the amount being moved to store credit,
+// and expires it once nothing is left to redeem — unlike refill/add-to-balance,
+// this never (re-)activates a certificate, since transferring out is the
+// opposite operation. This is only the certificate half of a transfer — see
+// transferGiftCertificateBalanceToStoreCredit in actions.ts, which also
+// grants the corresponding store credit and is the only place that name
+// should mean "the whole transfer."
+export async function debitGiftCertificateForTransfer(
+  giftCertificate: GiftCertificate,
+  amount: number,
+  apiCredentials: StoreCredentials,
+): Promise<GiftCertificate> {
+  const newBalance = giftCertificate.balance - amount;
+
+  return updateGiftCertificate(
+    giftCertificate,
+    { balance: String(newBalance), status: newBalance <= 0 ? "expired" : giftCertificate.status },
+    apiCredentials,
+  );
+}
+
+// Restores a certificate's balance/status exactly as they were before a
+// transfer — used to compensate if the transfer's second step (granting
+// store credit) fails after the certificate has already been debited. Takes
+// the pre-transfer values explicitly (rather than re-deriving them) so the
+// caller doesn't have to trust a second fetch to still reflect the original
+// state.
+export async function restoreGiftCertificateBalance(
+  giftCertificate: GiftCertificate,
+  previousBalance: number,
+  previousStatus: GiftCertificateStatus,
+  apiCredentials: StoreCredentials,
+): Promise<GiftCertificate> {
+  return updateGiftCertificate(
+    giftCertificate,
+    { balance: String(previousBalance), status: previousStatus },
+    apiCredentials,
+  );
+}

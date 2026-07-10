@@ -1,5 +1,5 @@
-import { getApiClient } from "@/lib/api-client/get-api-client";
-import { V3ListResponse } from "@/lib/api-client/types";
+import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { V3ListResponse } from "@/lib/bc-api-client/types";
 import { CUSTOMERS_PATH, Customer, CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
 
 export interface CustomersResult {
@@ -31,7 +31,7 @@ function parseCustomer(record: CustomerWireRecord): Customer {
 // account details — this data intentionally does not come back from the
 // gift certificates endpoint itself. Caching lives in the calling *View
 // component, not here, so the whole rendered view is cached together. Takes
-// storeHash (rather than an ApiClient) and resolves the client itself —
+// storeHash (rather than a BcRestApiClient) and resolves the client itself —
 // this function is never itself a `use cache` boundary, so that's just a
 // normal function call, not a cache-serialization concern.
 export async function fetchCustomersByEmail(
@@ -44,7 +44,7 @@ export async function fetchCustomersByEmail(
     return { items: [] };
   }
 
-  const apiClient = getApiClient(storeHash);
+  const apiClient = getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: {
       "email:in": uniqueEmails.join(","),
@@ -69,7 +69,7 @@ export async function fetchCustomers(
   query: CustomersQuery,
   storeHash: string | undefined,
 ): Promise<CustomersListResult> {
-  const apiClient = getApiClient(storeHash);
+  const apiClient = getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: {
       "name:like": query.name,
@@ -91,7 +91,7 @@ export async function fetchCustomers(
 // documented way to fetch one customer by id. See fetchCustomersByEmail —
 // caching lives in the calling *View component (CustomerView).
 export async function fetchCustomer(id: number | string, storeHash: string | undefined): Promise<Customer> {
-  const apiClient = getApiClient(storeHash);
+  const apiClient = getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: { "id:in": id, include: "storecredit" },
   });
@@ -118,7 +118,7 @@ export async function addToCustomerStoreCredit(
   amount: number,
   storeHash: string | undefined,
 ): Promise<Customer> {
-  const apiClient = getApiClient(storeHash);
+  const apiClient = getRestApiClient(storeHash);
   const { data: body } = await apiClient.put<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     body: [
       {

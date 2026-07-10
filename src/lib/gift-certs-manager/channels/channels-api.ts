@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { getApiClient } from "@/lib/api-client/get-api-client";
-import { V3ListResponse } from "@/lib/api-client/types";
+import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { V3ListResponse } from "@/lib/bc-api-client/types";
 import { CHANNELS_PATH, Channel } from "@/lib/gift-certs-manager/channels/types";
 
 export interface ChannelsResult {
@@ -15,7 +15,7 @@ export interface ChannelsResult {
 // (nested inside whichever *View calls it) with the longer "extended"
 // cacheLife (see next.config.ts), rather than inheriting the shorter
 // "standard" lifetime the calling view uses for its own data. Takes
-// storeHash (a plain, serializable string) rather than an ApiClient
+// storeHash (a plain, serializable string) rather than a BcRestApiClient
 // instance — `use cache` cannot serialize class instances, so the client is
 // constructed here instead of being passed in.
 export async function fetchChannels(storeHash: string | undefined): Promise<ChannelsResult> {
@@ -23,7 +23,7 @@ export async function fetchChannels(storeHash: string | undefined): Promise<Chan
   cacheLife("extended");
   cacheTag("channels:list");
 
-  const apiClient = getApiClient(storeHash);
+  const apiClient = getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<Channel>>(CHANNELS_PATH);
 
   return { items: body.data };

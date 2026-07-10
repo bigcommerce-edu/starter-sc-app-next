@@ -2,8 +2,8 @@ export type DataMode = "MOCK" | "STATIC" | "MULTITENANT";
 
 // What RestApiClient actually needs to make a request: a store to scope the
 // path to, and the token that store was issued at install time. Resolved by
-// getApiClient (see get-api-client.ts) — nothing outside that module should
-// need to construct or pass this around.
+// getRestApiClient (see get-rest-api-client.ts) — nothing outside that
+// module should need to construct or pass this around.
 export interface StoreApiCredentials {
   storeHash: string | undefined;
   apiToken: string | undefined;
@@ -54,10 +54,13 @@ export interface ApiResponse<TResponse> {
 // Modeled on the BigCommerce REST API: every request is a path (e.g.
 // "/v2/gift_certificates") plus optional query params, and returns a raw JSON
 // body plus response headers. Callers are responsible for shaping the body
-// into domain types. post/put/delete are for mutating requests — MockApiClient
-// rejects all three, since there's no mock store to mutate (see
-// mock-client.ts).
-export interface ApiClient {
+// into domain types. post/put/delete are for mutating requests —
+// MockRestApiClient rejects all three, since there's no mock store to
+// mutate (see mock-client.ts). Named for the BigCommerce REST API
+// specifically (rather than just ApiClient) to leave room for a future
+// GraphQL-based BigCommerce client with its own, differently-shaped
+// interface.
+export interface BcRestApiClient {
   get<TResponse>(path: string, options?: ApiRequestOptions): Promise<ApiResponse<TResponse>>;
   post<TResponse>(path: string, options?: ApiMutationOptions): Promise<ApiResponse<TResponse>>;
   put<TResponse>(path: string, options?: ApiMutationOptions): Promise<ApiResponse<TResponse>>;

@@ -1,4 +1,4 @@
-import { ApiClient, ApiMutationOptions, ApiRequestOptions, ApiResponse, StoreApiCredentials } from "@/lib/api-client/types";
+import { ApiMutationOptions, ApiRequestOptions, ApiResponse, BcRestApiClient, StoreApiCredentials } from "@/lib/bc-api-client/types";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
 
@@ -34,9 +34,9 @@ function logApiRequest(method: string, url: string, status: number, durationMs: 
 
 // Talks to the real BigCommerce Admin REST API. Used by both STATIC and
 // (eventually) MULTITENANT modes — they differ only in how storeHash/apiToken
-// are resolved (see get-api-client.ts), not in how requests are made, so
+// are resolved (see get-rest-api-client.ts), not in how requests are made, so
 // this class is agnostic to which mode constructed it.
-export class RestApiClient implements ApiClient {
+export class RestApiClient implements BcRestApiClient {
   constructor(private readonly credentials: StoreApiCredentials) {}
 
   private getCredentialsOrThrow(): { storeHash: string; apiToken: string } {

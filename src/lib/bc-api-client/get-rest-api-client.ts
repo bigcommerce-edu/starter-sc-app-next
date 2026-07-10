@@ -1,7 +1,7 @@
 import { cache } from "react";
-import { MockApiClient } from "@/lib/api-client/mock-client/mock-client";
-import { RestApiClient } from "@/lib/api-client/rest-client/rest-client";
-import { ApiClient, DataMode } from "@/lib/api-client/types";
+import { MockRestApiClient } from "@/lib/bc-api-client/mock-client/mock-client";
+import { RestApiClient } from "@/lib/bc-api-client/rest-client/rest-client";
+import { BcRestApiClient, DataMode } from "@/lib/bc-api-client/types";
 
 const VALID_DATA_MODES: DataMode[] = ["MOCK", "STATIC", "MULTITENANT"];
 
@@ -17,8 +17,8 @@ export function getDataMode(): DataMode {
 // segment happened to contain, or undefined on a root-level dev route):
 // STATIC mode always talks to the one store configured via env vars
 // regardless of that route param, and MULTITENANT resolves per-session.
-// Only called from inside getApiClient (see below) — nothing else needs to
-// know this resolution happens at all.
+// Only called from inside getRestApiClient (see below) — nothing else needs
+// to know this resolution happens at all.
 //
 // Every real MULTITENANT request is scoped to a store, so a missing route
 // param in that mode means a route is misconfigured (e.g. a root-level dev
@@ -64,30 +64,30 @@ function resolveApiToken(storeHash: string | undefined): string | undefined {
 
 // Cached by React's per-request memoization, keyed on the resolved store
 // hash (see resolveStoreHash) rather than the raw route param passed into
-// getApiClient — e.g. in STATIC mode, every call resolves to the same
+// getRestApiClient — e.g. in STATIC mode, every call resolves to the same
 // store regardless of the route param it was given, and should share one
 // RestApiClient instance per request rather than getting a new one per
 // distinct (but ultimately irrelevant) input.
-const getCachedRestApiClient = cache((resolvedStoreHash: string | undefined): ApiClient => {
+const getCachedRestApiClient = cache((resolvedStoreHash: string | undefined): BcRestApiClient => {
   return new RestApiClient({ storeHash: resolvedStoreHash, apiToken: resolveApiToken(resolvedStoreHash) });
 });
 
-// Selects and configures the ApiClient for the given store. Takes storeHash
-// — the [storeHash] route param, or undefined on a root-level dev route —
-// and resolves internally which store to actually target (see
-// resolveStoreHash), since that isn't always the same thing (e.g. STATIC
-// mode always targets its one env-configured store regardless of the route).
-// This function itself makes no dynamic reads beyond that resolution (in
-// MULTITENANT, this will eventually need a cache-safe session lookup), so
-// it's safe to call from inside a `use cache` component or function, as long
-// as only storeHash (a plain, serializable string) crosses that boundary —
-// the returned ApiClient is a class instance and must never be passed as an
-// argument into another `use cache` scope.
-export function getApiClient(storeHash: string | undefined): ApiClient {
+// Selects and configures the BigCommerce REST API client for the given
+// store. Takes storeHash — the [storeHash] route param, or undefined on a
+// root-level dev route — and resolves internally which store to actually
+// target (see resolveStoreHash), since that isn't always the same thing
+// (e.g. STATIC mode always targets its one env-configured store regardless
+// of the route). This function itself makes no dynamic reads beyond that
+// resolution (in MULTITENANT, this will eventually need a cache-safe
+// session lookup), so it's safe to call from inside a `use cache` component
+// or function, as long as only storeHash (a plain, serializable string)
+// crosses that boundary — the returned client is a class instance and must
+// never be passed as an argument into another `use cache` scope.
+export function getRestApiClient(storeHash: string | undefined): BcRestApiClient {
   const mode = getDataMode();
 
   if (mode === "MOCK") {
-    return new MockApiClient();
+    return new MockRestApiClient();
   }
 
   return getCachedRestApiClient(resolveStoreHash(storeHash));

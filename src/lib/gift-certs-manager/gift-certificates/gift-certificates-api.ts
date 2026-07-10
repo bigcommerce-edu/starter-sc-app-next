@@ -1,5 +1,5 @@
-import { getApiClient } from "@/lib/api-client/get-api-client";
-import { ApiClient } from "@/lib/api-client/types";
+import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { BcRestApiClient } from "@/lib/bc-api-client/types";
 import {
   GIFT_CERTIFICATES_PATH,
   GiftCertificate,
@@ -22,7 +22,7 @@ function parseGiftCertificate(record: GiftCertificateWireRecord): GiftCertificat
 }
 
 async function fetchGiftCertificatesPage(
-  apiClient: ApiClient,
+  apiClient: BcRestApiClient,
   query: GiftCertificatesQuery,
 ): Promise<GiftCertificateWireRecord[]> {
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
@@ -35,7 +35,7 @@ async function fetchGiftCertificatesPage(
 
   // BigCommerce's v2 gift certificates endpoint responds 204 No Content
   // (rather than 200 with an empty array) when nothing matches the query —
-  // ApiClient.get returns undefined for a 204, so treat that the same as [].
+  // BcRestApiClient.get returns undefined for a 204, so treat that the same as [].
   return items ?? [];
 }
 
@@ -48,7 +48,7 @@ async function fetchGiftCertificatesPage(
 // TODO: once server-side response caching lands, this peek request becomes
 // effectively free on repeat navigations to the same page.
 async function resolveHasNextPage(
-  apiClient: ApiClient,
+  apiClient: BcRestApiClient,
   query: GiftCertificatesQuery,
   items: GiftCertificateWireRecord[],
 ): Promise<boolean> {
@@ -66,14 +66,14 @@ async function resolveHasNextPage(
 // the wire's asc/desc. Caching lives in the calling *View component (see
 // GiftCertificateListView/CustomerView), not here, so the whole rendered
 // view is cached together rather than just this fetch. Takes storeHash
-// (rather than an ApiClient) and resolves the client itself — this function
+// (rather than a BcRestApiClient) and resolves the client itself — this function
 // is never itself a `use cache` boundary, so that's just a normal function
 // call, not a cache-serialization concern.
 export async function fetchGiftCertificates(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
 ): Promise<GiftCertificatesResult> {
-  const apiClient = getApiClient(storeHash);
+  const apiClient = getRestApiClient(storeHash);
   const items = await fetchGiftCertificatesPage(apiClient, query);
   const hasNextPage = await resolveHasNextPage(apiClient, query, items);
 
@@ -86,7 +86,7 @@ export async function fetchGiftCertificate(
   id: number | string,
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
-  const apiClient = getApiClient(storeHash);
+  const apiClient = getRestApiClient(storeHash);
   const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id));
 
   return parseGiftCertificate(record);
@@ -119,7 +119,7 @@ async function updateGiftCertificate(
   fields: Partial<Omit<GiftCertificateWireRecord, "id">>,
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
-  const apiClient = getApiClient(storeHash);
+  const apiClient = getRestApiClient(storeHash);
   const { data: record } = await apiClient.put<GiftCertificateWireRecord>(getGiftCertificatePath(giftCertificate.id), {
     body: { ...getRequiredFields(giftCertificate), ...fields },
   });

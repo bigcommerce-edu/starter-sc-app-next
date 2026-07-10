@@ -1,7 +1,7 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { getDataMode } from "@/lib/api-client/get-api-client";
+import { getDataMode } from "@/lib/bc-api-client/get-rest-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { addToCustomerStoreCredit, fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";

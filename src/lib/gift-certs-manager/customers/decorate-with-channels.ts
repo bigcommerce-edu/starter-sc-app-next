@@ -11,7 +11,7 @@ function findChannelById(channels: Channel[], id: number): Channel | undefined {
 // looks up what those ids actually refer to. Callers that already have the
 // full channel list on hand (e.g. because they also need it to populate a
 // filter) can pass it in directly to avoid fetching it twice. Takes
-// storeHash (rather than an ApiClient) purely to forward into
+// storeHash (rather than a BcRestApiClient) purely to forward into
 // fetchChannels, which is itself a `use cache` boundary and so can't accept a
 // class instance.
 export async function decorateCustomersWithChannels(

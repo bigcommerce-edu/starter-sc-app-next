@@ -14,7 +14,7 @@ import { getAppUrl } from "@/lib/routing/app-url";
 // GiftCertificateTabs (and everything under it) too. storeHash is the raw
 // [storeHash] route param (or undefined on a root-level dev route) — a
 // plain, serializable string, so it's safe to cross this cache boundary.
-// It's used both for data-access calls (getApiClient resolves which store to
+// It's used both for data-access calls (getRestApiClient resolves which store to
 // actually target internally) and for building URLs further down.
 export async function GiftCertificateView({
   id,

@@ -1,5 +1,5 @@
-import { mockRouteHandlers } from "@/lib/api-client/mock-client/handler-registry";
-import { ApiClient, ApiRequestOptions, ApiResponse } from "@/lib/api-client/types";
+import { mockRouteHandlers } from "@/lib/bc-api-client/mock-client/handler-registry";
+import { ApiRequestOptions, ApiResponse, BcRestApiClient } from "@/lib/bc-api-client/types";
 
 // Simulates real network latency so loading/Suspense states are visible
 // during local development and demos. Absent (or invalid) env vars mean no
@@ -20,11 +20,11 @@ function randomDelayMs(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
-// Routes requests by path, the same way a real API client dispatches to a
-// live endpoint. It knows nothing about any specific feature — handlers are
-// registered externally (see handler-registry.ts) and matched here purely
-// by pattern.
-export class MockApiClient implements ApiClient {
+// Routes requests by path, the same way a real REST API client dispatches to
+// a live endpoint. It knows nothing about any specific feature — handlers
+// are registered externally (see handler-registry.ts) and matched here
+// purely by pattern.
+export class MockRestApiClient implements BcRestApiClient {
   async get<TResponse>(path: string, options: ApiRequestOptions = {}): Promise<ApiResponse<TResponse>> {
     const delayRange = getMockRequestDelayRangeMs();
 
@@ -44,7 +44,7 @@ export class MockApiClient implements ApiClient {
       }
     }
 
-    throw new Error(`MockApiClient has no handler for path "${path}"`);
+    throw new Error(`MockRestApiClient has no handler for path "${path}"`);
   }
 
   async post<TResponse>(): Promise<ApiResponse<TResponse>> {

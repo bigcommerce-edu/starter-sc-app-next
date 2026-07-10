@@ -33,7 +33,10 @@ async function fetchGiftCertificatesPage(
     },
   });
 
-  return items;
+  // BigCommerce's v2 gift certificates endpoint responds 204 No Content
+  // (rather than 200 with an empty array) when nothing matches the query —
+  // ApiClient.get returns undefined for a 204, so treat that the same as [].
+  return items ?? [];
 }
 
 // BigCommerce's v2 gift certificates endpoint reports no total count

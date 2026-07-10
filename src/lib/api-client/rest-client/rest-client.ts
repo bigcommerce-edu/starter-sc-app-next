@@ -45,7 +45,14 @@ export class RestApiClient implements ApiClient {
       throw new Error(`BigCommerce API request to "${path}" failed with status ${response.status}.`);
     }
 
-    return { data: (await response.json()) as TResponse, headers: response.headers };
+    // Some GET endpoints (e.g. v2 gift certificates, when nothing matches the
+    // query) respond 204 No Content rather than 200 with an empty array —
+    // parsing an empty body as JSON would throw, so only attempt it when
+    // there's actually a body. Callers that expect a list should treat a
+    // missing/undefined data as empty, the same way they'd treat [].
+    const data = response.status === 204 ? undefined : ((await response.json()) as TResponse);
+
+    return { data: data as TResponse, headers: response.headers };
   }
 
   private async mutate<TResponse>(

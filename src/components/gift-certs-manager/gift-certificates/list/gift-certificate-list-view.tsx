@@ -30,7 +30,7 @@ export async function GiftCertificateListView({
   searchParams: Record<string, string | string[] | undefined>;
   storeHash: string | undefined;
 }) {
-  "use cache";
+  "use cache: remote";
   cacheLife("standard");
   cacheTag(GIFT_CERTIFICATES_LIST_TAG);
 

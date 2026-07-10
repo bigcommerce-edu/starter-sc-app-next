@@ -44,23 +44,27 @@ export interface CustomerWithChannels extends Customer {
   channels: Channel[];
 }
 
+// BigCommerce's v3 customers endpoint supports sorting by last_name or
+// date_created (also date_modified, which this app doesn't expose) — these
+// are the two sortable columns in the UI (Name, Customer Since).
+export type CustomersSortColumn = "name" | "date_created";
+
 // BigCommerce's v3 customers endpoint supports name:like, email:in, and
-// date_created:min/date_created:max filters, plus sorting — this app only
-// ever sorts by last_name (the sole sortable column exposed in the UI), so
-// there's no separate sort-column field to track. There's no origin-channel
-// filter: BigCommerce's v3 customers endpoint doesn't support filtering by
-// origin_channel_id at all (confirmed against the real API — the "Origin
-// Channel" table column, decorated via decorateCustomersWithChannels, is
-// purely a display concern, unrelated to this query). Field names match the
-// request params fetchCustomers sends directly (with ":min"/":max" replaced
-// by "_min"/"_max", since those aren't valid identifier characters), so
-// there's no separate translation step beyond that between this and the
-// wire request.
+// date_created:min/date_created:max filters, plus sorting. There's no
+// origin-channel filter: BigCommerce's v3 customers endpoint doesn't support
+// filtering by origin_channel_id at all (confirmed against the real API —
+// the "Origin Channel" table column, decorated via
+// decorateCustomersWithChannels, is purely a display concern, unrelated to
+// this query). Field names match the request params fetchCustomers sends
+// directly (with ":min"/":max" replaced by "_min"/"_max", since those aren't
+// valid identifier characters), so there's no separate translation step
+// beyond that between this and the wire request.
 export interface CustomersQuery {
   name: string;
   email: string;
   date_created_min: string;
   date_created_max: string;
+  sortColumn: CustomersSortColumn;
   direction: SortDirection;
   page: number;
   limit: number;

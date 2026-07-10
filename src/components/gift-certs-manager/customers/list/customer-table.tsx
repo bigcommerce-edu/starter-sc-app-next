@@ -7,7 +7,12 @@ import { CustomerActionsMenu } from "@/components/gift-certs-manager/customers/l
 import { CustomerFilters } from "@/components/gift-certs-manager/customers/list/customer-filters";
 import { PendingOverlay } from "@/components/ui/pending-overlay";
 import { buildCustomersSearchParams } from "@/lib/gift-certs-manager/customers/query";
-import { CustomersQuery, CustomerWithChannels, sumStoreCredit } from "@/lib/gift-certs-manager/customers/types";
+import {
+  CustomersQuery,
+  CustomersSortColumn,
+  CustomerWithChannels,
+  sumStoreCredit,
+} from "@/lib/gift-certs-manager/customers/types";
 import { getAppUrl } from "@/lib/routing/app-url";
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
@@ -47,6 +52,7 @@ function getColumns(urlStoreHash: string | undefined): Array<TableColumn<Custome
       header: "Customer Since",
       hash: "date_created",
       render: ({ date_created }: CustomerWithChannels) => dateFormatter.format(new Date(date_created)),
+      isSortable: true,
     },
     {
       header: "Actions",
@@ -119,9 +125,10 @@ export function CustomerTable({ customers, totalItems, query, urlStoreHash }: Cu
           keyField="id"
           itemName="customers"
           sortable={{
-            columnHash: "name",
+            columnHash: query.sortColumn,
             direction: query.direction,
-            onSort: (_columnHash, direction) => navigate({ ...query, direction }),
+            onSort: (columnHash, direction) =>
+              navigate({ ...query, sortColumn: columnHash as CustomersSortColumn, direction }),
           }}
           pagination={{
             currentPage: query.page,

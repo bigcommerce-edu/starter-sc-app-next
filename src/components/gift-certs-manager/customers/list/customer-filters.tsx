@@ -7,7 +7,7 @@ import { DEFAULT_QUERY } from "@/lib/gift-certs-manager/customers/query";
 
 // Fields that make up the advanced filters, i.e. everything in CustomersQuery
 // except sorting/paging, which the table controls directly.
-type FilterFields = Omit<CustomersQuery, "direction" | "page" | "limit">;
+type FilterFields = Omit<CustomersQuery, "sortColumn" | "direction" | "page" | "limit">;
 
 const DEFAULT_FILTERS: FilterFields = {
   name: DEFAULT_QUERY.name,
@@ -116,7 +116,11 @@ export function CustomerFilters({ query, onChange }: CustomerFiltersProps) {
           </FormGroup>
 
           <FormGroup>
-            <Input label="Email" onChange={(event) => setDraftField("email", event.target.value)} value={draft.email} />
+            <Input
+              label="Email (exact match)"
+              onChange={(event) => setDraftField("email", event.target.value)}
+              value={draft.email}
+            />
           </FormGroup>
 
           <FormGroup>

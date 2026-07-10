@@ -52,10 +52,15 @@ export async function fetchCustomersByEmail(
   return { items: body.data.map(parseCustomer) };
 }
 
+// BigCommerce's v3 customers endpoint sorts by last_name, not "name" — this
+// is the one place that translates the UI's Name column to the real field.
+const SORT_FIELD: Record<CustomersQuery["sortColumn"], string> = {
+  name: "last_name",
+  date_created: "date_created",
+};
+
 // BigCommerce v3 customers endpoint uses suffix-operator filters (:like/:in)
-// and a single sort value with the direction embedded (e.g. "last_name:asc")
-// — this app only ever sorts by last_name, the sole sortable column exposed
-// in the UI.
+// and a single sort value with the direction embedded (e.g. "last_name:asc").
 export async function fetchCustomers(
   query: CustomersQuery,
   apiCredentials: StoreCredentials,
@@ -68,7 +73,7 @@ export async function fetchCustomers(
       "email:in": query.email,
       "date_created:min": query.date_created_min,
       "date_created:max": query.date_created_max,
-      sort: `last_name:${query.direction.toLowerCase()}`,
+      sort: `${SORT_FIELD[query.sortColumn]}:${query.direction.toLowerCase()}`,
       page: query.page,
       limit: query.limit,
       include: "storecredit",

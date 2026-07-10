@@ -1,10 +1,11 @@
-import { CustomersQuery, SortDirection } from "@/lib/gift-certs-manager/customers/types";
+import { CustomersQuery, CustomersSortColumn, SortDirection } from "@/lib/gift-certs-manager/customers/types";
 
 export const DEFAULT_QUERY: CustomersQuery = {
   name: "",
   email: "",
   date_created_min: "",
   date_created_max: "",
+  sortColumn: "name",
   direction: "ASC",
   page: 1,
   limit: 10,
@@ -25,9 +26,9 @@ export function parseCustomersQuery(searchParams: RawSearchParams): CustomersQue
   const date_created_min = getParam(searchParams, "date_created_min") ?? DEFAULT_QUERY.date_created_min;
   const date_created_max = getParam(searchParams, "date_created_max") ?? DEFAULT_QUERY.date_created_max;
 
-  // name is the only sortable column BigCommerce supports for customers
-  // (mapped to last_name server-side — see customers-api.ts), so the only
-  // choice left to the user is direction.
+  const sortColumnParam = getParam(searchParams, "sortColumn");
+  const sortColumn: CustomersSortColumn = sortColumnParam === "date_created" ? "date_created" : DEFAULT_QUERY.sortColumn;
+
   const directionParam = getParam(searchParams, "direction");
   const direction: SortDirection = directionParam === "DESC" ? "DESC" : DEFAULT_QUERY.direction;
 
@@ -42,6 +43,7 @@ export function parseCustomersQuery(searchParams: RawSearchParams): CustomersQue
     email,
     date_created_min,
     date_created_max,
+    sortColumn,
     direction,
     page,
     limit,
@@ -65,6 +67,10 @@ export function buildCustomersSearchParams(query: CustomersQuery): URLSearchPara
 
   if (query.date_created_max) {
     params.set("date_created_max", query.date_created_max);
+  }
+
+  if (query.sortColumn !== DEFAULT_QUERY.sortColumn) {
+    params.set("sortColumn", query.sortColumn);
   }
 
   if (query.direction !== DEFAULT_QUERY.direction) {

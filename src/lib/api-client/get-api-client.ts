@@ -1,7 +1,6 @@
 import { cache } from "react";
 import { MockApiClient } from "@/lib/api-client/mock-client/mock-client";
 import { RestApiClient } from "@/lib/api-client/rest-client/rest-client";
-import { StoreCredentials } from "@/lib/api-client/store-credentials";
 import { ApiClient, DataMode } from "@/lib/api-client/types";
 
 const VALID_DATA_MODES: DataMode[] = ["MOCK", "STATIC", "MULTITENANT"];
@@ -12,27 +11,84 @@ export function getDataMode(): DataMode {
   return VALID_DATA_MODES.includes(configuredMode as DataMode) ? (configuredMode as DataMode) : "MOCK";
 }
 
-// Cached by React's per-request memoization, keyed on the primitive
-// storeHash/apiToken values (not the StoreCredentials object, whose identity
-// changes on every getStoreCredentials call) — so within one request, calls
-// that resolve to the same store/token reuse the same RestApiClient
-// instance, and calls with different credentials (e.g. MULTITENANT fan-out
-// across stores, if that's ever needed) each get their own.
-const getCachedRestApiClient = cache((storeHash: string | undefined, apiToken: string | undefined): ApiClient => {
-  return new RestApiClient({ storeHash, apiToken });
+// Resolves which store API calls should actually target, which is NOT
+// always storeHash (the route param — every *Page/*View/data-access function
+// calls it storeHash, but it's really just whatever the [storeHash] URL
+// segment happened to contain, or undefined on a root-level dev route):
+// STATIC mode always talks to the one store configured via env vars
+// regardless of that route param, and MULTITENANT resolves per-session.
+// Only called from inside getApiClient (see below) — nothing else needs to
+// know this resolution happens at all.
+//
+// Every real MULTITENANT request is scoped to a store, so a missing route
+// param in that mode means a route is misconfigured (e.g. a root-level dev
+// alias got exposed) rather than something callers should handle
+// gracefully — this is the first (and only) place that matters, so it
+// throws here rather than requiring every *Page to separately assert it.
+function resolveStoreHash(storeHash: string | undefined): string | undefined {
+  switch (getDataMode()) {
+    case "MOCK":
+      return undefined;
+    case "STATIC":
+      return process.env.STATIC_STORE_HASH;
+    case "MULTITENANT":
+      if (!storeHash) {
+        throw new Error("A store hash is required when DATA_MODE is MULTITENANT.");
+      }
+
+      // TODO: once session lookup exists, this may resolve to a different
+      // value than the route param (e.g. validated against the session
+      // rather than trusted as-is) — for now it's just passed through.
+      return storeHash;
+  }
+}
+
+// A BigCommerce API token is generated once for a store at install time and
+// stored server-side — it is never per-user. Resolves the token for an
+// already-resolved storeHash (see resolveStoreHash) — STATIC mode reads it
+// from env vars; MULTITENANT looks it up per-store. Not implemented yet, so
+// this returns no token for now; returning it (rather than throwing) lets
+// RestApiClient be the single place that decides a missing token is an
+// error, regardless of which mode caused it.
+function resolveApiToken(storeHash: string | undefined): string | undefined {
+  if (getDataMode() === "STATIC") {
+    return process.env.STATIC_STORE_TOKEN;
+  }
+
+  // TODO: look up this store's token (by storeHash) from wherever it was
+  // stored when the app was installed.
+  void storeHash;
+
+  return undefined;
+}
+
+// Cached by React's per-request memoization, keyed on the resolved store
+// hash (see resolveStoreHash) rather than the raw route param passed into
+// getApiClient — e.g. in STATIC mode, every call resolves to the same
+// store regardless of the route param it was given, and should share one
+// RestApiClient instance per request rather than getting a new one per
+// distinct (but ultimately irrelevant) input.
+const getCachedRestApiClient = cache((resolvedStoreHash: string | undefined): ApiClient => {
+  return new RestApiClient({ storeHash: resolvedStoreHash, apiToken: resolveApiToken(resolvedStoreHash) });
 });
 
-// Selects the ApiClient implementation for the given credentials. Callers
-// (Page components, or anything else already doing a dynamic read) are
-// responsible for resolving those credentials via getStoreCredentials first —
-// this function itself makes no dynamic reads, so it's safe to call from a
-// component that might run under the Next.js cache pattern.
-export function getApiClient(credentials: StoreCredentials): ApiClient {
+// Selects and configures the ApiClient for the given store. Takes storeHash
+// — the [storeHash] route param, or undefined on a root-level dev route —
+// and resolves internally which store to actually target (see
+// resolveStoreHash), since that isn't always the same thing (e.g. STATIC
+// mode always targets its one env-configured store regardless of the route).
+// This function itself makes no dynamic reads beyond that resolution (in
+// MULTITENANT, this will eventually need a cache-safe session lookup), so
+// it's safe to call from inside a `use cache` component or function, as long
+// as only storeHash (a plain, serializable string) crosses that boundary —
+// the returned ApiClient is a class instance and must never be passed as an
+// argument into another `use cache` scope.
+export function getApiClient(storeHash: string | undefined): ApiClient {
   const mode = getDataMode();
 
   if (mode === "MOCK") {
     return new MockApiClient();
   }
 
-  return getCachedRestApiClient(credentials.storeHash, credentials.apiToken);
+  return getCachedRestApiClient(resolveStoreHash(storeHash));
 }

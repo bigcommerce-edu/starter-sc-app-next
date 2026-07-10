@@ -2,7 +2,6 @@
 
 import { updateTag } from "next/cache";
 import { getDataMode } from "@/lib/api-client/get-api-client";
-import { getStoreCredentials } from "@/lib/api-client/store-credentials";
 import { ActionResult } from "@/lib/actions/action-result";
 import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { addToCustomerStoreCredit, fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";
@@ -20,16 +19,14 @@ import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificate
 export async function updateGiftCertificateStatus(
   id: number | string,
   status: GiftCertificateStatus,
-  urlStoreHash: string | undefined,
+  storeHash: string | undefined,
 ): Promise<ActionResult> {
-  const apiCredentials = getStoreCredentials(urlStoreHash);
-
   // The caller only supplies id/status — every other field used to build the
   // update request (and any future validation against the certificate's real
   // state) comes from this fresh fetch, never from client-supplied data.
-  const giftCertificate = await fetchGiftCertificate(id, apiCredentials);
+  const giftCertificate = await fetchGiftCertificate(id, storeHash);
 
-  await updateGiftCertificateStatusRequest(giftCertificate, status, apiCredentials);
+  await updateGiftCertificateStatusRequest(giftCertificate, status, storeHash);
 
   updateTag(giftCertificateTag(id));
 
@@ -61,10 +58,9 @@ export async function resendGiftCertificateEmail(id: number | string): Promise<A
 export async function refillGiftCertificateBalance(
   id: number | string,
   newBalance: number,
-  urlStoreHash: string | undefined,
+  storeHash: string | undefined,
 ): Promise<ActionResult> {
-  const apiCredentials = getStoreCredentials(urlStoreHash);
-  const giftCertificate = await fetchGiftCertificate(id, apiCredentials);
+  const giftCertificate = await fetchGiftCertificate(id, storeHash);
 
   if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
     return { success: false, message: "Only active or expired gift certificates can be refilled." };
@@ -74,7 +70,7 @@ export async function refillGiftCertificateBalance(
     return { success: false, message: "Refill balance cannot exceed the original gift certificate amount." };
   }
 
-  await refillGiftCertificateBalanceRequest(giftCertificate, newBalance, apiCredentials);
+  await refillGiftCertificateBalanceRequest(giftCertificate, newBalance, storeHash);
 
   updateTag(giftCertificateTag(id));
 
@@ -89,16 +85,15 @@ export async function refillGiftCertificateBalance(
 export async function addToGiftCertificateBalance(
   id: number | string,
   amount: number,
-  urlStoreHash: string | undefined,
+  storeHash: string | undefined,
 ): Promise<ActionResult> {
-  const apiCredentials = getStoreCredentials(urlStoreHash);
-  const giftCertificate = await fetchGiftCertificate(id, apiCredentials);
+  const giftCertificate = await fetchGiftCertificate(id, storeHash);
 
   if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
     return { success: false, message: "Only active or expired gift certificates can have balance added." };
   }
 
-  await addToGiftCertificateBalanceRequest(giftCertificate, amount, apiCredentials);
+  await addToGiftCertificateBalanceRequest(giftCertificate, amount, storeHash);
 
   updateTag(giftCertificateTag(id));
 
@@ -126,10 +121,9 @@ export async function addToGiftCertificateBalance(
 export async function transferGiftCertificateBalanceToStoreCredit(
   id: number | string,
   amount: number,
-  urlStoreHash: string | undefined,
+  storeHash: string | undefined,
 ): Promise<ActionResult> {
-  const apiCredentials = getStoreCredentials(urlStoreHash);
-  const giftCertificate = await fetchGiftCertificate(id, apiCredentials);
+  const giftCertificate = await fetchGiftCertificate(id, storeHash);
 
   if (giftCertificate.status !== "active") {
     return { success: false, message: "Only active gift certificates can be transferred to store credit." };
@@ -139,7 +133,7 @@ export async function transferGiftCertificateBalanceToStoreCredit(
     return { success: false, message: "Transfer amount cannot exceed the current gift certificate balance." };
   }
 
-  const { items: customers } = await fetchCustomersByEmail([giftCertificate.to_email], apiCredentials);
+  const { items: customers } = await fetchCustomersByEmail([giftCertificate.to_email], storeHash);
   const customer = customers.find((item) => item.email.toLowerCase() === giftCertificate.to_email.toLowerCase());
 
   if (!customer) {
@@ -149,13 +143,13 @@ export async function transferGiftCertificateBalanceToStoreCredit(
   const previousBalance = giftCertificate.balance;
   const previousStatus = giftCertificate.status;
 
-  await debitGiftCertificateForTransfer(giftCertificate, amount, apiCredentials);
+  await debitGiftCertificateForTransfer(giftCertificate, amount, storeHash);
 
   try {
-    await addToCustomerStoreCredit(customer, amount, apiCredentials);
+    await addToCustomerStoreCredit(customer, amount, storeHash);
   } catch {
     try {
-      await restoreGiftCertificateBalance(giftCertificate, previousBalance, previousStatus, apiCredentials);
+      await restoreGiftCertificateBalance(giftCertificate, previousBalance, previousStatus, storeHash);
     } catch {
       // Only the certificate was actually mutated (the debit) — the customer
       // credit never succeeded, so there's no customer tag to invalidate here.

@@ -1,5 +1,4 @@
 import { getApiClient } from "@/lib/api-client/get-api-client";
-import { StoreCredentials } from "@/lib/api-client/store-credentials";
 import { V3ListResponse } from "@/lib/api-client/types";
 import { CUSTOMERS_PATH, Customer, CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
 
@@ -31,10 +30,13 @@ function parseCustomer(record: CustomerWireRecord): Customer {
 // whether that email belongs to a registered customer, and if so, their
 // account details — this data intentionally does not come back from the
 // gift certificates endpoint itself. Caching lives in the calling *View
-// component, not here, so the whole rendered view is cached together.
+// component, not here, so the whole rendered view is cached together. Takes
+// storeHash (rather than an ApiClient) and resolves the client itself —
+// this function is never itself a `use cache` boundary, so that's just a
+// normal function call, not a cache-serialization concern.
 export async function fetchCustomersByEmail(
   emails: string[],
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<CustomersResult> {
   const uniqueEmails = [...new Set(emails.filter((email) => email))];
 
@@ -42,7 +44,7 @@ export async function fetchCustomersByEmail(
     return { items: [] };
   }
 
-  const apiClient = getApiClient(apiCredentials);
+  const apiClient = getApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: {
       "email:in": uniqueEmails.join(","),
@@ -65,10 +67,9 @@ const SORT_FIELD: Record<CustomersQuery["sortColumn"], string> = {
 // See fetchCustomersByEmail — caching lives in the calling *View component.
 export async function fetchCustomers(
   query: CustomersQuery,
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<CustomersListResult> {
-  const apiClient = getApiClient(apiCredentials);
-
+  const apiClient = getApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: {
       "name:like": query.name,
@@ -89,8 +90,8 @@ export async function fetchCustomers(
 // gift certificates/channels) — GET /v3/customers?id:in={id} is the
 // documented way to fetch one customer by id. See fetchCustomersByEmail —
 // caching lives in the calling *View component (CustomerView).
-export async function fetchCustomer(id: number | string, apiCredentials: StoreCredentials): Promise<Customer> {
-  const apiClient = getApiClient(apiCredentials);
+export async function fetchCustomer(id: number | string, storeHash: string | undefined): Promise<Customer> {
+  const apiClient = getApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: { "id:in": id, include: "storecredit" },
   });
@@ -115,9 +116,9 @@ export async function fetchCustomer(id: number | string, apiCredentials: StoreCr
 export async function addToCustomerStoreCredit(
   customer: Customer,
   amount: number,
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<Customer> {
-  const apiClient = getApiClient(apiCredentials);
+  const apiClient = getApiClient(storeHash);
   const { data: body } = await apiClient.put<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     body: [
       {

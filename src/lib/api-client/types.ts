@@ -1,5 +1,14 @@
 export type DataMode = "MOCK" | "STATIC" | "MULTITENANT";
 
+// What RestApiClient actually needs to make a request: a store to scope the
+// path to, and the token that store was issued at install time. Resolved by
+// getApiClient (see get-api-client.ts) — nothing outside that module should
+// need to construct or pass this around.
+export interface StoreApiCredentials {
+  storeHash: string | undefined;
+  apiToken: string | undefined;
+}
+
 export type ApiRequestParams = Record<string, string | number | boolean | undefined>;
 
 // The standard BigCommerce v3 list-endpoint envelope: a page of records plus

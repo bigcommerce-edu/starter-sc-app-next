@@ -1,4 +1,3 @@
-import { StoreCredentials } from "@/lib/api-client/store-credentials";
 import { fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";
 import { Customer } from "@/lib/gift-certs-manager/customers/types";
 import { GiftCertificate, GiftCertificateWithAccounts, GiftCertificateWithRecipientAccount } from "@/lib/gift-certs-manager/gift-certificates/types";
@@ -11,10 +10,10 @@ function findAccountByEmail(customers: Customer[], email: string): Customer | un
 // looks up (and only pays the request cost for) recipient emails.
 export async function decorateGiftCertificatesWithRecipientAccounts(
   giftCertificates: GiftCertificate[],
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<GiftCertificateWithRecipientAccount[]> {
   const emails = giftCertificates.map((certificate) => certificate.to_email);
-  const { items: customers } = await fetchCustomersByEmail(emails, apiCredentials);
+  const { items: customers } = await fetchCustomersByEmail(emails, storeHash);
 
   return giftCertificates.map((certificate) => ({
     ...certificate,
@@ -26,11 +25,11 @@ export async function decorateGiftCertificatesWithRecipientAccounts(
 // looks up both emails in a single batched request.
 export async function decorateGiftCertificateWithAccounts(
   giftCertificate: GiftCertificate,
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<GiftCertificateWithAccounts> {
   const { items: customers } = await fetchCustomersByEmail(
     [giftCertificate.from_email, giftCertificate.to_email],
-    apiCredentials,
+    storeHash,
   );
 
   return {

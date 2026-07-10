@@ -1,6 +1,5 @@
-import { ApiClient } from "@/lib/api-client/types";
 import { getApiClient } from "@/lib/api-client/get-api-client";
-import { StoreCredentials } from "@/lib/api-client/store-credentials";
+import { ApiClient } from "@/lib/api-client/types";
 import {
   GIFT_CERTIFICATES_PATH,
   GiftCertificate,
@@ -63,12 +62,15 @@ async function resolveHasNextPage(
 // field, so the only translation needed is lowercasing direction to match
 // the wire's asc/desc. Caching lives in the calling *View component (see
 // GiftCertificateListView/CustomerView), not here, so the whole rendered
-// view is cached together rather than just this fetch.
+// view is cached together rather than just this fetch. Takes storeHash
+// (rather than an ApiClient) and resolves the client itself — this function
+// is never itself a `use cache` boundary, so that's just a normal function
+// call, not a cache-serialization concern.
 export async function fetchGiftCertificates(
   query: GiftCertificatesQuery,
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<GiftCertificatesResult> {
-  const apiClient = getApiClient(apiCredentials);
+  const apiClient = getApiClient(storeHash);
   const items = await fetchGiftCertificatesPage(apiClient, query);
   const hasNextPage = await resolveHasNextPage(apiClient, query, items);
 
@@ -79,9 +81,9 @@ export async function fetchGiftCertificates(
 // (GiftCertificateView), not here.
 export async function fetchGiftCertificate(
   id: number | string,
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<GiftCertificate> {
-  const apiClient = getApiClient(apiCredentials);
+  const apiClient = getApiClient(storeHash);
   const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id));
 
   return parseGiftCertificate(record);
@@ -112,9 +114,9 @@ function getRequiredFields(giftCertificate: GiftCertificate): Pick<
 async function updateGiftCertificate(
   giftCertificate: GiftCertificate,
   fields: Partial<Omit<GiftCertificateWireRecord, "id">>,
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<GiftCertificate> {
-  const apiClient = getApiClient(apiCredentials);
+  const apiClient = getApiClient(storeHash);
   const { data: record } = await apiClient.put<GiftCertificateWireRecord>(getGiftCertificatePath(giftCertificate.id), {
     body: { ...getRequiredFields(giftCertificate), ...fields },
   });
@@ -125,9 +127,9 @@ async function updateGiftCertificate(
 export async function updateGiftCertificateStatus(
   giftCertificate: GiftCertificate,
   status: GiftCertificateStatus,
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<GiftCertificate> {
-  return updateGiftCertificate(giftCertificate, { status }, apiCredentials);
+  return updateGiftCertificate(giftCertificate, { status }, storeHash);
 }
 
 // Refilling always (re-)activates the certificate — the caller (the action
@@ -136,13 +138,9 @@ export async function updateGiftCertificateStatus(
 export async function refillGiftCertificateBalance(
   giftCertificate: GiftCertificate,
   newBalance: number,
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<GiftCertificate> {
-  return updateGiftCertificate(
-    giftCertificate,
-    { balance: String(newBalance), status: "active" },
-    apiCredentials,
-  );
+  return updateGiftCertificate(giftCertificate, { balance: String(newBalance), status: "active" }, storeHash);
 }
 
 // Adding to balance always (re-)activates the certificate, same as refilling
@@ -152,12 +150,12 @@ export async function refillGiftCertificateBalance(
 export async function addToGiftCertificateBalance(
   giftCertificate: GiftCertificate,
   amount: number,
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<GiftCertificate> {
   return updateGiftCertificate(
     giftCertificate,
     { balance: String(giftCertificate.balance + amount), status: "active" },
-    apiCredentials,
+    storeHash,
   );
 }
 
@@ -171,14 +169,14 @@ export async function addToGiftCertificateBalance(
 export async function debitGiftCertificateForTransfer(
   giftCertificate: GiftCertificate,
   amount: number,
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<GiftCertificate> {
   const newBalance = giftCertificate.balance - amount;
 
   return updateGiftCertificate(
     giftCertificate,
     { balance: String(newBalance), status: newBalance <= 0 ? "expired" : giftCertificate.status },
-    apiCredentials,
+    storeHash,
   );
 }
 
@@ -192,11 +190,11 @@ export async function restoreGiftCertificateBalance(
   giftCertificate: GiftCertificate,
   previousBalance: number,
   previousStatus: GiftCertificateStatus,
-  apiCredentials: StoreCredentials,
+  storeHash: string | undefined,
 ): Promise<GiftCertificate> {
   return updateGiftCertificate(
     giftCertificate,
     { balance: String(previousBalance), status: previousStatus },
-    apiCredentials,
+    storeHash,
   );
 }

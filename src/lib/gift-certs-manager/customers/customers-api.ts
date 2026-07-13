@@ -44,7 +44,7 @@ export async function fetchCustomersByEmail(
     return { items: [] };
   }
 
-  const apiClient = getRestApiClient(storeHash);
+  const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: {
       "email:in": uniqueEmails.join(","),
@@ -69,7 +69,7 @@ export async function fetchCustomers(
   query: CustomersQuery,
   storeHash: string | undefined,
 ): Promise<CustomersListResult> {
-  const apiClient = getRestApiClient(storeHash);
+  const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: {
       "name:like": query.name,
@@ -91,7 +91,7 @@ export async function fetchCustomers(
 // documented way to fetch one customer by id. See fetchCustomersByEmail —
 // caching lives in the calling *View component (CustomerView).
 export async function fetchCustomer(id: number | string, storeHash: string | undefined): Promise<Customer> {
-  const apiClient = getRestApiClient(storeHash);
+  const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: { "id:in": id, include: "storecredit" },
   });
@@ -118,7 +118,7 @@ export async function addToCustomerStoreCredit(
   amount: number,
   storeHash: string | undefined,
 ): Promise<Customer> {
-  const apiClient = getRestApiClient(storeHash);
+  const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.put<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     body: [
       {

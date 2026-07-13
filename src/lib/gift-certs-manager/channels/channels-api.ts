@@ -23,7 +23,7 @@ export async function fetchChannels(storeHash: string | undefined): Promise<Chan
   cacheLife("extended");
   cacheTag("channels:list");
 
-  const apiClient = getRestApiClient(storeHash);
+  const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<Channel>>(CHANNELS_PATH);
 
   return { items: body.data };

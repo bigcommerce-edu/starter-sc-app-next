@@ -39,7 +39,7 @@ async function fetchGiftCertificatesPage(
   cacheLife("standard");
   cacheTag(GIFT_CERTIFICATES_LIST_TAG);
 
-  const apiClient = getRestApiClient(storeHash);
+  const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
     params: {
       ...query,
@@ -112,7 +112,7 @@ export async function fetchGiftCertificate(
   id: number | string,
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
-  const apiClient = getRestApiClient(storeHash);
+  const apiClient = await getRestApiClient(storeHash);
   const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id));
 
   return parseGiftCertificate(record);
@@ -145,7 +145,7 @@ async function updateGiftCertificate(
   fields: Partial<Omit<GiftCertificateWireRecord, "id">>,
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
-  const apiClient = getRestApiClient(storeHash);
+  const apiClient = await getRestApiClient(storeHash);
   const { data: record } = await apiClient.put<GiftCertificateWireRecord>(getGiftCertificatePath(giftCertificate.id), {
     body: { ...getRequiredFields(giftCertificate), ...fields },
   });

@@ -2,6 +2,7 @@ import { cache } from "react";
 import { MockRestApiClient } from "@/lib/bc-api-client/mock-client/mock-client";
 import { RestApiClient } from "@/lib/bc-api-client/rest-client/rest-client";
 import { BcRestApiClient, DataMode } from "@/lib/bc-api-client/types";
+import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 
 const VALID_DATA_MODES: DataMode[] = ["MOCK", "STATIC", "MULTITENANT"];
 
@@ -46,20 +47,21 @@ function resolveStoreHash(storeHash: string | undefined): string | undefined {
 // A BigCommerce API token is generated once for a store at install time and
 // stored server-side — it is never per-user. Resolves the token for an
 // already-resolved storeHash (see resolveStoreHash) — STATIC mode reads it
-// from env vars; MULTITENANT looks it up per-store. Not implemented yet, so
-// this returns no token for now; returning it (rather than throwing) lets
-// RestApiClient be the single place that decides a missing token is an
-// error, regardless of which mode caused it.
-function resolveApiToken(storeHash: string | undefined): string | undefined {
+// from env vars; MULTITENANT looks it up via the credentials store, which
+// was populated by the /auth install callback (see
+// app/api/app/auth/route.ts). Returning undefined (rather than throwing)
+// when no token is found lets RestApiClient be the single place that
+// decides a missing token is an error, regardless of which mode caused it.
+async function resolveApiToken(storeHash: string | undefined): Promise<string | undefined> {
   if (getDataMode() === "STATIC") {
     return process.env.STATIC_STORE_TOKEN;
   }
 
-  // TODO: look up this store's token (by storeHash) from wherever it was
-  // stored when the app was installed.
-  void storeHash;
+  if (!storeHash) {
+    return undefined;
+  }
 
-  return undefined;
+  return getCredentialsStore().getStoreToken(storeHash);
 }
 
 // Cached by React's per-request memoization, keyed on the resolved store
@@ -68,8 +70,8 @@ function resolveApiToken(storeHash: string | undefined): string | undefined {
 // store regardless of the route param it was given, and should share one
 // RestApiClient instance per request rather than getting a new one per
 // distinct (but ultimately irrelevant) input.
-const getCachedRestApiClient = cache((resolvedStoreHash: string | undefined): BcRestApiClient => {
-  return new RestApiClient({ storeHash: resolvedStoreHash, apiToken: resolveApiToken(resolvedStoreHash) });
+const getCachedRestApiClient = cache(async (resolvedStoreHash: string | undefined): Promise<BcRestApiClient> => {
+  return new RestApiClient({ storeHash: resolvedStoreHash, apiToken: await resolveApiToken(resolvedStoreHash) });
 });
 
 // Selects and configures the BigCommerce REST API client for the given
@@ -83,7 +85,7 @@ const getCachedRestApiClient = cache((resolvedStoreHash: string | undefined): Bc
 // or function, as long as only storeHash (a plain, serializable string)
 // crosses that boundary — the returned client is a class instance and must
 // never be passed as an argument into another `use cache` scope.
-export function getRestApiClient(storeHash: string | undefined): BcRestApiClient {
+export async function getRestApiClient(storeHash: string | undefined): Promise<BcRestApiClient> {
   const mode = getDataMode();
 
   if (mode === "MOCK") {

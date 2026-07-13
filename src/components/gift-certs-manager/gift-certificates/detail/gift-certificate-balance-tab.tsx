@@ -52,10 +52,10 @@ function getConfirmationMessage(action: BalanceAction, giftCertificate: GiftCert
 // successful refill/add/transfer.
 export function GiftCertificateBalanceTab({
   giftCertificate,
-  urlStoreHash,
+  storeHash,
 }: {
   giftCertificate: GiftCertificateWithAccounts;
-  urlStoreHash: string | undefined;
+  storeHash: string | undefined;
 }) {
   const [selectedAction, setSelectedAction] = useState<BalanceAction | null>(null);
   const [pendingAction, setPendingAction] = useState<BalanceAction | null>(null);
@@ -77,17 +77,17 @@ export function GiftCertificateBalanceTab({
       switch (action) {
         case "refill":
           await runServerAction(() =>
-            refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount), urlStoreHash),
+            refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount), storeHash),
           );
           break;
         case "add":
           await runServerAction(() =>
-            addToGiftCertificateBalance(giftCertificate.id, Number(addAmount), urlStoreHash),
+            addToGiftCertificateBalance(giftCertificate.id, Number(addAmount), storeHash),
           );
           break;
         case "transfer":
           await runServerAction(() =>
-            transferGiftCertificateBalanceToStoreCredit(giftCertificate.id, Number(transferAmount), urlStoreHash),
+            transferGiftCertificateBalanceToStoreCredit(giftCertificate.id, Number(transferAmount), storeHash),
           );
           break;
       }

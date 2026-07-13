@@ -75,7 +75,7 @@ export async function CustomerView({
           query={query}
           showFilters={false}
           showRecipientColumns={false}
-          urlStoreHash={storeHash}
+          storeHash={storeHash}
         />
       </Panel>
     </Box>

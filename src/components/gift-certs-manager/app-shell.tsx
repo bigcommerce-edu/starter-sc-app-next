@@ -22,14 +22,14 @@ export async function AppShell({
   params: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const resolvedParams = await params;
-  const urlStoreHash = resolvedParams.storeHash;
-  const urlStoreHashString = Array.isArray(urlStoreHash) ? urlStoreHash[0] : urlStoreHash;
+  const storeHash = resolvedParams.storeHash;
+  const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
 
   return (
     <Box>
       <DataModeBanner />
       <Box paddingHorizontal="large" paddingTop="large">
-        <MainNav storeHash={urlStoreHashString} />
+        <MainNav storeHash={storeHashString} />
       </Box>
       <Flex padding="large" flexGap="1rem" alignItems="flex-start">
         <FlexItem flexGrow={1} flexShrink={1}>

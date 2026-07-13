@@ -43,7 +43,7 @@ export async function GiftCertificateView({
         </Link>
       </Box>
 
-      <GiftCertificateTabs giftCertificate={giftCertificate} urlStoreHash={storeHash} />
+      <GiftCertificateTabs giftCertificate={giftCertificate} storeHash={storeHash} />
     </Box>
   );
 }

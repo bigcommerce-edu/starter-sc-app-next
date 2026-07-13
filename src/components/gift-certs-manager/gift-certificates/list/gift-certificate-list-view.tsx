@@ -49,7 +49,7 @@ export async function GiftCertificateListView({
         giftCertificates={decoratedItems}
         hasNextPage={hasNextPage}
         query={query}
-        urlStoreHash={storeHash}
+        storeHash={storeHash}
       />
     </Panel>
   );

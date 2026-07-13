@@ -19,10 +19,10 @@ import { GiftCertificateStatus, GiftCertificateWithAccounts } from "@/lib/gift-c
 // (see gift-certificate-balance-tab.tsx for the same pattern).
 export function GiftCertificateDetailsTab({
   giftCertificate,
-  urlStoreHash,
+  storeHash,
 }: {
   giftCertificate: GiftCertificateWithAccounts;
-  urlStoreHash: string | undefined;
+  storeHash: string | undefined;
 }) {
   const [status, setStatus] = useState<GiftCertificateStatus>(giftCertificate.status);
   const [isPending, startTransition] = useTransition();
@@ -36,7 +36,7 @@ export function GiftCertificateDetailsTab({
 
   const handleUpdate = () => {
     startTransition(async () => {
-      await runServerAction(() => updateGiftCertificateStatus(giftCertificate.id, status, urlStoreHash));
+      await runServerAction(() => updateGiftCertificateStatus(giftCertificate.id, status, storeHash));
       closeUpdateModal();
     });
   };
@@ -70,7 +70,7 @@ export function GiftCertificateDetailsTab({
           email={giftCertificate.to_email}
           account={giftCertificate.recipientAccount}
           isRecipient
-          urlStoreHash={urlStoreHash}
+          storeHash={storeHash}
         />
       </FlexItem>
 

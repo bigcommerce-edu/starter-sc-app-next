@@ -16,10 +16,10 @@ const TAB_ITEMS = [
 
 export function GiftCertificateTabs({
   giftCertificate,
-  urlStoreHash,
+  storeHash,
 }: {
   giftCertificate: GiftCertificateWithAccounts;
-  urlStoreHash: string | undefined;
+  storeHash: string | undefined;
 }) {
   const [activeTab, setActiveTab] = useState("details");
 
@@ -31,7 +31,7 @@ export function GiftCertificateTabs({
           <GiftCertificateDetailsTab
             giftCertificate={giftCertificate}
             key={`${giftCertificate.id}-${giftCertificate.status}`}
-            urlStoreHash={urlStoreHash}
+            storeHash={storeHash}
           />
         </Box>
       ) : (
@@ -39,7 +39,7 @@ export function GiftCertificateTabs({
           <GiftCertificateBalanceTab
             giftCertificate={giftCertificate}
             key={`${giftCertificate.id}-${giftCertificate.balance}`}
-            urlStoreHash={urlStoreHash}
+            storeHash={storeHash}
           />
         </Box>
       )}

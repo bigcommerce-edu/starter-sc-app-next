@@ -39,11 +39,11 @@ function getConfirmationMessage(action: PendingAction, certificate: GiftCertific
 export function GiftCertificateActionsMenu({
   certificate,
   detailUrl,
-  urlStoreHash,
+  storeHash,
 }: {
   certificate: GiftCertificateWithRecipientAccount;
   detailUrl: string;
-  urlStoreHash: string | undefined;
+  storeHash: string | undefined;
 }) {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -59,11 +59,11 @@ export function GiftCertificateActionsMenu({
           await runServerAction(() => resendGiftCertificateEmail(certificate.id));
           break;
         case "refill":
-          await runServerAction(() => refillGiftCertificateBalance(certificate.id, certificate.amount, urlStoreHash));
+          await runServerAction(() => refillGiftCertificateBalance(certificate.id, certificate.amount, storeHash));
           break;
         case "transfer":
           await runServerAction(() =>
-            transferGiftCertificateBalanceToStoreCredit(certificate.id, certificate.balance, urlStoreHash),
+            transferGiftCertificateBalanceToStoreCredit(certificate.id, certificate.balance, storeHash),
           );
           break;
       }

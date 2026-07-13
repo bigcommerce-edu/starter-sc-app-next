@@ -22,7 +22,7 @@ interface GiftCertificatePartyPanelProps {
   // the sender isn't a link target anywhere else in this app, so there's no
   // customer detail page context to link to for them.
   isRecipient?: boolean;
-  urlStoreHash?: string;
+  storeHash?: string;
 }
 
 export function GiftCertificatePartyPanel({
@@ -31,9 +31,9 @@ export function GiftCertificatePartyPanel({
   email,
   account,
   isRecipient = false,
-  urlStoreHash,
+  storeHash,
 }: GiftCertificatePartyPanelProps) {
-  const accountUrl = isRecipient && account ? getAppUrl(urlStoreHash, `/customers/${account.id}`) : undefined;
+  const accountUrl = isRecipient && account ? getAppUrl(storeHash, `/customers/${account.id}`) : undefined;
 
   return (
     <Panel header={header}>

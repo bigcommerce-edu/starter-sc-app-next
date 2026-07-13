@@ -37,7 +37,7 @@ export async function CustomerListView({
 
   return (
     <Panel header="Customers">
-      <CustomerTable customers={decoratedItems} totalItems={totalItems} query={query} urlStoreHash={storeHash} />
+      <CustomerTable customers={decoratedItems} totalItems={totalItems} query={query} storeHash={storeHash} />
     </Panel>
   );
 }

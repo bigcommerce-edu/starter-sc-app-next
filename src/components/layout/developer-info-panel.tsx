@@ -34,7 +34,7 @@ export function DeveloperInfoPanel() {
           <Link href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</Link>
         </Text>
         <Text marginBottom="none">
-          <Link href={`tel:${SUPPORT_PHONE}`}>{SUPPORT_PHONE}</Link>
+          <Link href={`tel:${SUPPORT_PHONE.replace(/[^+\d]/g, "")}`}>{SUPPORT_PHONE}</Link>
         </Text>
         <Text marginBottom="none">
           <Link href={SUPPORT_URL} target="_blank" rel="noopener noreferrer">

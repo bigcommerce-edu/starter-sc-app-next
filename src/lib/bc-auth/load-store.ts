@@ -1,6 +1,7 @@
 import { StoreNotInstalledError } from "@/lib/bc-auth/errors";
 import { parseStoreHash, verifySignedPayload } from "@/lib/bc-auth/verify-signed-payload";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
+import { upsertSessionStore } from "@/lib/session/session-cookie";
 
 export interface LoadStoreResult {
   storeHash: string;
@@ -9,9 +10,13 @@ export interface LoadStoreResult {
 // The full /load (launch) callback's business logic: verify the signed
 // request, confirm the store is actually installed (throws
 // StoreNotInstalledError otherwise — a stale launch for an uninstalled
-// store shouldn't proceed with no token), then provision this user if
-// they're new to the store (a second admin who never went through /auth
-// would otherwise have no users/store_users row at all). Throws whatever
+// store shouldn't proceed with no token), provision this user if they're
+// new to the store (a second admin who never went through /auth would
+// otherwise have no users/store_users row at all), then establish (or
+// extend) this user's session — the same admin launching a second store
+// gets that store appended to their existing session rather than a
+// separate one, which is what lets them operate in multiple stores
+// concurrently (e.g. separate browser tabs). Throws whatever
 // verifySignedPayload throws on a bad/expired JWT; the caller (the /load
 // route) decides what HTTP status each failure becomes.
 export async function loadStore(signedPayloadJwt: string): Promise<LoadStoreResult> {
@@ -26,9 +31,7 @@ export async function loadStore(signedPayloadJwt: string): Promise<LoadStoreResu
 
   await credentialsStore.setUser({ userId: payload.user.id, email: payload.user.email });
   await credentialsStore.setStoreUser({ storeHash, userId: payload.user.id });
-
-  // TODO: mint this user's session cookie once session management exists,
-  // rather than relying solely on the /load route's redirect.
+  await upsertSessionStore(payload.user.id, storeHash);
 
   return { storeHash };
 }

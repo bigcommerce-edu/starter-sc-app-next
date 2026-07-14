@@ -37,9 +37,6 @@ function resolveStoreHash(storeHash: string | undefined): string | undefined {
         throw new Error("A store hash is required when DATA_MODE is MULTITENANT.");
       }
 
-      // TODO: once session lookup exists, this may resolve to a different
-      // value than the route param (e.g. validated against the session
-      // rather than trusted as-is) — for now it's just passed through.
       return storeHash;
   }
 }

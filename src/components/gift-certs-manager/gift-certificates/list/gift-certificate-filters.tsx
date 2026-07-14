@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Button, Chip, Flex, FilterListIcon, Form, FormGroup, Input, Modal } from "@/components/ui/big-design";
+import { Box, Button, Chip, Flex, Form, FormGroup, Input, Modal } from "@/components/ui/big-design";
+import { FilterListIcon } from "@/components/ui/big-design-icons";
 import { GiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/types";
 import { DEFAULT_QUERY } from "@/lib/gift-certs-manager/gift-certificates/query";
 

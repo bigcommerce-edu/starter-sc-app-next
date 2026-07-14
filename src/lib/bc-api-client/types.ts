@@ -30,11 +30,6 @@ export interface V3ListResponse<TItem> {
   };
 }
 
-export interface V3ItemResponse<TItem> {
-  data: TItem;
-  meta: Record<string, never>;
-}
-
 export interface ApiRequestOptions {
   params?: ApiRequestParams;
 }

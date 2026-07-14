@@ -42,9 +42,13 @@ async function fetchGiftCertificatesPage(
   const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
     params: {
-      ...query,
+      ... (query.code && { "code": query.code }),
+      ... (query.to_name && { "to_name": query.to_name }),
+      ... (query.to_email && { "to_email": query.to_email }),
       sort: "id",
       direction: query.direction.toLowerCase(),
+      page: query.page,
+      limit: query.limit,
     },
   });
 

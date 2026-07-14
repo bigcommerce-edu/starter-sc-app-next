@@ -16,9 +16,9 @@ function getNumberParam(params: ApiRequestParams, key: string, fallback: number)
   return Number.isInteger(value) && value > 0 ? value : fallback;
 }
 
-// BigCommerce's v2 gift certificates endpoint only supports flat equality
-// filters on these fields (code, to_name, to_email, from_name, from_email)
-// and sorting by id — no balance/date ranges, no status filter, no
+// BigCommerce's v2 gift certificates endpoint supports partial-match filters
+// on these fields (code, to_name, to_email, from_name, from_email) and
+// sorting by id — no balance/date ranges, no status filter, no
 // arbitrary-column sort. Mirrors the real endpoint's response shape exactly:
 // a bare array of records for the requested page, with no total count
 // anywhere — fetchGiftCertificates derives that itself by peeking ahead.

@@ -72,10 +72,10 @@ export async function fetchCustomers(
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: {
-      "name:like": query.name,
-      "email:in": query.email,
-      "date_created:min": query.date_created_min,
-      "date_created:max": query.date_created_max,
+      ... (query.name && { "name:like": query.name }),
+      ... (query.email && { "email:in": query.email }),
+      ... (query.date_created_min && { "date_created:min": query.date_created_min }),
+      ... (query.date_created_max && { "date_created:max": query.date_created_max }),
       sort: `${SORT_FIELD[query.sortColumn]}:${query.direction.toLowerCase()}`,
       page: query.page,
       limit: query.limit,

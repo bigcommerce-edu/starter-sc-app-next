@@ -21,7 +21,7 @@ function buildUrl(storeHash: string, path: string, params: ApiRequestOptions["pa
 // cache. Off by default since it's a developer diagnostic, not something a
 // deployed app should log unconditionally.
 function isApiRequestLoggingEnabled(): boolean {
-  return process.env.LOG_API_REQUESTS === "true";
+  return process.env.LOG_API_REQUESTS?.toLowerCase() === "true";
 }
 
 function logApiRequest(method: string, url: string, status: number, durationMs: number): void {

@@ -12,11 +12,11 @@
 // request) should use getAbsoluteAppUrl instead of resolving this against
 // request.url — see its comment for why.
 export function getAppUrl(storeHash: string | undefined, path: string): string {
-  if (!storeHash) {
-    return path;
-  }
-
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (!storeHash) {
+    return normalizedPath;
+  }
 
   return `/${storeHash}${normalizedPath}`;
 }

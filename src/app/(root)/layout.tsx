@@ -1,8 +1,22 @@
-// This route group has no [storeHash] segment (these routes only ever
-// render in MOCK/STATIC mode — see root-route-guard.tsx), but layouts don't
-// inherit across sibling route groups, so this file still has to exist.
-// AppShell resolves storeHash to undefined for a params object with no
-// storeHash key, the same as for any other missing/absent route param, which
-// is exactly the behavior this route group needs — so it's otherwise
-// identical to [storeHash]/layout.tsx.
-export { default } from "@/app/[storeHash]/layout";
+import { Suspense } from "react";
+import { AppShell } from "@/components/gift-certs-manager/app-shell";
+import { renderRootRoute } from "@/lib/routing/root-route-guard";
+
+// Wraps the root-level dev routes (no [storeHash] segment) in the same
+// AppShell as the real routes, with storeHash explicitly undefined — these
+// routes only ever render in MOCK/STATIC mode (see root-route-guard.tsx). `renderRootRoute()` enforces this by
+// rendering an Unauthorized page instead of the real content when this
+// layout is hit in MULTITENANT mode.
+export default function RootDevLayout({ 
+  children,
+  params,
+}: { 
+  children: React.ReactNode;
+  params: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return renderRootRoute(
+    <Suspense>
+      <AppShell params={params}>{children}</AppShell>
+    </Suspense>
+  );
+}

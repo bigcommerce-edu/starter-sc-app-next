@@ -1,11 +1,8 @@
 import GiftCertificateDetailPage from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/page";
-import { renderRootRoute } from "@/lib/routing/root-route-guard";
 
 // This route exists only for MOCK/STATIC development, when there's no store hash
-// context in the page request. `renderRootRoute()` enforces this by rendering an
-// Unauthorized page instead of `GiftCertificateDetailPage` when this route is hit
-// in MULTITENANT mode.
+// context in the page request. 
 // See `GiftCertificateDetailPage` for the real page route.
 export default function Page(props: React.ComponentProps<typeof GiftCertificateDetailPage>) {
-  return renderRootRoute(<GiftCertificateDetailPage {...props} />);
+  return <GiftCertificateDetailPage {...props} />;
 }

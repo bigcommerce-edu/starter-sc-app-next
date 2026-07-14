@@ -1,3 +1,5 @@
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { CREATE_CREDENTIALS_STORE_SCHEMA } from "@/lib/credentials-store/schema";
 import { decrypt, encrypt } from "@/lib/credentials-store/sqlite-driver/encryption";
@@ -9,7 +11,14 @@ function getDbPath(): string {
   return process.env.CREDENTIALS_SQLITE_PATH ?? DEFAULT_DB_PATH;
 }
 
+// DatabaseSync creates the database file itself if it's missing, but not any
+// missing parent directory — the default ./data/ is gitignored (it's a
+// runtime artifact, not something the repo ships) and nothing else creates
+// it, so without this, a first run fails with a raw "unable to open
+// database file" (SQLITE_CANTOPEN) rather than a clear error.
 function openDatabase(path: string): DatabaseSync {
+  mkdirSync(dirname(path), { recursive: true });
+
   const db = new DatabaseSync(path);
 
   db.exec(CREATE_CREDENTIALS_STORE_SCHEMA);

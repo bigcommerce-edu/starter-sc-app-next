@@ -49,15 +49,6 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
     .map((email) => email.trim().toLowerCase())
     .filter((email) => email !== "");
 
-  // email:in is used by fetchCustomersByEmail for exact-match lookups, and
-  // takes priority over the listing page's own filters/pagination — the two
-  // callers never combine both in a single request.
-  if (emailIn.length > 0) {
-    const matches = mockCustomers.filter((customer) => emailIn.includes(customer.email.toLowerCase()));
-
-    return paginate(matches, 1, Math.max(matches.length, 1));
-  }
-
   const nameLike = getStringParam(params, "name:like").trim().toLowerCase();
   const emailFilter = getStringParam(params, "email:in").trim().toLowerCase();
   const originChannelIds = getStringParam(params, "origin_channel_id:in")

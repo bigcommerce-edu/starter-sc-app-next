@@ -20,7 +20,7 @@ export function showSuccessAlert(message: string): void {
 
 export function showErrorAlert(message: string): void {
   alertsManager.add({
-    autoDismiss: true,
+    autoDismiss: false,
     messages: [{ text: message }],
     type: "error",
   });

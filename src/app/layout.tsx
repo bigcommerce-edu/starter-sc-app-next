@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Source_Sans_3 } from "next/font/google";
-import { BigDesignProvider } from "@/components/ui/big-design";
+import { BigDesignProvider } from "@/components/ui/big-design-provider";
 import { StyledComponentsRegistry } from "@/components/ui/styled-components-registry";
 import { ActionAlertsManager } from "@/components/ui/action-alerts";
 

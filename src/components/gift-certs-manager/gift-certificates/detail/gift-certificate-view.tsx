@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { ArrowBackIcon, Box, Flex, Link } from "@/components/ui/big-design";
+import { Box, Flex, Link } from "@/components/ui/big-design";
+import { ArrowBackIcon } from "@/components/ui/big-design-icons";
 import { GiftCertificateTabs } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-tabs";
 import { decorateGiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/decorate-with-accounts";
 import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";

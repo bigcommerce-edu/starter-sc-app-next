@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { BaselineHelpIcon, Box, Flex, H4, Link, Panel, Small, Text } from "@/components/ui/big-design";
+import { Box, Flex, H4, Link, Panel, Small, Text } from "@/components/ui/big-design";
+import { BaselineHelpIcon } from "@/components/ui/big-design-icons";
 
 const DEVELOPER_LOGO_FILENAME = process.env.DEVELOPER_LOGO_FILENAME || "developer-logo.svg";
 const DEVELOPER_NAME = process.env.DEVELOPER_NAME || "Developer Name";

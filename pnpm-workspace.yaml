@@ -4,3 +4,11 @@ allowBuilds:
 onlyBuiltDependencies:
   - sharp
   - unrs-resolver
+peerDependencyRules:
+  allowedVersions:
+    "@bigcommerce/big-design>react": "19"
+    "@bigcommerce/big-design>react-dom": "19"
+    "@bigcommerce/big-design-theme>react": "19"
+    "@bigcommerce/big-design-theme>react-dom": "19"
+    "@bigcommerce/big-design-icons>react": "19"
+    "@bigcommerce/big-design-icons>react-dom": "19"

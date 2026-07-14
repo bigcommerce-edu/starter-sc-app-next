@@ -57,17 +57,22 @@ function getColumns(
           {
             header: "Recipient",
             hash: "to_name",
-            // TODO: link to the customer detail page once the customers page
-            // feature lands (see gift-certificate-view.tsx for the eventual
-            // getAppUrl(storeHash, `/customers/${id}`) pattern).
             render: ({ recipientAccount, to_name }: GiftCertificateWithRecipientAccount) =>
-              recipientAccount ? <Link href="#">{to_name}</Link> : to_name,
+              recipientAccount ? (
+                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{to_name}</Link>
+              ) : (
+                to_name
+              ),
           },
           {
             header: "Recipient Email",
             hash: "to_email",
             render: ({ to_email, recipientAccount }: GiftCertificateWithRecipientAccount) =>
-              recipientAccount ? <Link href="#">{to_email}</Link> : to_email,
+              recipientAccount ? (
+                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{to_email}</Link>
+              ) : (
+                to_email
+              ),
           },
         ]
       : []),

@@ -4,11 +4,11 @@
 // Callers don't need to know about DataMode — see assertStoreHashForDataMode,
 // which enforces that a storeHash is only ever missing when that's valid.
 export function getAppUrl(storeHash: string | undefined, path: string): string {
-  if (!storeHash) {
-    return path;
-  }
-
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (!storeHash) {
+    return normalizedPath;
+  }
 
   return `/${storeHash}${normalizedPath}`;
 }

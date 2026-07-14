@@ -29,17 +29,22 @@ interface GiftCertificatesApiResponse {
   totalItems: number;
 }
 
-// Domain-level adapter: query already matches the request shape field for
-// field, so the only translation needed is lowercasing direction to match
-// the wire's asc/desc.
+// BigCommerce's v2 gift certificates endpoint matches code/to_name/to_email
+// filters on partial (substring) values, and omits filter params entirely
+// when empty rather than sending an empty string. direction is also
+// lowercased here to match the wire's asc/desc.
 export async function fetchGiftCertificates(query: GiftCertificatesQuery): Promise<GiftCertificatesResult> {
   const apiClient = getApiClient();
 
   const response = await apiClient.get<GiftCertificatesApiResponse>(GIFT_CERTIFICATES_PATH, {
     params: {
-      ...query,
+      ... (query.code && { "code": query.code }),
+      ... (query.to_name && { "to_name": query.to_name }),
+      ... (query.to_email && { "to_email": query.to_email }),
       sort: "id",
       direction: query.direction.toLowerCase(),
+      page: query.page,
+      limit: query.limit,
     },
   });
 

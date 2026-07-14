@@ -79,6 +79,10 @@ export async function refillGiftCertificateBalance(
     return { success: false, message: "Only active or expired gift certificates can be refilled." };
   }
 
+  if (!Number.isFinite(newBalance) || newBalance < 0) {
+    return { success: false, message: "Refill balance must be a non-negative number." };
+  }
+
   if (newBalance > giftCertificate.amount) {
     return { success: false, message: "Refill balance cannot exceed the original gift certificate amount." };
   }
@@ -108,6 +112,10 @@ export async function addToGiftCertificateBalance(
 
   if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
     return { success: false, message: "Only active or expired gift certificates can have balance added." };
+  }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { success: false, message: "Amount must be a positive number." };
   }
 
   await addToGiftCertificateBalanceRequest(giftCertificate, amount, storeHash);
@@ -148,6 +156,10 @@ export async function transferGiftCertificateBalanceToStoreCredit(
 
   if (giftCertificate.status !== "active") {
     return { success: false, message: "Only active gift certificates can be transferred to store credit." };
+  }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { success: false, message: "Transfer amount must be a positive number." };
   }
 
   if (amount > giftCertificate.balance) {

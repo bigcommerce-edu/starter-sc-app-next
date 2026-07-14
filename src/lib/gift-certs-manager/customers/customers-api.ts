@@ -53,11 +53,11 @@ export async function fetchCustomers(query: CustomersQuery): Promise<CustomersLi
 
   const response = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: {
-      "name:like": query.name,
-      "email:in": query.email,
-      "origin_channel_id:in": query.origin_channel_id.join(","),
-      "date_created:min": query.date_created_min,
-      "date_created:max": query.date_created_max,
+      ... (query.name && { "name:like": query.name }),
+      ... (query.email && { "email:in": query.email }),
+      ... (query.origin_channel_id.length > 0 && { "origin_channel_id:in": query.origin_channel_id.join(",") }),
+      ... (query.date_created_min && { "date_created:min": query.date_created_min }),
+      ... (query.date_created_max && { "date_created:max": query.date_created_max }),
       sort: `last_name:${query.direction.toLowerCase()}`,
       page: query.page,
       limit: query.limit,

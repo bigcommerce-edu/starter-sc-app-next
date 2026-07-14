@@ -1,4 +1,5 @@
-import { ArrowBackIcon, Box, Flex, Link, Panel } from "@/components/ui/big-design";
+import { Box, Flex, Link, Panel } from "@/components/ui/big-design";
+import { ArrowBackIcon } from "@/components/ui/big-design-icons";
 import { CustomerInfoPanel } from "@/components/gift-certs-manager/customers/detail/customer-info-panel";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
 import { decorateCustomerWithChannels } from "@/lib/gift-certs-manager/customers/decorate-with-channels";

@@ -7,13 +7,13 @@ import {
   Chip,
   Datepicker,
   Flex,
-  FilterListIcon,
   Form,
   FormGroup,
   Input,
   Modal,
   MultiSelect,
 } from "@/components/ui/big-design";
+import { FilterListIcon } from "@/components/ui/big-design-icons";
 import { Channel } from "@/lib/gift-certs-manager/channels/types";
 import { CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
 import { DEFAULT_QUERY } from "@/lib/gift-certs-manager/customers/query";

@@ -14,7 +14,7 @@ const SIDEBAR_WIDTH = "280px";
 // [storeHash]/layout.tsx and (root)/layout.tsx wrap `children` (not this
 // component) in the Suspense boundary that covers the auth check and page
 // data — this component itself never needs one.
-export function AppShellChrome({ children }: { children: React.ReactNode }) {
+export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <Box>
       <DataModeBanner />

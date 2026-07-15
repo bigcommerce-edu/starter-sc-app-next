@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { AppShellChrome } from "@/components/gift-certs-manager/app-shell-chrome";
+import { AppShell } from "@/components/gift-certs-manager/app-shell";
 import { ContentFallback } from "@/components/layout/content-fallback";
 import { renderRootRoute } from "@/lib/routing/root-route-guard";
 
@@ -11,8 +11,8 @@ import { renderRootRoute } from "@/lib/routing/root-route-guard";
 // [storeHash]/layout.tsx — see its comment for why.
 export default function RootDevLayout({ children }: { children: React.ReactNode }) {
   return renderRootRoute(
-    <AppShellChrome>
+    <AppShell>
       <Suspense fallback={<ContentFallback />}>{children}</Suspense>
-    </AppShellChrome>,
+    </AppShell>,
   );
 }

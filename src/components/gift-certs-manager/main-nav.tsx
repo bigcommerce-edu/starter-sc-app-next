@@ -31,10 +31,10 @@ function getActiveSection(pathname: string, storeHash: string | undefined): stri
 // deliberate, so the two don't read as the same kind of control.
 //
 // Reads storeHash via useParams() rather than taking it as a prop, so the
-// server component tree above this (AppShellChrome) never needs to await
-// params just to compute a value only this client component uses — that
-// await was the one thing forcing the whole shell to block on route-param
-// resolution before painting anything.
+// server component tree above this (AppShell) never needs to await params
+// just to compute a value only this client component uses — that await was
+// the one thing forcing the whole shell to block on route-param resolution
+// before painting anything.
 export function MainNav() {
   const params = useParams<{ storeHash?: string }>();
   const storeHash = params.storeHash;

@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams, usePathname } from "next/navigation";
-import { Box, Flex, Link, Text } from "@/components/ui/big-design";
+import { Box, Flex, Text } from "@/components/ui/big-design";
+import { AppLink } from "@/components/ui/app-link";
 import { getAppUrl } from "@/lib/routing/app-url";
 
 const NAV_ITEMS = [
@@ -54,7 +55,7 @@ export function MainNav() {
             paddingVertical="xSmall"
             style={{ borderRadius: "9999px" }}
           >
-            <Link
+            <AppLink
               aria-current={isActive ? "page" : undefined}
               href={getAppUrl(storeHash, `/${item.id}`)}
               style={{ textDecoration: "none" }}
@@ -62,7 +63,7 @@ export function MainNav() {
               <Text bold={isActive} color={isActive ? "primary" : "secondary70"} margin="none">
                 {item.title}
               </Text>
-            </Link>
+            </AppLink>
           </Box>
         );
       })}

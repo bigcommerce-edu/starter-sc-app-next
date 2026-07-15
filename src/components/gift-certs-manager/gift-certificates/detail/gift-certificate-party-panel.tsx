@@ -1,4 +1,5 @@
-import { Badge, Box, Link, Panel, Small, Text } from "@/components/ui/big-design";
+import { Badge, Box, Panel, Small, Text } from "@/components/ui/big-design";
+import { AppLink } from "@/components/ui/app-link";
 import { Customer, sumStoreCredit } from "@/lib/gift-certs-manager/customers/types";
 import { getAppUrl } from "@/lib/routing/app-url";
 
@@ -41,11 +42,11 @@ export function GiftCertificatePartyPanel({
       <DetailField label="Registered Customer">
         <Badge label={account ? "Yes" : "No"} variant={account ? "success" : "secondary"} />
       </DetailField>
-      <DetailField label="Email">{accountUrl ? <Link href={accountUrl}>{email}</Link> : email}</DetailField>
+      <DetailField label="Email">{accountUrl ? <AppLink href={accountUrl}>{email}</AppLink> : email}</DetailField>
       {account && (
         <DetailField label="Account Name">
           {accountUrl ? (
-            <Link href={accountUrl}>{`${account.first_name} ${account.last_name}`}</Link>
+            <AppLink href={accountUrl}>{`${account.first_name} ${account.last_name}`}</AppLink>
           ) : (
             `${account.first_name} ${account.last_name}`
           )}

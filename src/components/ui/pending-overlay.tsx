@@ -9,7 +9,13 @@ import { Box, Flex, ProgressCircle } from "@/components/ui/big-design";
 // than being conditionally rendered — mounting/unmounting a sibling of
 // children while children itself is mid-transition (its Server Component
 // content swapping in) causes React to crash with a "removeChild: not a
-// child of this node" DOM reconciliation error.
+// child of this node" DOM reconciliation error. This is also why the
+// *Filters component (with its own portal-rendered Modal) is nested inside
+// this wrapper rather than rendered as its sibling: AppLink's underlying
+// next/link mounts an IntersectionObserver via a ref callback on every row,
+// so a table row re-render during that same transition can hit the same
+// crash against the filters Modal's portal if the Modal isn't inside the
+// one subtree that's guaranteed to stay mounted throughout.
 export function PendingOverlay({ isPending, children }: { isPending: boolean; children: React.ReactNode }) {
   return (
     <Box style={{ position: "relative" }}>

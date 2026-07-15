@@ -1,6 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { Box, Flex, Link, Panel } from "@/components/ui/big-design";
+import { Box, Flex, Panel } from "@/components/ui/big-design";
 import { ArrowBackIcon } from "@/components/ui/big-design-icons";
+import { AppLink } from "@/components/ui/app-link";
 import { CustomerInfoPanel } from "@/components/gift-certs-manager/customers/detail/customer-info-panel";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
 import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
@@ -61,12 +62,12 @@ export async function CustomerView({
   return (
     <Box>
       <Box marginBottom="medium">
-        <Link href={getAppUrl(storeHash, "/customers")}>
+        <AppLink href={getAppUrl(storeHash, "/customers")}>
           <Flex alignItems="center" flexGap="0.25rem">
             <ArrowBackIcon size="small" />
             Back to Customers
           </Flex>
-        </Link>
+        </AppLink>
       </Box>
 
       <Box marginBottom="medium">

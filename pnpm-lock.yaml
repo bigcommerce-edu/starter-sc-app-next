@@ -4,13 +4,16 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@bigcommerce/big-design': c185a2e483d959833f660a67d1b9979d9985869715698dc22053a77047b20791
+
 importers:
 
   .:
     dependencies:
       '@bigcommerce/big-design':
         specifier: ^3.2.0
-        version: 3.2.0(@types/react@19.2.17)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(styled-components@5.3.11(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react-is@18.2.0)(react@19.2.4))
+        version: 3.2.0(patch_hash=c185a2e483d959833f660a67d1b9979d9985869715698dc22053a77047b20791)(@types/react@19.2.17)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(styled-components@5.3.11(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react-is@18.2.0)(react@19.2.4))
       '@bigcommerce/big-design-icons':
         specifier: ^1.10.0
         version: 1.10.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(styled-components@5.3.11(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react-is@18.2.0)(react@19.2.4))
@@ -2199,7 +2202,7 @@ snapshots:
       react-dom: 19.2.4(react@19.2.4)
       styled-components: 5.3.11(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react-is@18.2.0)(react@19.2.4)
 
-  '@bigcommerce/big-design@3.2.0(@types/react@19.2.17)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(styled-components@5.3.11(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react-is@18.2.0)(react@19.2.4))':
+  '@bigcommerce/big-design@3.2.0(patch_hash=c185a2e483d959833f660a67d1b9979d9985869715698dc22053a77047b20791)(@types/react@19.2.17)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(styled-components@5.3.11(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react-is@18.2.0)(react@19.2.4))':
     dependencies:
       '@babel/runtime': 7.29.7
       '@bigcommerce/big-design-icons': 1.10.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(styled-components@5.3.11(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react-is@18.2.0)(react@19.2.4))

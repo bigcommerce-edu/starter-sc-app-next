@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { Box, Flex, Link, Text } from "@/components/ui/big-design";
 import { getAppUrl } from "@/lib/routing/app-url";
 
@@ -10,9 +10,10 @@ const NAV_ITEMS = [
 ];
 
 // The active section is the one piece of nav state that's legitimately
-// derived from the current route; storeHash is not — it's passed down from
-// the layout that actually has it as a route param (see [storeHash]/layout.tsx
-// and (root)/layout.tsx).
+// derived from the current route; storeHash is not — it's read directly
+// below via useParams() (undefined on root-level dev routes, which have no
+// [storeHash] segment at all — same behavior as before, just read here
+// instead of passed down from a server layout).
 function getActiveSection(pathname: string, storeHash: string | undefined): string | undefined {
   const segments = pathname.split("/").filter(Boolean);
   const sectionSegment = storeHash ? segments[1] : segments[0];
@@ -28,7 +29,15 @@ function getActiveSection(pathname: string, storeHash: string | undefined): stri
 // aria-controls target. The pill-on-background look (vs. the underline look
 // `Tabs` uses for the gift certificate detail page's in-page tabs) is also
 // deliberate, so the two don't read as the same kind of control.
-export function MainNav({ storeHash }: { storeHash: string | undefined }) {
+//
+// Reads storeHash via useParams() rather than taking it as a prop, so the
+// server component tree above this (AppShellChrome) never needs to await
+// params just to compute a value only this client component uses — that
+// await was the one thing forcing the whole shell to block on route-param
+// resolution before painting anything.
+export function MainNav() {
+  const params = useParams<{ storeHash?: string }>();
+  const storeHash = params.storeHash;
   const pathname = usePathname();
   const activeSection = getActiveSection(pathname, storeHash);
 

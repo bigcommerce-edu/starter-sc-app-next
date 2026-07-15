@@ -6,7 +6,7 @@ import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certi
 import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { decorateCustomerWithChannels } from "@/lib/gift-certs-manager/customers/decorate-with-channels";
 import { fetchCustomer } from "@/lib/gift-certs-manager/customers/customers-api";
-import { GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+import { GIFT_CERTIFICATES_LIST_TAG, giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { parseGiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/query";
 import { getAppUrl } from "@/lib/routing/app-url";
@@ -49,6 +49,10 @@ export async function CustomerView({
     decorateCustomerWithChannels(rawCustomer, storeHash),
     fetchGiftCertificates({ ...query, to_email: rawCustomer.email }, storeHash),
   ]);
+
+  for (const item of items) {
+    cacheTag(giftCertificateTag(item.id));
+  }
 
   // Every row's recipient is this customer, so there's no need to decorate
   // via a separate customer lookup — the account is already known.

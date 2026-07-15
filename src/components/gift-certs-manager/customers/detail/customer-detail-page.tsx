@@ -1,4 +1,6 @@
 import { CustomerView } from "@/components/gift-certs-manager/customers/detail/customer-view";
+import { ContentFallback } from "@/components/layout/content-fallback";
+import { Suspense } from "react";
 
 export async function CustomerDetailPage({
   params,
@@ -16,5 +18,9 @@ export async function CustomerDetailPage({
   const storeHash = resolvedParams.storeHash;
   const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
 
-  return <CustomerView id={idString ?? ""} searchParams={resolvedSearchParams} storeHash={storeHashString} />;
+  return (
+    <Suspense fallback={<ContentFallback />}>
+      <CustomerView id={idString ?? ""} searchParams={resolvedSearchParams} storeHash={storeHashString} />
+    </Suspense>
+  );
 }

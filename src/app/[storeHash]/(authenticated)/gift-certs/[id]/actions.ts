@@ -1,7 +1,6 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { getDataMode } from "@/lib/bc-api-client/get-rest-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { addToCustomerStoreCredit, fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";
@@ -40,20 +39,6 @@ export async function updateGiftCertificateStatus(
   updateTag(giftCertificateTag(id));
 
   return { success: true, message: "Gift certificate status updated." };
-}
-
-// Re-send is only meaningful in MULTITENANT mode (MOCK/STATIC have no real
-// recipient to email), and MULTITENANT itself isn't implemented yet.
-export async function resendGiftCertificateEmail(id: number | string): Promise<ActionResult> {
-  void id;
-
-  const dataMode = getDataMode();
-
-  if (dataMode !== "MULTITENANT") {
-    throw new Error(`Re-send is not available in ${dataMode} mode.`);
-  }
-
-  throw new Error("Re-send not yet implemented.");
 }
 
 // Refilling only makes sense for a certificate that's still usable (active

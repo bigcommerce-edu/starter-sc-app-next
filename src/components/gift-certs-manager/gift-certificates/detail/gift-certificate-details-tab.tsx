@@ -2,10 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Button, Flex, FlexItem, Modal, Text } from "@/components/ui/big-design";
-import {
-  resendGiftCertificateEmail,
-  updateGiftCertificateStatus,
-} from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/actions";
+import { updateGiftCertificateStatus } from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/actions";
 import { GiftCertificatePartyPanel } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-party-panel";
 import { GiftCertificateStatusPanel } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-status-panel";
 import { runServerAction } from "@/components/ui/action-alerts";
@@ -27,7 +24,6 @@ export function GiftCertificateDetailsTab({
   const [status, setStatus] = useState<GiftCertificateStatus>(giftCertificate.status);
   const [isPending, startTransition] = useTransition();
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const [isResendModalOpen, setIsResendModalOpen] = useState(false);
   const isDirty = status !== giftCertificate.status;
 
   const handleCancel = () => setStatus(giftCertificate.status);
@@ -38,15 +34,6 @@ export function GiftCertificateDetailsTab({
     startTransition(async () => {
       await runServerAction(() => updateGiftCertificateStatus(giftCertificate.id, status, storeHash));
       closeUpdateModal();
-    });
-  };
-
-  const closeResendModal = () => setIsResendModalOpen(false);
-
-  const handleResend = () => {
-    startTransition(async () => {
-      await runServerAction(() => resendGiftCertificateEmail(giftCertificate.id));
-      closeResendModal();
     });
   };
 
@@ -86,9 +73,6 @@ export function GiftCertificateDetailsTab({
           >
             Update Status
           </Button>
-          <Button disabled={isPending} onClick={() => setIsResendModalOpen(true)} variant="secondary">
-            Re-send
-          </Button>
         </Flex>
       </FlexItem>
 
@@ -106,19 +90,6 @@ export function GiftCertificateDetailsTab({
           Update status from {GIFT_CERTIFICATE_STATUS_LABEL[giftCertificate.status]} to{" "}
           {GIFT_CERTIFICATE_STATUS_LABEL[status]}?
         </Text>
-      </Modal>
-
-      <Modal
-        actions={[
-          { text: "Cancel", variant: "subtle", onClick: closeResendModal },
-          { text: "Re-send", variant: "primary", isLoading: isPending, onClick: handleResend },
-        ]}
-        closeOnEscKey
-        header="Re-send"
-        isOpen={isResendModalOpen}
-        onClose={closeResendModal}
-      >
-        <Text marginBottom="none">Re-send gift certificate email to {giftCertificate.to_email}?</Text>
       </Modal>
     </Flex>
   );

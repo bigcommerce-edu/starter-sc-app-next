@@ -5,7 +5,6 @@ import { Button, Dropdown, DropdownItem, DropdownLinkItem, Modal, Text } from "@
 import { MoreHorizIcon } from "@/components/ui/big-design-icons";
 import {
   refillGiftCertificateBalance,
-  resendGiftCertificateEmail,
   transferGiftCertificateBalanceToStoreCredit,
 } from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/actions";
 import { runServerAction } from "@/components/ui/action-alerts";
@@ -13,18 +12,15 @@ import { GiftCertificateWithRecipientAccount } from "@/lib/gift-certs-manager/gi
 
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
-type PendingAction = "resend" | "refill" | "transfer";
+type PendingAction = "refill" | "transfer";
 
 const ACTION_LABEL: Record<PendingAction, string> = {
-  resend: "Re-send",
   refill: "Refill",
   transfer: "Transfer to Credit",
 };
 
 function getConfirmationMessage(action: PendingAction, certificate: GiftCertificateWithRecipientAccount): string {
   switch (action) {
-    case "resend":
-      return `Re-send gift certificate email to ${certificate.to_email}?`;
     case "refill":
       return `Refill balance to ${currencyFormatter.format(certificate.amount)}?`;
     case "transfer": {
@@ -56,9 +52,6 @@ export function GiftCertificateActionsMenu({
 
     startTransition(async () => {
       switch (action) {
-        case "resend":
-          await runServerAction(() => resendGiftCertificateEmail(certificate.id));
-          break;
         case "refill":
           await runServerAction(() => refillGiftCertificateBalance(certificate.id, certificate.amount, storeHash));
           break;
@@ -78,10 +71,6 @@ export function GiftCertificateActionsMenu({
       type: "link",
       content: "View",
       url: detailUrl,
-    },
-    {
-      content: "Re-send",
-      onItemClick: () => setPendingAction("resend"),
     },
     {
       content: "Refill",

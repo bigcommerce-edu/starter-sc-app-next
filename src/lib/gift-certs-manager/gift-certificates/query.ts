@@ -44,7 +44,6 @@ export function buildGiftCertificatesSearchParams(query: GiftCertificatesQuery):
     params.set("code", query.code);
   }
 
-  // TODO: There is currently a BigCommerce issue with the to_name filter; 500 errors are returned.
   if (query.to_name) {
     params.set("to_name", query.to_name);
   }

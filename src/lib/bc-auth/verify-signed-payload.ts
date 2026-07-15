@@ -16,6 +16,14 @@ const signedPayloadSchema = z.object({
     id: z.number(),
     email: z.string(),
   }),
+  // The deep link that triggered the /load callback — "/" for a standard
+  // Apps-menu click, or an App Extension's configured path (with template
+  // variables already resolved by BigCommerce) when opened from one. See
+  // https://docs.bigcommerce.com/developer/docs/integrations/apps/guide/handling-callbacks.
+  // Optional defensively — not currently relied on for anything other than
+  // /load's post-launch redirect, so a payload missing it shouldn't fail
+  // verification.
+  url: z.string().optional(),
 });
 
 export type SignedPayload = z.infer<typeof signedPayloadSchema>;

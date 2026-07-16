@@ -53,17 +53,20 @@ export interface StoreExtensionRecord {
 //
 // deleteStore encapsulates the full /uninstall cascade: the store, its
 // store-user links, its extension link (if any), and any user left with no
-// remaining store association. deleteUser scopes to one store+user pair (the
-// /remove_user callback's actual semantics — a user is removed from one
-// store, not globally), and likewise drops the user row if that was their
-// last association.
+// remaining store association. The extension link is dropped purely as
+// local bookkeeping — BigCommerce confirmed App Extensions are
+// automatically cleaned up on their side when the app is uninstalled, so
+// this app never calls the deleteAppExtension mutation itself. deleteUser
+// scopes to one store+user pair (the /remove_user callback's actual
+// semantics — a user is removed from one store, not globally), and
+// likewise drops the user row if that was their last association.
 //
 // setStoreExtension is an upsert (like setStore/setUser/setStoreUser), but
 // register-app-extension.ts only ever calls it after a successful
 // createAppExtension mutation — a failed registration should leave no row,
 // not a partial one. getStoreExtension returns just the extensionId (not the
 // full StoreExtensionRecord), mirroring getStoreToken, since that's the only
-// thing deregister-app-extension.ts needs to call deleteAppExtension.
+// thing AppExtensionStatusBanner's status check needs.
 export interface CredentialsStore {
   setStore(store: StoreRecord): Promise<void>;
   setUser(user: UserRecord): Promise<void>;

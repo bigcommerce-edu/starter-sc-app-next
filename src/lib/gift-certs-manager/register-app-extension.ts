@@ -4,11 +4,15 @@ import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-sto
 
 // Registers this app's App Extension for a newly installed store, via the
 // createAppExtension GraphQL mutation (see app-extension-mutation.ts), and
-// records the returned extension id so the /uninstall route can look it up
-// later to remove it (see deregister-app-extension.ts). Takes apiToken
-// directly — the one just returned from the OAuth handshake — rather than
-// looking it up from the credentials store, since that store may not have
-// been written yet when this runs. Called directly by the /auth route (see
+// records the returned extension id so AppExtensionStatusBanner can check
+// whether registration succeeded (see app-extension-status.ts). Nothing in
+// this app deregisters the extension on uninstall — BigCommerce confirmed
+// App Extensions are automatically cleaned up when the app is uninstalled,
+// so CredentialsStore.deleteStore just drops this app's own record of it
+// without making any BigCommerce API call. Takes apiToken directly — the
+// one just returned from the OAuth handshake — rather than looking it up
+// from the credentials store, since that store may not have been written
+// yet when this runs. Called directly by the /auth route (see
 // app/api/app/auth/route.ts) alongside installStore, not from within
 // installStore itself — installStore (lib/bc-auth) is agnostic
 // single-click-app plumbing, and registering this specific extension is a

@@ -35,4 +35,16 @@ export const CREATE_CREDENTIALS_STORE_SCHEMA = `
     user_id INTEGER NOT NULL,
     PRIMARY KEY (store_hash, user_id)
   );
+
+  -- Links a store to the App Extension registered for it at install time
+  -- (see lib/bc-auth/register-app-extension.ts). One row per store — the
+  -- app only ever registers one extension per install — keyed on store_hash
+  -- rather than a surrogate id since that's the only lookup any caller does
+  -- (find the extension_id to delete on uninstall). extension_id is
+  -- BigCommerce's own opaque id for the App Extension (e.g.
+  -- "bc/store/appExtension/2"), not something this app generates.
+  CREATE TABLE IF NOT EXISTS store_extensions (
+    store_hash TEXT PRIMARY KEY,
+    extension_id TEXT NOT NULL
+  );
 `;

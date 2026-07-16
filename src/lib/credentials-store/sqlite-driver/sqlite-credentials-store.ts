@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { CREATE_CREDENTIALS_STORE_SCHEMA } from "@/lib/credentials-store/schema";
 import { decrypt, encrypt } from "@/lib/credentials-store/sqlite-driver/encryption";
-import { CredentialsStore, StoreRecord, StoreUserRecord, UserRecord } from "@/lib/credentials-store/types";
+import { CredentialsStore, StoreExtensionRecord, StoreRecord, StoreUserRecord, UserRecord } from "@/lib/credentials-store/types";
 
 const DEFAULT_DB_PATH = "./data/credentials.sqlite";
 
@@ -28,6 +28,10 @@ function openDatabase(path: string): DatabaseSync {
 
 interface StoreTokenRow {
   access_token: string;
+}
+
+interface ExtensionIdRow {
+  extension_id: string;
 }
 
 interface UserIdRow {
@@ -96,9 +100,33 @@ export class SqliteCredentialsStore implements CredentialsStore {
     return row ? decrypt(row.access_token) : undefined;
   }
 
-  // Deletes a store's row, its store-user links, and any of those users left
-  // with no other store association. Run as a transaction so a crash
-  // mid-cascade can't leave orphaned store_users/users rows behind.
+  // Only called after a successful createAppExtension mutation (see
+  // register-app-extension.ts) — a failed registration should never reach
+  // here, so this doesn't need ON CONFLICT DO NOTHING semantics beyond
+  // replacing a stale extension_id from a prior install.
+  async setStoreExtension(storeExtension: StoreExtensionRecord): Promise<void> {
+    this.db
+      .prepare(
+        `INSERT INTO store_extensions (store_hash, extension_id)
+         VALUES (?, ?)
+         ON CONFLICT(store_hash) DO UPDATE SET
+           extension_id = excluded.extension_id`,
+      )
+      .run(storeExtension.storeHash, storeExtension.extensionId);
+  }
+
+  async getStoreExtension(storeHash: string): Promise<string | undefined> {
+    const row = this.db.prepare("SELECT extension_id FROM store_extensions WHERE store_hash = ?").get(storeHash) as unknown as
+      | ExtensionIdRow
+      | undefined;
+
+    return row?.extension_id;
+  }
+
+  // Deletes a store's row, its store-user links, its extension link, and any
+  // of those users left with no other store association. Run as a
+  // transaction so a crash mid-cascade can't leave orphaned
+  // store_users/users rows behind.
   async deleteStore(storeHash: string): Promise<void> {
     this.db.exec("BEGIN TRANSACTION");
 
@@ -108,6 +136,7 @@ export class SqliteCredentialsStore implements CredentialsStore {
       ).map((row) => row.user_id);
 
       this.db.prepare("DELETE FROM store_users WHERE store_hash = ?").run(storeHash);
+      this.db.prepare("DELETE FROM store_extensions WHERE store_hash = ?").run(storeHash);
       this.db.prepare("DELETE FROM stores WHERE store_hash = ?").run(storeHash);
 
       const countRemainingStoreUsersStmt = this.db.prepare("SELECT COUNT(*) as c FROM store_users WHERE user_id = ?");

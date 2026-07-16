@@ -16,7 +16,21 @@ const getCachedGraphqlApiClient = cache(async (resolvedStoreHash: string | undef
 // implementation of its own: nothing built on top of the GraphQL client
 // needs mocked data yet, so MOCK mode just throws on first use rather than
 // maintaining a mock client with no handlers.
-export async function getGraphqlApiClient(storeHash: string | undefined): Promise<BcGraphqlApiClient> {
+//
+// apiToken is an explicit override for the one caller (register-app-extension.ts,
+// via installStore) that needs to use the token just returned from the
+// OAuth handshake rather than the one persisted by getStoreToken — right
+// after exchanging the code, that token hasn't been (or is only just being)
+// written to the credentials store, so resolveApiToken's normal storage
+// lookup can't be relied on yet. Passing apiToken skips both resolveApiToken
+// and the shared per-request cache: this client is a one-off constructed
+// for a single mutation, not something other calls in the same request
+// would ever look up again.
+export async function getGraphqlApiClient(storeHash: string | undefined, apiToken?: string): Promise<BcGraphqlApiClient> {
+  if (apiToken !== undefined) {
+    return new GraphqlApiClient({ storeHash, apiToken });
+  }
+
   if (getDataMode() === "MOCK") {
     throw new Error("The BigCommerce GraphQL API client has no MOCK-mode implementation.");
   }

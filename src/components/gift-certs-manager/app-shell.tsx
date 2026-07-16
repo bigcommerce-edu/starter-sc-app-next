@@ -21,7 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <Box>
       <DataModeBanner />
       <Box paddingHorizontal="large" paddingTop="large">
-        <Suspense fallback={<ContentFallback />}>
+        <Suspense>
           <MainNav />
         </Suspense>
       </Box>

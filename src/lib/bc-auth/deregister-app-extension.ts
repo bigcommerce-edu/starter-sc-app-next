@@ -35,7 +35,10 @@ async function deleteAppExtension(graphqlApiClient: BcGraphqlApiClient, extensio
 // BigCommerce's side of the deletion never succeeds — a leftover App
 // Extension is cosmetic (the app itself is being uninstalled), not worth
 // blocking the rest of the uninstall cascade over. One delayed retry first,
-// in case the failure was transient, before giving up.
+// in case the failure was transient, before giving up. Logged (rather than
+// silently swallowed) since there's no other way to notice an orphaned App
+// Extension left behind on BigCommerce's side; this is a permanent
+// diagnostic, not a temporary debugging aid.
 export async function deregisterAppExtension(storeHash: string): Promise<void> {
   const credentialsStore = getCredentialsStore();
   const extensionId = await credentialsStore.getStoreExtension(storeHash);
@@ -53,9 +56,8 @@ export async function deregisterAppExtension(storeHash: string): Promise<void> {
 
     try {
       await deleteAppExtension(graphqlApiClient, extensionId);
-    } catch {
-      // No further handling: uninstall proceeds regardless (see the
-      // doc comment above).
+    } catch (error) {
+      console.error(`Failed to remove the App Extension "${extensionId}" for store "${storeHash}".`, error);
     }
   }
 }

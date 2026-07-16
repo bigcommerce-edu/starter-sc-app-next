@@ -27,12 +27,18 @@ interface CreateAppExtensionResult {
 // detail page that opens this app's own gift-certificates-for-customer view.
 // Fixed rather than configurable — there's only one extension this app ever
 // registers, so there's nothing for a caller to parameterize.
+//
+// label.locales is required by the API's schema despite being documented as
+// optional locale-specific overrides — omitting it entirely causes the
+// mutation to be rejected, so it's set to an empty array since this app has
+// no locale-specific label text to provide.
 const APP_EXTENSION_INPUT = {
   context: "LINK",
   model: "CUSTOMERS",
   url: "/customers/${id}",
   label: {
     defaultValue: "Manage Gift Certificates",
+    locales: [],
   },
 };
 
@@ -48,7 +54,9 @@ const APP_EXTENSION_INPUT = {
 // installation (the app is still fully usable without the menu shortcut),
 // so any failure is swallowed here and simply results in no
 // store_extensions row being written — nothing to clean up, nothing to
-// retry from this call site.
+// retry from this call site. Logged (rather than silently swallowed)
+// since there's no other way to notice a store missing its menu shortcut;
+// this is a permanent diagnostic, not a temporary debugging aid.
 export async function registerAppExtension(storeHash: string, apiToken: string): Promise<void> {
   try {
     const graphqlApiClient = await getGraphqlApiClient(storeHash, apiToken);
@@ -60,9 +68,7 @@ export async function registerAppExtension(storeHash: string, apiToken: string):
     const extensionId = result.appExtension.createAppExtension.appExtension.id;
 
     await getCredentialsStore().setStoreExtension({ storeHash, extensionId });
-  } catch {
-    // No further handling: a missing store_extensions row is the only
-    // consequence, and it's harmless (see deregisterAppExtension's no-op
-    // path) — nothing here needs to observe why registration failed.
+  } catch (error) {
+    console.error(`Failed to register the App Extension for store "${storeHash}".`, error);
   }
 }

@@ -34,16 +34,20 @@ export class GraphqlApiClient implements BcGraphqlApiClient {
       body: JSON.stringify({ query, variables }),
     });
 
-    if (!response.ok) {
-      throw new Error(`BigCommerce GraphQL request failed with status ${response.status}.`);
+    // BigCommerce's GraphQL Admin API reports validation errors (bad query
+    // syntax, a mistyped enum value, etc.) as a non-2xx with the actual
+    // detail in the JSON body's `errors` array, not just a bare status —
+    // reading only response.status here would discard the one piece of
+    // information that explains the failure.
+    const responseText = await response.text();
+    const body = responseText ? (JSON.parse(responseText) as GraphqlResponseBody<TResult>) : undefined;
+
+    if (!response.ok || body?.errors?.length) {
+      const errorDetail = body?.errors?.length ? body.errors.map((error) => error.message).join("; ") : responseText;
+
+      throw new Error(`BigCommerce GraphQL request failed with status ${response.status}: ${errorDetail}`);
     }
 
-    const body = (await response.json()) as GraphqlResponseBody<TResult>;
-
-    if (body.errors?.length) {
-      throw new Error(`BigCommerce GraphQL request returned errors: ${body.errors.map((error) => error.message).join("; ")}`);
-    }
-
-    return body.data as TResult;
+    return body?.data as TResult;
   }
 }

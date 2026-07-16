@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useParams } from "next/navigation";
 import { Box, InlineMessage } from "@/components/ui/big-design";
-import { showErrorAlert } from "@/components/ui/action-alerts";
+import { showErrorAlert, showSuccessAlert } from "@/components/ui/action-alerts";
 import { retryAppExtensionRegistration } from "@/components/layout/app-extension-status-banner/actions/retry-app-extension-registration";
 
 // null = still checking (render nothing rather than flash the banner then
@@ -69,6 +69,7 @@ export function AppExtensionStatusBanner() {
 
       if (result.success) {
         setStatus(true);
+        showSuccessAlert("App extension registration succeeded");
       } else {
         showErrorAlert(result.message);
       }

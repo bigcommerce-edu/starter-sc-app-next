@@ -1,5 +1,4 @@
 import { exchangeCodeForToken } from "@/lib/bc-auth/exchange-code-for-token";
-import { registerAppExtension } from "@/lib/bc-auth/register-app-extension";
 import { parseStoreHash } from "@/lib/bc-auth/verify-signed-payload";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 import { upsertSessionStore } from "@/lib/session/session-cookie";
@@ -13,23 +12,27 @@ export interface InstallStoreParams {
 
 export interface InstallStoreResult {
   storeHash: string;
+  accessToken: string;
 }
 
 // The full /auth (install) callback's business logic: exchange the
 // authorization code for a store-scoped token, then persist the store, the
-// installing admin, and their store-user link, and register this app's App
-// Extension, all in parallel — each writes to an independent table/resource
-// using only data already available from tokenResponse, so none needs to
-// wait on another. registerAppExtension in particular uses the token from
-// this handshake directly (see getGraphqlApiClient's apiToken override)
-// rather than the one setStore just persists, and never blocks install on
-// failure (see registerAppExtension) — so it has no ordering dependency on
-// the credentials-store writes either. Then establishes (or extends) this
-// admin's session. Idempotent — re-installing an already-known store just
-// replaces its token/scope (see CredentialsStore.setStore), and
-// upsertSessionStore is itself idempotent for the same reason. Throws
-// whatever exchangeCodeForToken throws on a failed exchange; the caller
-// (the /auth route) decides what HTTP status that becomes.
+// installing admin, and their store-user link, all in parallel — each
+// writes to an independent table using only data already available from
+// tokenResponse, so none needs to wait on another. Then establishes (or
+// extends) this admin's session. Idempotent — re-installing an
+// already-known store just replaces its token/scope (see
+// CredentialsStore.setStore), and upsertSessionStore is itself idempotent
+// for the same reason. Throws whatever exchangeCodeForToken throws on a
+// failed exchange; the caller (the /auth route) decides what HTTP status
+// that becomes.
+//
+// This is agnostic single-click-app plumbing — it knows nothing about any
+// specific app extension. Returns accessToken (not just storeHash) so the
+// /auth route can register a Gift Certificates Manager-specific App
+// Extension using this handshake's token directly, without a redundant
+// storage round-trip — see app/api/app/auth/route.ts and
+// lib/gift-certs-manager/register-app-extension.ts.
 export async function installStore(params: InstallStoreParams): Promise<InstallStoreResult> {
   const tokenResponse = await exchangeCodeForToken(params);
   const storeHash = parseStoreHash(tokenResponse.context);
@@ -47,10 +50,9 @@ export async function installStore(params: InstallStoreParams): Promise<InstallS
       email: tokenResponse.user.email,
     }),
     credentialsStore.setStoreUser({ storeHash, userId: tokenResponse.user.id }),
-    registerAppExtension(storeHash, tokenResponse.access_token),
   ]);
 
   await upsertSessionStore(tokenResponse.user.id, storeHash);
 
-  return { storeHash };
+  return { storeHash, accessToken: tokenResponse.access_token };
 }

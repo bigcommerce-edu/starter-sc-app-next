@@ -37,8 +37,9 @@ export const CREATE_CREDENTIALS_STORE_SCHEMA = `
   );
 
   -- Links a store to the App Extension registered for it at install time
-  -- (see lib/bc-auth/register-app-extension.ts). One row per store — the
-  -- app only ever registers one extension per install — keyed on store_hash
+  -- (see lib/gift-certs-manager/register-app-extension.ts). One row per
+  -- store — the app only ever registers one extension per install — keyed
+  -- on store_hash
   -- rather than a surrogate id since that's the only lookup any caller does
   -- (find the extension_id to delete on uninstall). extension_id is
   -- BigCommerce's own opaque id for the App Extension (e.g.

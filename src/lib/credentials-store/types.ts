@@ -31,9 +31,9 @@ export interface StoreUserRecord {
 }
 
 // Links a store to the App Extension registered for it at install time (see
-// lib/bc-auth/register-app-extension.ts). extensionId is BigCommerce's own
-// opaque id for the App Extension, returned by the createAppExtension
-// mutation — not something this app generates.
+// lib/gift-certs-manager/register-app-extension.ts). extensionId is
+// BigCommerce's own opaque id for the App Extension, returned by the
+// createAppExtension mutation — not something this app generates.
 export interface StoreExtensionRecord {
   storeHash: string;
   extensionId: string;
@@ -63,7 +63,7 @@ export interface StoreExtensionRecord {
 // createAppExtension mutation — a failed registration should leave no row,
 // not a partial one. getStoreExtension returns just the extensionId (not the
 // full StoreExtensionRecord), mirroring getStoreToken, since that's the only
-// thing uninstall-store.ts needs to call deleteAppExtension.
+// thing deregister-app-extension.ts needs to call deleteAppExtension.
 export interface CredentialsStore {
   setStore(store: StoreRecord): Promise<void>;
   setUser(user: UserRecord): Promise<void>;

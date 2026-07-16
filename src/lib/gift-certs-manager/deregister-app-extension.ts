@@ -29,7 +29,11 @@ async function deleteAppExtension(graphqlApiClient: BcGraphqlApiClient, extensio
 // extensions, or whose registration failed at install time. Must run before
 // CredentialsStore.deleteStore, which is what actually removes the
 // store_extensions row (and the store's token this needs to authenticate
-// the deletion) — see uninstall-store.ts.
+// the deletion) — called directly by the /uninstall route (see
+// app/api/app/uninstall/route.ts) before uninstallStore, not from within
+// uninstallStore itself, since uninstallStore (lib/bc-auth) is agnostic
+// single-click-app plumbing and this extension is a Gift Certificates
+// Manager concern.
 //
 // Never throws: uninstall must still clear the store's credentials even if
 // BigCommerce's side of the deletion never succeeds — a leftover App

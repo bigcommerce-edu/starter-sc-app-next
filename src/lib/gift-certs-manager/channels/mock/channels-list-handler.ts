@@ -1,5 +1,5 @@
-import { MockRouteHandler, MockRouteResponse } from "@/lib/bc-api-client/mock-client/types";
-import { V3ListResponse } from "@/lib/bc-api-client/types";
+import { MockRouteHandler, MockRouteResponse } from "@/lib/bc-api-client/rest-client/mock-rest-client/types";
+import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
 import { CHANNELS_PATH, Channel } from "@/lib/gift-certs-manager/channels/types";
 import { mockChannels } from "@/lib/gift-certs-manager/channels/mock/mock-channels";
 

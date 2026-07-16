@@ -1,4 +1,4 @@
-import { ApiRequestParams } from "@/lib/bc-api-client/types";
+import { ApiRequestParams } from "@/lib/bc-api-client/rest-client/types";
 
 // headers is for handlers mimicking a v2 endpoint's header-based pagination
 // (see gift-certificates-list-handler.ts) — most handlers omit it, since

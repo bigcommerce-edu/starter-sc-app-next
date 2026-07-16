@@ -1,5 +1,5 @@
-import { mockRouteHandlers } from "@/lib/bc-api-client/mock-client/handler-registry";
-import { ApiRequestOptions, ApiResponse, BcRestApiClient } from "@/lib/bc-api-client/types";
+import { mockRouteHandlers } from "@/lib/bc-api-client/rest-client/mock-rest-client/handler-registry";
+import { ApiRequestOptions, ApiResponse, BcRestApiClient } from "@/lib/bc-api-client/rest-client/types";
 
 // Simulates real network latency so loading/Suspense states are visible
 // during local development and demos. Absent (or invalid) env vars mean no

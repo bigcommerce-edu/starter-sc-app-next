@@ -1,5 +1,5 @@
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
-import { V3ListResponse } from "@/lib/bc-api-client/types";
+import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
 import { CUSTOMERS_PATH, Customer, CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
 
 export interface CustomersResult {

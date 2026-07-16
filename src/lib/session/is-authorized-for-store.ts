@@ -1,4 +1,4 @@
-import { getDataMode } from "@/lib/bc-api-client/get-rest-api-client";
+import { getDataMode } from "@/lib/bc-api-client/resolve-store-credentials";
 import { readSession } from "@/lib/session/session-cookie";
 
 // Whether the current session is authorized to act on the given store —

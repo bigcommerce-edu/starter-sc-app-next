@@ -1,4 +1,5 @@
-import { ApiMutationOptions, ApiRequestOptions, ApiResponse, BcRestApiClient, StoreApiCredentials } from "@/lib/bc-api-client/types";
+import { ApiMutationOptions, ApiRequestOptions, ApiResponse, BcRestApiClient } from "@/lib/bc-api-client/rest-client/types";
+import { StoreApiCredentials } from "@/lib/bc-api-client/types";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
 
@@ -19,7 +20,12 @@ function buildUrl(storeHash: string, path: string, params: ApiRequestOptions["pa
 // all), so a logged request means the calling *View's cache entry was
 // missing/expired, and no log on a repeat visit means it was served from
 // cache. Off by default since it's a developer diagnostic, not something a
-// deployed app should log unconditionally.
+// deployed app should log unconditionally. REST-specific (rather than shared
+// with the GraphQL client): method + URL + status is a useful signal when
+// the URL varies by path and verb, but every GraphQL request is a POST to
+// the same "/graphql" URL, so the same log line would carry none of that
+// signal — GraphQL request/error insight instead comes from the query name
+// and any body-level `errors`, not from method/status.
 function isApiRequestLoggingEnabled(): boolean {
   return process.env.LOG_API_REQUESTS?.toLowerCase() === "true";
 }

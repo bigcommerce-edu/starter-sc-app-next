@@ -1,5 +1,28 @@
 import { redirect } from "next/navigation";
 import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
+import { Suspense } from "react";
+import { ContentFallback } from "@/components/layout/content-fallback";
+
+async function AwaitedAuthenticatedLayout({ 
+  children, 
+  params
+}: { 
+  children: React.ReactNode, 
+  params: Promise<Record<string, string | string[] | undefined>> }
+) {
+  const resolvedParams = await params;
+  const storeHash = resolvedParams.storeHash;
+  const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
+
+  if (!(await isAuthorizedForStore(storeHashString))) {
+    // TODO: revisit once a dedicated "not authorized" destination exists —
+    // this redirects into /load's own verification, which will itself
+    // reject (400) without a valid signed_payload_jwt query param.
+    redirect("/api/app/load");
+  }
+
+  return children;
+}
 
 // The MULTITENANT auth guard: gates every page render in this route group
 // behind a check that the current session is actually authorized for the
@@ -19,16 +42,10 @@ export default async function AuthenticatedLayout({
   children: React.ReactNode;
   params: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const resolvedParams = await params;
-  const storeHash = resolvedParams.storeHash;
-  const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
-
-  if (!(await isAuthorizedForStore(storeHashString))) {
-    // TODO: revisit once a dedicated "not authorized" destination exists —
-    // this redirects into /load's own verification, which will itself
-    // reject (400) without a valid signed_payload_jwt query param.
-    redirect("/api/app/load");
-  }
-
-  return children;
+  return (
+    <Suspense fallback={<ContentFallback />}>
+      {/* Content fallback because AwaitedAuthenticatedLayout must perform auth check based on session cookie */}
+      <AwaitedAuthenticatedLayout params={params}>{children}</AwaitedAuthenticatedLayout>
+    </Suspense>
+  );
 }

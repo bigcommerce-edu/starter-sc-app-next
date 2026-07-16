@@ -10,7 +10,8 @@ export default function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   return (
-    <Suspense fallback={<ContentFallback />}>
+    <Suspense>
+      {/* Simple Suspense boundary, no fallback, because GiftCertificateDetailPage un-packs request params */}
       <GiftCertificateDetailPage params={params} searchParams={searchParams} />
     </Suspense>
   );

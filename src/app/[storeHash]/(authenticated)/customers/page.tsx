@@ -10,7 +10,8 @@ export default function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   return (
-    <Suspense fallback={<ContentFallback />}>
+    <Suspense>
+      {/* Simple Suspense boundary, no fallback, because CustomersPage un-packs request params */}
       <CustomersPage params={params} searchParams={searchParams} />
     </Suspense>
   );

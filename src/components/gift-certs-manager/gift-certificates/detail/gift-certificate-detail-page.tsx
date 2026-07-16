@@ -20,6 +20,7 @@ export async function GiftCertificateDetailPage({
 
   return (
     <Suspense fallback={<ContentFallback />}>
+      {/* Content fallback because GiftCertificateView must perform data fetching */}
       <GiftCertificateView id={idString ?? ""} storeHash={storeHashString} />
     </Suspense>
   );

@@ -60,11 +60,6 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
     return paginate(matches, 1, Math.max(matches.length, 1));
   }
 
-  const emailIn = getStringParam(params, "email:in")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter((email) => email !== "");
-
   const nameLike = getStringParam(params, "name:like").trim().toLowerCase();
   const emailFilter = getStringParam(params, "email:in").trim().toLowerCase();
   const dateCreatedMin = getStringParam(params, "date_created:min");

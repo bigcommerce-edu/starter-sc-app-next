@@ -4,7 +4,7 @@ import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-sto
 // One shared cache tag per store — there's only one App Extension this app
 // ever registers, so no need for a per-extension-id tag the way
 // giftCertificateTag/customerTag are per-record. Exported so the retry
-// action (see components/layout/app-extension-status-banner/actions/retry-app-extension-registration.ts)
+// action (see components/gift-certs-manager/app-extension-status-banner/actions/retry-app-extension-registration.ts)
 // can updateTag it the moment a retry succeeds, rather than waiting out the
 // cacheLife below.
 export function appExtensionStatusTag(storeHash: string): string {
@@ -23,8 +23,8 @@ async function fetchStoreExtensionStatus(storeHash: string): Promise<{ isRegiste
 
 // Whether this app's App Extension is registered for the given store —
 // used only to decide whether AppExtensionStatusBanner renders (see
-// components/layout/app-extension-status-banner/index.tsx). This is
-// non-critical, cosmetic-banner data (never blocks a page render — the
+// components/gift-certs-manager/app-extension-status-banner/index.tsx).
+// This is non-critical, cosmetic-banner data (never blocks a page render — the
 // banner is a client component that fetches this via its own API route), so
 // it's cached with the longer "extended" lifetime rather than "standard":
 // a stale "registered" reading for up to 10 minutes after a background fix

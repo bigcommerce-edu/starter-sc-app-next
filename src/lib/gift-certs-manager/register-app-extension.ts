@@ -22,7 +22,7 @@ import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-sto
 // there's no other way to notice a store missing its menu shortcut; this is
 // a permanent diagnostic, not a temporary debugging aid. A user-triggered
 // retry (see
-// components/layout/app-extension-status-banner/actions/retry-app-extension-registration.ts)
+// components/gift-certs-manager/app-extension-status-banner/actions/retry-app-extension-registration.ts)
 // is a separate action, colocated with the banner component that calls it
 // rather than living here, since it needs to surface success/failure to the
 // UI rather than swallow it.

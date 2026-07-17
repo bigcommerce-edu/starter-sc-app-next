@@ -1,5 +1,5 @@
 import { Box, InlineMessage } from "@/components/ui/big-design";
-import { getDataMode } from "@/lib/api-client/get-api-client";
+import { getDataMode } from "@/lib/bc-api-client/get-rest-api-client";
 
 const DATA_MODE_LABEL: Record<"MOCK" | "STATIC", string> = {
   MOCK: "mock",

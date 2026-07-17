@@ -10,12 +10,16 @@ function findChannelById(channels: Channel[], id: number): Channel | undefined {
 // Customers only ever know channels by id — this is the one place that
 // looks up what those ids actually refer to. Callers that already have the
 // full channel list on hand (e.g. because they also need it to populate a
-// filter) can pass it in directly to avoid fetching it twice.
+// filter) can pass it in directly to avoid fetching it twice. Takes
+// storeHash (rather than a BcRestApiClient) purely to forward into
+// fetchChannels, which is itself a `use cache` boundary and so can't accept a
+// class instance.
 export async function decorateCustomersWithChannels(
   customers: Customer[],
+  storeHash: string | undefined,
   channels?: Channel[],
 ): Promise<CustomerWithChannels[]> {
-  const resolvedChannels = channels ?? (await fetchChannels()).items;
+  const resolvedChannels = channels ?? (await fetchChannels(storeHash)).items;
 
   return customers.map((customer) => ({
     ...customer,
@@ -26,8 +30,12 @@ export async function decorateCustomersWithChannels(
   }));
 }
 
-export async function decorateCustomerWithChannels(customer: Customer, channels?: Channel[]): Promise<CustomerWithChannels> {
-  const [decorated] = await decorateCustomersWithChannels([customer], channels);
+export async function decorateCustomerWithChannels(
+  customer: Customer,
+  storeHash: string | undefined,
+  channels?: Channel[],
+): Promise<CustomerWithChannels> {
+  const [decorated] = await decorateCustomersWithChannels([customer], storeHash, channels);
 
   return decorated;
 }

@@ -1,11 +1,11 @@
-import { CustomersQuery, SortDirection } from "@/lib/gift-certs-manager/customers/types";
+import { CustomersQuery, CustomersSortColumn, SortDirection } from "@/lib/gift-certs-manager/customers/types";
 
 export const DEFAULT_QUERY: CustomersQuery = {
   name: "",
   email: "",
-  origin_channel_id: [],
   date_created_min: "",
   date_created_max: "",
+  sortColumn: "name",
   direction: "ASC",
   page: 1,
   limit: 10,
@@ -23,20 +23,12 @@ export function parseCustomersQuery(searchParams: RawSearchParams): CustomersQue
   const name = getParam(searchParams, "name") ?? DEFAULT_QUERY.name;
   const email = getParam(searchParams, "email") ?? DEFAULT_QUERY.email;
 
-  const originChannelIdParam = getParam(searchParams, "origin_channel_id");
-  const origin_channel_id = originChannelIdParam
-    ? originChannelIdParam
-        .split(",")
-        .map((value) => Number(value))
-        .filter((value) => Number.isInteger(value))
-    : DEFAULT_QUERY.origin_channel_id;
-
   const date_created_min = getParam(searchParams, "date_created_min") ?? DEFAULT_QUERY.date_created_min;
   const date_created_max = getParam(searchParams, "date_created_max") ?? DEFAULT_QUERY.date_created_max;
 
-  // name is the only sortable column BigCommerce supports for customers
-  // (mapped to last_name server-side — see customers-api.ts), so the only
-  // choice left to the user is direction.
+  const sortColumnParam = getParam(searchParams, "sortColumn");
+  const sortColumn: CustomersSortColumn = sortColumnParam === "date_created" ? "date_created" : DEFAULT_QUERY.sortColumn;
+
   const directionParam = getParam(searchParams, "direction");
   const direction: SortDirection = directionParam === "DESC" ? "DESC" : DEFAULT_QUERY.direction;
 
@@ -49,9 +41,9 @@ export function parseCustomersQuery(searchParams: RawSearchParams): CustomersQue
   return {
     name,
     email,
-    origin_channel_id,
     date_created_min,
     date_created_max,
+    sortColumn,
     direction,
     page,
     limit,
@@ -69,16 +61,16 @@ export function buildCustomersSearchParams(query: CustomersQuery): URLSearchPara
     params.set("email", query.email);
   }
 
-  if (query.origin_channel_id.length > 0) {
-    params.set("origin_channel_id", query.origin_channel_id.join(","));
-  }
-
   if (query.date_created_min) {
     params.set("date_created_min", query.date_created_min);
   }
 
   if (query.date_created_max) {
     params.set("date_created_max", query.date_created_max);
+  }
+
+  if (query.sortColumn !== DEFAULT_QUERY.sortColumn) {
+    params.set("sortColumn", query.sortColumn);
   }
 
   if (query.direction !== DEFAULT_QUERY.direction) {

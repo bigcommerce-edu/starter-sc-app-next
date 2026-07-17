@@ -121,7 +121,7 @@ export function GiftCertificateFilters({ query, onChange }: GiftCertificateFilte
 
           <FormGroup>
             <Input
-              label="Recipient email"
+              label="Recipient email contains"
               onChange={(event) => setDraftField("to_email", event.target.value)}
               value={draft.to_email}
             />

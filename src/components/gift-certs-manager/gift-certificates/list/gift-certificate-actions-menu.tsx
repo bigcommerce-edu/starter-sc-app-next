@@ -40,9 +40,11 @@ function getConfirmationMessage(action: PendingAction, certificate: GiftCertific
 export function GiftCertificateActionsMenu({
   certificate,
   detailUrl,
+  storeHash,
 }: {
   certificate: GiftCertificateWithRecipientAccount;
   detailUrl: string;
+  storeHash: string | undefined;
 }) {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -58,11 +60,11 @@ export function GiftCertificateActionsMenu({
           await runServerAction(() => resendGiftCertificateEmail(certificate.id));
           break;
         case "refill":
-          await runServerAction(() => refillGiftCertificateBalance(certificate.id, certificate.amount));
+          await runServerAction(() => refillGiftCertificateBalance(certificate.id, certificate.amount, storeHash));
           break;
         case "transfer":
           await runServerAction(() =>
-            transferGiftCertificateBalanceToStoreCredit(certificate.id, certificate.balance),
+            transferGiftCertificateBalanceToStoreCredit(certificate.id, certificate.balance, storeHash),
           );
           break;
       }
@@ -83,12 +85,15 @@ export function GiftCertificateActionsMenu({
     },
     {
       content: "Refill",
-      disabled: certificate.balance >= certificate.amount,
+      disabled:
+        certificate.balance >= certificate.amount ||
+        certificate.status === "pending" ||
+        certificate.status === "disabled",
       onItemClick: () => setPendingAction("refill"),
     },
     {
       content: "Transfer to Credit",
-      disabled: !certificate.recipientAccount,
+      disabled: !certificate.recipientAccount || certificate.balance <= 0 || certificate.status !== "active",
       onItemClick: () => setPendingAction("transfer"),
     },
   ];

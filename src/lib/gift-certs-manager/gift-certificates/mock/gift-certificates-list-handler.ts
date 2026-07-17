@@ -1,18 +1,8 @@
-import { MockRouteHandler } from "@/lib/api-client/mock-client/types";
-import { ApiRequestParams } from "@/lib/api-client/types";
+import { MockRouteHandler, MockRouteResponse } from "@/lib/bc-api-client/mock-client/types";
+import { ApiRequestParams } from "@/lib/bc-api-client/types";
 import { GiftCertificateWireRecord } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { mockGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/mock/mock-gift-certificates";
 import { GIFT_CERTIFICATES_PATH } from "@/lib/gift-certs-manager/gift-certificates/types";
-
-// Mirrors the shape a real gift certificates list endpoint would return: a
-// page of records plus the total count. Real BigCommerce v2 endpoints report
-// the total via Link/X-Total-Count response headers rather than a body
-// field — this mock keeps the count in the body since ApiClient doesn't
-// expose headers, but that's a mock-only convenience, not a real API shape.
-export interface MockGiftCertificatesResponse {
-  items: GiftCertificateWireRecord[];
-  totalItems: number;
-}
 
 function getStringParam(params: ApiRequestParams, key: string): string {
   const value = params[key];
@@ -29,8 +19,10 @@ function getNumberParam(params: ApiRequestParams, key: string, fallback: number)
 // BigCommerce's v2 gift certificates endpoint supports partial-match filters
 // on these fields (code, to_name, to_email, from_name, from_email) and
 // sorting by id — no balance/date ranges, no status filter, no
-// arbitrary-column sort.
-function handleGiftCertificatesListRequest(params: ApiRequestParams): MockGiftCertificatesResponse {
+// arbitrary-column sort. Mirrors the real endpoint's response shape exactly:
+// a bare array of records for the requested page, with no total count
+// anywhere — fetchGiftCertificates derives that itself by peeking ahead.
+function handleGiftCertificatesListRequest(params: ApiRequestParams): GiftCertificateWireRecord[] {
   const code = getStringParam(params, "code").trim().toLowerCase();
   const toName = getStringParam(params, "to_name").trim().toLowerCase();
   const toEmail = getStringParam(params, "to_email").trim().toLowerCase();
@@ -67,12 +59,11 @@ function handleGiftCertificatesListRequest(params: ApiRequestParams): MockGiftCe
   const sorted = [...filtered].sort((a, b) => (direction === "asc" ? a.id - b.id : b.id - a.id));
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const items = sorted.slice(startIndex, startIndex + itemsPerPage);
 
-  return { items, totalItems: sorted.length };
+  return sorted.slice(startIndex, startIndex + itemsPerPage);
 }
 
 export const giftCertificatesListMockHandler: MockRouteHandler = {
   pattern: new RegExp(`^${GIFT_CERTIFICATES_PATH}$`),
-  handle: (_match, params) => handleGiftCertificatesListRequest(params),
+  handle: (_match, params): MockRouteResponse => ({ data: handleGiftCertificatesListRequest(params) }),
 };

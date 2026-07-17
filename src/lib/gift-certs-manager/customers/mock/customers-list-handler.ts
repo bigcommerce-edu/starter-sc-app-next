@@ -1,6 +1,6 @@
-import { MockRouteHandler } from "@/lib/api-client/mock-client/types";
-import { ApiRequestParams } from "@/lib/api-client/types";
-import { V3ListResponse } from "@/lib/api-client/types";
+import { MockRouteHandler, MockRouteResponse } from "@/lib/bc-api-client/mock-client/types";
+import { ApiRequestParams } from "@/lib/bc-api-client/types";
+import { V3ListResponse } from "@/lib/bc-api-client/types";
 import { CustomerWireRecord } from "@/lib/gift-certs-manager/customers/customers-api";
 import { mockCustomers } from "@/lib/gift-certs-manager/customers/mock/mock-customers";
 import { CUSTOMERS_PATH } from "@/lib/gift-certs-manager/customers/types";
@@ -44,18 +44,24 @@ function paginate(
 }
 
 function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<CustomerWireRecord> {
-  const emailIn = getStringParam(params, "email:in")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter((email) => email !== "");
-
-  const nameLike = getStringParam(params, "name:like").trim().toLowerCase();
-  const emailFilter = getStringParam(params, "email:in").trim().toLowerCase();
-  const originChannelIds = getStringParam(params, "origin_channel_id:in")
+  const idIn = getStringParam(params, "id:in")
     .split(",")
     .filter((value) => value !== "")
     .map((value) => Number(value))
     .filter((value) => Number.isInteger(value));
+
+  // id:in is used by fetchCustomer for single-record lookups (BigCommerce's
+  // v3 customers endpoint has no dedicated /{id} path), and takes priority
+  // over the listing page's own filters/pagination — the two callers never
+  // combine both in a single request.
+  if (idIn.length > 0) {
+    const matches = mockCustomers.filter((customer) => idIn.includes(customer.id));
+
+    return paginate(matches, 1, Math.max(matches.length, 1));
+  }
+
+  const nameLike = getStringParam(params, "name:like").trim().toLowerCase();
+  const emailFilter = getStringParam(params, "email:in").trim().toLowerCase();
   const dateCreatedMin = getStringParam(params, "date_created:min");
   const dateCreatedMax = getStringParam(params, "date_created:max");
 
@@ -74,10 +80,6 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
     }
 
     if (emailFilter && customer.email.toLowerCase() !== emailFilter) {
-      return false;
-    }
-
-    if (originChannelIds.length > 0 && !originChannelIds.includes(customer.origin_channel_id)) {
       return false;
     }
 
@@ -103,5 +105,5 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
 
 export const customersListMockHandler: MockRouteHandler = {
   pattern: new RegExp(`^${CUSTOMERS_PATH}$`),
-  handle: (_match, params) => handleCustomersListRequest(params),
+  handle: (_match, params): MockRouteResponse => ({ data: handleCustomersListRequest(params) }),
 };

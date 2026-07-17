@@ -1,6 +1,4 @@
 import { GiftCertificateListView } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-list-view";
-import { getDataMode } from "@/lib/api-client/get-api-client";
-import { assertStoreHashForDataMode } from "@/lib/routing/assert-store-hash";
 
 export async function GiftCertificatesPage({
   params,
@@ -14,8 +12,6 @@ export async function GiftCertificatesPage({
 
   const storeHash = resolvedParams.storeHash;
   const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
-
-  assertStoreHashForDataMode(getDataMode(), storeHashString);
 
   return <GiftCertificateListView searchParams={resolvedSearchParams} storeHash={storeHashString} />;
 }

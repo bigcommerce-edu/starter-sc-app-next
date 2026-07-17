@@ -57,12 +57,11 @@ function getColumns(
           {
             header: "Recipient",
             hash: "to_name",
-            render: ({ recipientAccount, to_name }: GiftCertificateWithRecipientAccount) =>
-              recipientAccount ? (
-                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{to_name}</Link>
-              ) : (
-                to_name
-              ),
+            // Not a link: this is the name typed on the certificate, which
+            // may not match the registered account's actual name — only
+            // the email column (unambiguously the account's identifier)
+            // links to the customer.
+            render: ({ to_name }: GiftCertificateWithRecipientAccount) => to_name,
           },
           {
             header: "Recipient Email",
@@ -91,6 +90,7 @@ function getColumns(
         <GiftCertificateActionsMenu
           certificate={certificate}
           detailUrl={getAppUrl(storeHash, `/gift-certs/${certificate.id}`)}
+          storeHash={storeHash}
         />
       ),
       width: 64,
@@ -100,7 +100,10 @@ function getColumns(
 
 interface GiftCertificateTableProps {
   giftCertificates: GiftCertificateWithRecipientAccount[];
-  totalItems: number;
+  // BigCommerce's v2 gift certificates endpoint never reports a total count,
+  // so pagination here is stateless (next/previous only, no page count) —
+  // see resolveHasNextPage in gift-certificates-api.ts.
+  hasNextPage: boolean;
   query: GiftCertificatesQuery;
   storeHash: string | undefined;
   // The customer detail page reuses this table, pre-scoped to one customer's
@@ -116,7 +119,7 @@ interface GiftCertificateTableProps {
 // GiftCertificateListView reads the resulting searchParams and re-fetches server-side.
 export function GiftCertificateTable({
   giftCertificates,
-  totalItems,
+  hasNextPage,
   query,
   storeHash,
   showFilters = true,
@@ -168,18 +171,16 @@ export function GiftCertificateTable({
           columns={columns}
           items={giftCertificates}
           keyField="id"
-          itemName="gift certificates"
           sortable={{
             columnHash: "id",
             direction: query.direction,
             onSort: (_columnHash, direction) => navigate({ ...query, direction }),
           }}
           pagination={{
-            currentPage: query.page,
-            totalItems,
             itemsPerPage: query.limit,
             itemsPerPageOptions: ITEMS_PER_PAGE_OPTIONS,
-            onPageChange: (page) => navigate({ ...query, page }),
+            onPrevious: query.page > 1 ? () => navigate({ ...query, page: query.page - 1 }) : undefined,
+            onNext: hasNextPage ? () => navigate({ ...query, page: query.page + 1 }) : undefined,
             onItemsPerPageChange: (limit) => navigate({ ...query, limit, page: 1 }),
           }}
         />

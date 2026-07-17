@@ -1,13 +1,16 @@
+import { Suspense } from "react";
 import { AppShell } from "@/components/gift-certs-manager/app-shell";
 
-export default async function StoreLayout({
+export default function StoreLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ storeHash: string }>;
+  params: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { storeHash } = await params;
-
-  return <AppShell storeHash={storeHash}>{children}</AppShell>;
+  return (
+    <Suspense>
+      <AppShell params={params}>{children}</AppShell>
+    </Suspense>
+  );
 }

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShell } from "@/components/gift-certs-manager/app-shell";
 import { renderRootRoute } from "@/lib/routing/root-route-guard";
 
@@ -6,8 +7,16 @@ import { renderRootRoute } from "@/lib/routing/root-route-guard";
 // routes only ever render in MOCK/STATIC mode (see root-route-guard.tsx). `renderRootRoute()` enforces this by
 // rendering an Unauthorized page instead of the real content when this
 // layout is hit in MULTITENANT mode.
-export default function RootDevLayout({ children }: { children: React.ReactNode }) {
+export default function RootDevLayout({ 
+  children,
+  params,
+}: { 
+  children: React.ReactNode;
+  params: Promise<Record<string, string | string[] | undefined>>;
+}) {
   return renderRootRoute(
-    <AppShell storeHash={undefined}>{children}</AppShell>
+    <Suspense>
+      <AppShell params={params}>{children}</AppShell>
+    </Suspense>
   );
 }

@@ -1,12 +1,37 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { Box, Flex, Link } from "@/components/ui/big-design";
 import { ArrowBackIcon } from "@/components/ui/big-design-icons";
 import { GiftCertificateTabs } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-tabs";
 import { decorateGiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/decorate-with-accounts";
+import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { fetchGiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { getAppUrl } from "@/lib/routing/app-url";
 
-export async function GiftCertificateView({ id, storeHash }: { id: string; storeHash: string | undefined }) {
-  const giftCertificate = await decorateGiftCertificateWithAccounts(await fetchGiftCertificate(id));
+// Tagged per-id (rather than the shared list tag) so the detail page's
+// action layer can invalidate exactly the certificate it just mutated and
+// have the change show up immediately, without waiting out the cacheLife or
+// invalidating every other certificate's cached detail view. `use cache`
+// wraps the whole rendered view, so a cache hit skips re-rendering
+// GiftCertificateTabs (and everything under it) too. storeHash is the raw
+// [storeHash] route param (or undefined on a root-level dev route) — a
+// plain, serializable string, so it's safe to cross this cache boundary.
+// It's used both for data-access calls (getRestApiClient resolves which store to
+// actually target internally) and for building URLs further down.
+export async function GiftCertificateView({
+  id,
+  storeHash,
+}: {
+  id: string;
+  storeHash: string | undefined;
+}) {
+  "use cache: remote";
+  cacheLife("standard");
+  cacheTag(giftCertificateTag(id));
+
+  const giftCertificate = await decorateGiftCertificateWithAccounts(
+    await fetchGiftCertificate(id, storeHash),
+    storeHash,
+  );
 
   return (
     <Box>
@@ -19,7 +44,7 @@ export async function GiftCertificateView({ id, storeHash }: { id: string; store
         </Link>
       </Box>
 
-      <GiftCertificateTabs giftCertificate={giftCertificate} />
+      <GiftCertificateTabs giftCertificate={giftCertificate} storeHash={storeHash} />
     </Box>
   );
 }

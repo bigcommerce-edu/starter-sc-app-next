@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { CustomersPage } from "@/components/gift-certs-manager/customers/list/customers-page";
+import { GiftCertificateDetailPage } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-detail-page";
+import { AuthorizedPage } from "@/components/layout/authorized-page";
 import { ContentFallback } from "@/components/layout/content-fallback";
 
 export default function Page({
@@ -11,7 +12,7 @@ export default function Page({
 }) {
   return (
     <Suspense fallback={<ContentFallback />}>
-      <CustomersPage params={params} searchParams={searchParams} />
+      <AuthorizedPage params={params} searchParams={searchParams} pageComponent={GiftCertificateDetailPage} />
     </Suspense>
   );
 }

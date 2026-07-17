@@ -47,11 +47,22 @@ export interface StoreUserRecord {
 // deleteUser scopes to one store+user pair (the /remove_user callback's
 // actual semantics — a user is removed from one store, not globally), and
 // likewise drops the user row if that was their last association.
+//
+// isStoreUserLinked is the authoritative half of isAuthorizedForStore's
+// check (see lib/session/is-authorized-for-store.ts) — the session cookie's
+// authenticatedStores list is only an optimistic, unrevocable-until-expiry
+// claim; this confirms the store_users link still actually exists (e.g. it
+// wasn't removed via /remove_user since the cookie was issued). Deliberately
+// a separate call from getStoreToken (rather than one query joining
+// stores+store_users) so each keeps a cache key that matches what it's
+// actually keyed on: this by (storeHash, userId), getStoreToken by storeHash
+// alone. Called in parallel with getStoreToken by isAuthorizedForStore.
 export interface CredentialsStore {
   setStore(store: StoreRecord): Promise<void>;
   setUser(user: UserRecord): Promise<void>;
   setStoreUser(storeUser: StoreUserRecord): Promise<void>;
   getStoreToken(storeHash: string): Promise<string | undefined>;
+  isStoreUserLinked(storeHash: string, userId: number): Promise<boolean>;
   deleteStore(storeHash: string): Promise<void>;
   deleteUser(storeHash: string, userId: number): Promise<void>;
 }

@@ -6,7 +6,7 @@ import { MoreHorizIcon } from "@/components/ui/big-design-icons";
 import {
   refillGiftCertificateBalance,
   transferGiftCertificateBalanceToStoreCredit,
-} from "@/app/[storeHash]/(authenticated)/gift-certs/[id]/actions";
+} from "@/app/[storeHash]/gift-certs/[id]/actions";
 import { runServerAction } from "@/components/ui/action-alerts";
 import { GiftCertificateWithRecipientAccount } from "@/lib/gift-certs-manager/gift-certificates/types";
 

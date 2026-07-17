@@ -42,6 +42,10 @@ interface CountRow {
   c: number;
 }
 
+interface ExistsRow {
+  found: number;
+}
+
 // Local-development driver for single-instance use — node:sqlite gives
 // synchronous, in-process access to a file on disk, with no server process
 // or extra dependency to install. Not suitable for MULTITENANT once this
@@ -121,6 +125,14 @@ export class SqliteCredentialsStore implements CredentialsStore {
       | undefined;
 
     return row?.extension_id;
+  }
+
+  async isStoreUserLinked(storeHash: string, userId: number): Promise<boolean> {
+    const row = this.db
+      .prepare("SELECT 1 as found FROM store_users WHERE store_hash = ? AND user_id = ?")
+      .get(storeHash, userId) as unknown as ExistsRow | undefined;
+
+    return row !== undefined;
   }
 
   // Deletes a store's row, its store-user links, its extension link, and any

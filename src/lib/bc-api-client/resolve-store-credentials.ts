@@ -1,4 +1,5 @@
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
+import { cache } from "react";
 
 export type DataMode = "MOCK" | "STATIC" | "MULTITENANT";
 
@@ -55,7 +56,18 @@ export function resolveStoreHash(storeHash: string | undefined): string | undefi
 // decides a missing token is an error, regardless of which mode caused it.
 // Takes an already-resolved storeHash (see resolveStoreHash) — not the raw
 // route param.
-export async function resolveApiToken(storeHash: string | undefined): Promise<string | undefined> {
+//
+// Cached by React's per-request memoization, keyed on storeHash alone
+// (never userId — this is also called from inside `use cache` component
+// trees via getRestApiClient, which can only ever cross that boundary with
+// plain, serializable, session-agnostic arguments). Exported so
+// isAuthorizedForStore (see lib/session/is-authorized-for-store.ts) can call
+// this exact same wrapped function as half of its authorization check,
+// run in parallel with the store_users link check via Promise.all — since
+// it's the same cache() entry, the *View components' own later call to
+// getRestApiClient for this storeHash reuses this result for free instead
+// of triggering a second DB round-trip.
+export const resolveApiToken = cache(async (storeHash: string | undefined): Promise<string | undefined> => {
   if (getDataMode() === "STATIC") {
     return process.env.STATIC_STORE_TOKEN;
   }
@@ -65,4 +77,4 @@ export async function resolveApiToken(storeHash: string | undefined): Promise<st
   }
 
   return getCredentialsStore().getStoreToken(storeHash);
-}
+});

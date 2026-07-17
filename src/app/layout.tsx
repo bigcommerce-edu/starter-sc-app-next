@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Source_Sans_3 } from "next/font/google";
-import { BigDesignProvider } from "@/components/ui/big-design-provider";
-import { StyledComponentsRegistry } from "@/components/ui/styled-components-registry";
 import { ActionAlertsManager } from "@/components/ui/action-alerts";
+import "./globals.css";
 
 const sourceSans3 = Source_Sans_3({
   subsets: ["latin"],
@@ -21,12 +20,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={sourceSans3.className}>
       <body>
-        <StyledComponentsRegistry>
-          <BigDesignProvider>
-            {children}
-            <ActionAlertsManager />
-          </BigDesignProvider>
-        </StyledComponentsRegistry>
+        {children}
+        <ActionAlertsManager />
       </body>
     </html>
   );

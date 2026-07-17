@@ -1,4 +1,7 @@
-import { Box, Panel, Select, Small, Text } from "@/components/ui/big-design";
+import { Box } from "@/components/ui/box";
+import { Panel } from "@/components/ui/panel";
+import { Select } from "@/components/ui/select";
+import { Small, Text } from "@/components/ui/text";
 import { GIFT_CERTIFICATE_STATUSES, GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certs-manager/gift-certificates/status";
 import { GiftCertificateStatus, GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 

@@ -1,5 +1,8 @@
-import { Box, Flex, H1, Panel, Text } from "@/components/ui/big-design";
-import { ErrorIcon } from "@/components/ui/big-design-icons";
+import { Box } from "@/components/ui/box";
+import { Flex } from "@/components/ui/flex";
+import { Panel } from "@/components/ui/panel";
+import { H1, Text } from "@/components/ui/text";
+import { ErrorIcon } from "@/components/ui/icons";
 
 export function UnauthorizedRootRoute() {
   return (

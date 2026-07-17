@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useParams } from "next/navigation";
-import { Box, InlineMessage } from "@/components/ui/big-design";
+import { Box } from "@/components/ui/box";
+import { InlineMessage } from "@/components/ui/inline-message";
 import { showErrorAlert, showSuccessAlert } from "@/components/ui/action-alerts";
 import { retryAppExtensionRegistration } from "@/components/gift-certs-manager/app-extension-status-banner/actions/retry-app-extension-registration";
 

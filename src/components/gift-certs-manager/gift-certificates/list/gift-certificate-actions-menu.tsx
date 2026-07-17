@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button, Dropdown, DropdownItem, DropdownLinkItem, Modal, Text } from "@/components/ui/big-design";
-import { MoreHorizIcon } from "@/components/ui/big-design-icons";
+import { Button } from "@/components/ui/button";
+import { Dropdown, DropdownItem, DropdownLinkItem } from "@/components/ui/dropdown";
+import { Modal } from "@/components/ui/modal";
+import { Text } from "@/components/ui/text";
+import { MoreHorizIcon } from "@/components/ui/icons";
 import {
   refillGiftCertificateBalance,
   transferGiftCertificateBalanceToStoreCredit,

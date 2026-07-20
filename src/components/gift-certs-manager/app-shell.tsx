@@ -1,4 +1,5 @@
-import { Box, Flex, FlexItem } from "@/components/ui/big-design";
+import { Box } from "@/components/ui/box";
+import { Flex, FlexItem } from "@/components/ui/flex";
 import { AppExtensionStatusBanner } from "@/components/gift-certs-manager/app-extension-status-banner";
 import { DataModeBanner } from "@/components/layout/data-mode-banner";
 import { DeveloperInfoPanel } from "@/components/layout/developer-info-panel";

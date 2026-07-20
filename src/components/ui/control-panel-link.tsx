@@ -1,34 +1,14 @@
 "use client";
 
 import { MouseEvent } from "react";
-import styled from "styled-components";
-import { OpenInNewIcon } from "@/components/ui/big-design-icons";
+import { OpenInNewIcon } from "@/components/ui/icons";
 import { getControlPanelUrl } from "@/lib/routing/control-panel-url";
 
-// Same visual styling as AppLink (in turn copied from BigDesign's own Link —
-// see its comment), so a ControlPanelLink reads as the same kind of control
-// everywhere else in the app, plus an inline-flex layout so the icon sits
-// next to the text — the same layout BigDesign's own Link uses for its
+// Same visual styling as AppLink/Link (see globals.css's shared link rules),
+// plus an inline-flex layout (in the .control-panel-link class) so the icon
+// sits next to the text — the same layout BigDesign's own Link used for its
 // external prop.
-const StyledControlPanelLink = styled.a`
-  align-items: center;
-  color: ${({ theme }) => theme.colors.primary};
-  cursor: pointer;
-  display: inline-flex;
-  font-size: ${({ theme }) => theme.typography.fontSize.medium};
-  font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
-  gap: ${({ theme }) => theme.spacing.xxSmall};
-  text-decoration: none;
-
-  &:active {
-    color: ${({ theme }) => theme.colors.primary70};
-  }
-
-  &:hover:not(:active) {
-    color: ${({ theme }) => theme.colors.primary70};
-  }
-`;
-
+//
 // Navigates the parent frame (the BigCommerce control panel itself), not
 // this app's own iframe — for links that take the merchant to a native
 // control-panel page this app doesn't (and shouldn't try to) reimplement.
@@ -85,9 +65,9 @@ export function ControlPanelLink({
   };
 
   return (
-    <StyledControlPanelLink href={href} onClick={handleClick} rel="noopener noreferrer">
+    <a className="control-panel-link" href={href} onClick={handleClick} rel="noopener noreferrer">
       {children}
       <OpenInNewIcon size="medium" />
-    </StyledControlPanelLink>
+    </a>
   );
 }

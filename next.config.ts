@@ -22,17 +22,6 @@ const nextConfig: NextConfig = {
   // in this app is commented out alongside this flag; re-enable together
   // once upstream fixes the streaming/hang issue.
   // cacheComponents: true,
-  
-  // Without this, Next's SWC compiler doesn't apply styled-components'
-  // displayNameAndId transform, so every styled(...) component (AppLink,
-  // ControlPanelLink, etc.) gets its class name generated purely at
-  // runtime — which can come out in a different order on the server's
-  // render pass than on the client's first hydration pass, causing a
-  // "className didn't match" hydration error. This gives every
-  // styled-component a stable, deterministic class name/id instead.
-  compiler: {
-    styledComponents: true,
-  },
   experimental: {
     serverActions: {
       allowedOrigins,

@@ -1,6 +1,8 @@
 // import { cacheLife, cacheTag } from "next/cache";
-import { Box, Flex, Panel } from "@/components/ui/big-design";
-import { ArrowBackIcon } from "@/components/ui/big-design-icons";
+import { Box } from "@/components/ui/box";
+import { Flex } from "@/components/ui/flex";
+import { Panel } from "@/components/ui/panel";
+import { ArrowBackIcon } from "@/components/ui/icons";
 import { AppLink } from "@/components/ui/app-link";
 import { CustomerInfoPanel } from "@/components/gift-certs-manager/customers/detail/customer-info-panel";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";

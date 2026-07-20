@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Button, Chip, Datepicker, Flex, Form, FormGroup, Input, Modal } from "@/components/ui/big-design";
-import { FilterListIcon } from "@/components/ui/big-design-icons";
+import { Box } from "@/components/ui/box";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { Datepicker } from "@/components/ui/datepicker";
+import { Flex } from "@/components/ui/flex";
+import { Form, FormGroup } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
+import { FilterListIcon } from "@/components/ui/icons";
 import { CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
 import { DEFAULT_QUERY } from "@/lib/gift-certs-manager/customers/query";
 
@@ -126,7 +133,6 @@ export function CustomerFilters({ query, onChange }: CustomerFiltersProps) {
 
           <FormGroup>
             <Datepicker
-              dateFormat="yyyy-MM-dd"
               label="Registered after"
               onDateChange={(date) => setDraftField("date_created_min", toDateOnly(date))}
               value={draft.date_created_min || undefined}
@@ -135,7 +141,6 @@ export function CustomerFilters({ query, onChange }: CustomerFiltersProps) {
 
           <FormGroup>
             <Datepicker
-              dateFormat="yyyy-MM-dd"
               label="Registered before"
               onDateChange={(date) => setDraftField("date_created_max", toDateOnly(date))}
               value={draft.date_created_max || undefined}

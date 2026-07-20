@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button, Flex, FlexItem, Modal, Text } from "@/components/ui/big-design";
+import { Button } from "@/components/ui/button";
+import { Flex, FlexItem } from "@/components/ui/flex";
+import { Modal } from "@/components/ui/modal";
+import { Text } from "@/components/ui/text";
 import { updateGiftCertificateStatus } from "@/app/[storeHash]/gift-certs/[id]/actions";
 import { GiftCertificatePartyPanel } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-party-panel";
 import { GiftCertificateStatusPanel } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-status-panel";

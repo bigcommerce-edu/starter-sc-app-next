@@ -63,7 +63,12 @@ export interface StoreExtensionRecord {
 // createAppExtension mutation — a failed registration should leave no row,
 // not a partial one. getStoreExtension returns just the extensionId (not the
 // full StoreExtensionRecord), mirroring getStoreToken, since that's the only
-// thing deregister-app-extension.ts needs to call deleteAppExtension.
+// thing the app-extension-status check
+// (lib/gift-certs-manager/app-extension-status.ts) needs to report whether
+// registration succeeded. BigCommerce automatically cleans up an app's
+// extensions on uninstall, so this app has no deregistration step of its
+// own — deleteStore's cascade below still drops the store_extensions row
+// itself, just so no stale row lingers if the store is ever reinstalled.
 //
 // isStoreUserLinked is the authoritative half of isAuthorizedForStore's
 // check (see lib/session/is-authorized-for-store.ts) — the session cookie's

@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag } from "next/cache";
+// import { cacheLife, cacheTag } from "next/cache";
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
 import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
 import { CHANNELS_PATH, Channel } from "@/lib/gift-certs-manager/channels/types";
@@ -19,9 +19,11 @@ export interface ChannelsResult {
 // instance — `use cache` cannot serialize class instances, so the client is
 // constructed here instead of being passed in.
 export async function fetchChannels(storeHash: string | undefined): Promise<ChannelsResult> {
-  "use cache: remote";
-  cacheLife("extended");
-  cacheTag("channels:list");
+  // Disabled: cacheComponents/"use cache: remote" causes intermittent request
+  // hangs on Cloudflare Workers — see next.config.ts.
+  // "use cache: remote";
+  // cacheLife("extended");
+  // cacheTag("channels:list");
 
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<Channel>>(CHANNELS_PATH);

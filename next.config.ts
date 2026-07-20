@@ -15,23 +15,29 @@ if (process.env.APP_ORIGIN) {
 }
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
+  // Disabled: cacheComponents (PPR) + "use cache: remote" causes intermittent
+  // request hangs on Cloudflare Workers via @opennextjs/cloudflare — see
+  // https://github.com/opennextjs/opennextjs-cloudflare/issues/1115. Every
+  // `"use cache: remote"`, `cacheTag(...)`, and `updateTag(...)` call site
+  // in this app is commented out alongside this flag; re-enable together
+  // once upstream fixes the streaming/hang issue.
+  // cacheComponents: true,
   experimental: {
     serverActions: {
       allowedOrigins,
     },
   },
-  cacheLife: {
-    // This is an admin-privileged app, so most fetches use a short lifetime —
-    // changes made directly in the BigCommerce control panel, or by another
-    // admin, shouldn't stay stale for long even where no cache tag invalidates
-    // them.
-    standard: { stale: 300, revalidate: 300, expire: 300 },
-    // Channels change far less often than gift certificates or customers
-    // (they're a store configuration concern, not day-to-day transactional
-    // data), so this can tolerate a much longer lifetime.
-    extended: { stale: 600, revalidate: 600, expire: 600 },
-  },
+  // cacheLife: {
+  //   // This is an admin-privileged app, so most fetches use a short lifetime —
+  //   // changes made directly in the BigCommerce control panel, or by another
+  //   // admin, shouldn't stay stale for long even where no cache tag invalidates
+  //   // them.
+  //   standard: { stale: 300, revalidate: 300, expire: 300 },
+  //   // Channels change far less often than gift certificates or customers
+  //   // (they're a store configuration concern, not day-to-day transactional
+  //   // data), so this can tolerate a much longer lifetime.
+  //   extended: { stale: 600, revalidate: 600, expire: 600 },
+  // },
 };
 
 export default nextConfig;

@@ -1,11 +1,11 @@
 "use server";
 
-import { updateTag } from "next/cache";
+// import { updateTag } from "next/cache";
 import { getGraphqlApiClient } from "@/lib/bc-api-client/get-graphql-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 import { APP_EXTENSION_INPUT, CREATE_APP_EXTENSION_MUTATION, CreateAppExtensionResult } from "@/lib/gift-certs-manager/app-extension-mutation";
-import { appExtensionStatusTag } from "@/lib/gift-certs-manager/app-extension-status";
+// import { appExtensionStatusTag } from "@/lib/gift-certs-manager/app-extension-status";
 import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
 
 // User-triggered retry for a failed install-time registration — called only
@@ -49,7 +49,7 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
     };
   }
 
-  updateTag(appExtensionStatusTag(storeHash));
+  // updateTag(appExtensionStatusTag(storeHash));
 
   return { success: true, message: "App Extension registered." };
 }

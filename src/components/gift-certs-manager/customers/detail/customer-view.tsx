@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag } from "next/cache";
+// import { cacheLife, cacheTag } from "next/cache";
 import { Box } from "@/components/ui/box";
 import { Flex } from "@/components/ui/flex";
 import { Panel } from "@/components/ui/panel";
@@ -6,10 +6,10 @@ import { ArrowBackIcon } from "@/components/ui/icons";
 import { AppLink } from "@/components/ui/app-link";
 import { CustomerInfoPanel } from "@/components/gift-certs-manager/customers/detail/customer-info-panel";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
-import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
+// import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { decorateCustomerWithChannels } from "@/lib/gift-certs-manager/customers/decorate-with-channels";
 import { fetchCustomer } from "@/lib/gift-certs-manager/customers/customers-api";
-import { GIFT_CERTIFICATES_LIST_TAG, giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+// import { GIFT_CERTIFICATES_LIST_TAG, giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { parseGiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/query";
 import { getAppUrl } from "@/lib/routing/app-url";
@@ -33,10 +33,12 @@ export async function CustomerView({
   searchParams: Record<string, string | string[] | undefined>;
   storeHash: string | undefined;
 }) {
-  "use cache: remote";
-  cacheLife("standard");
-  cacheTag(customerTag(id));
-  cacheTag(GIFT_CERTIFICATES_LIST_TAG);
+  // Disabled: cacheComponents/"use cache: remote" causes intermittent request
+  // hangs on Cloudflare Workers — see next.config.ts.
+  // "use cache: remote";
+  // cacheLife("standard");
+  // cacheTag(customerTag(id));
+  // cacheTag(GIFT_CERTIFICATES_LIST_TAG);
 
   const rawCustomer = await fetchCustomer(id, storeHash);
 
@@ -53,9 +55,9 @@ export async function CustomerView({
     fetchGiftCertificates({ ...query, to_email: rawCustomer.email }, storeHash),
   ]);
 
-  for (const item of items) {
-    cacheTag(giftCertificateTag(item.id));
-  }
+  // for (const item of items) {
+  //   cacheTag(giftCertificateTag(item.id));
+  // }
 
   // Every row's recipient is this customer, so there's no need to decorate
   // via a separate customer lookup — the account is already known.

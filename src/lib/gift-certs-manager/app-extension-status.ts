@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag } from "next/cache";
+// import { cacheLife, cacheTag } from "next/cache";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 
 // One shared cache tag per store — there's only one App Extension this app
@@ -12,9 +12,11 @@ export function appExtensionStatusTag(storeHash: string): string {
 }
 
 async function fetchStoreExtensionStatus(storeHash: string): Promise<{ isRegistered: boolean }> {
-  "use cache: remote";
-  cacheLife("extended");
-  cacheTag(appExtensionStatusTag(storeHash));
+  // Disabled: cacheComponents/"use cache: remote" causes intermittent request
+  // hangs on Cloudflare Workers — see next.config.ts.
+  // "use cache: remote";
+  // cacheLife("extended");
+  // cacheTag(appExtensionStatusTag(storeHash));
 
   const extensionId = await getCredentialsStore().getStoreExtension(storeHash);
 

@@ -1,6 +1,6 @@
-import { cacheLife, cacheTag } from "next/cache";
+// import { cacheLife, cacheTag } from "next/cache";
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
-import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+// import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   GIFT_CERTIFICATES_PATH,
   GiftCertificate,
@@ -35,9 +35,11 @@ async function fetchGiftCertificatesPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
 ): Promise<GiftCertificateWireRecord[]> {
-  "use cache: remote";
-  cacheLife("standard");
-  cacheTag(GIFT_CERTIFICATES_LIST_TAG);
+  // Disabled: cacheComponents/"use cache: remote" causes intermittent request
+  // hangs on Cloudflare Workers — see next.config.ts.
+  // "use cache: remote";
+  // cacheLife("standard");
+  // cacheTag(GIFT_CERTIFICATES_LIST_TAG);
 
   const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
@@ -64,9 +66,9 @@ async function fetchGiftCertificatesPage(
   // cacheTag pattern), so a mutation to one of these certificates
   // invalidates this page/peek immediately rather than waiting out the
   // cacheLife.
-  for (const record of records) {
-    cacheTag(giftCertificateTag(record.id));
-  }
+  // for (const record of records) {
+  //   cacheTag(giftCertificateTag(record.id));
+  // }
 
   return records;
 }

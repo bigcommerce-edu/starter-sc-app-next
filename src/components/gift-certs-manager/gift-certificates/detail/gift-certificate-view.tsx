@@ -1,11 +1,11 @@
-import { cacheLife, cacheTag } from "next/cache";
+// import { cacheLife, cacheTag } from "next/cache";
 import { Box } from "@/components/ui/box";
 import { Flex } from "@/components/ui/flex";
 import { ArrowBackIcon } from "@/components/ui/icons";
 import { AppLink } from "@/components/ui/app-link";
 import { GiftCertificateTabs } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-tabs";
 import { decorateGiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/decorate-with-accounts";
-import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+// import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { fetchGiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { getAppUrl } from "@/lib/routing/app-url";
 
@@ -26,9 +26,11 @@ export async function GiftCertificateView({
   id: string;
   storeHash: string | undefined;
 }) {
-  "use cache: remote";
-  cacheLife("standard");
-  cacheTag(giftCertificateTag(id));
+  // Disabled: cacheComponents/"use cache: remote" causes intermittent request
+  // hangs on Cloudflare Workers — see next.config.ts.
+  // "use cache: remote";
+  // cacheLife("standard");
+  // cacheTag(giftCertificateTag(id));
 
   const giftCertificate = await decorateGiftCertificateWithAccounts(
     await fetchGiftCertificate(id, storeHash),

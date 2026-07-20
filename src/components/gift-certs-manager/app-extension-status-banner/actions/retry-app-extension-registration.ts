@@ -1,10 +1,10 @@
 "use server";
 
-import { updateTag } from "next/cache";
+// import { updateTag } from "next/cache";
 import { getGraphqlApiClient } from "@/lib/bc-api-client/get-graphql-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
-import { appExtensionStatusTag } from "@/lib/gift-certs-manager/app-extension-status";
+// import { appExtensionStatusTag } from "@/lib/gift-certs-manager/app-extension-status";
 import { findOrCreateAppExtension } from "@/lib/gift-certs-manager/register-app-extension";
 import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
 
@@ -49,7 +49,7 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
     };
   }
 
-  updateTag(appExtensionStatusTag(storeHash));
+  // updateTag(appExtensionStatusTag(storeHash));
 
   return { success: true, message: "App extension registration succeeded" };
 }

@@ -1,6 +1,4 @@
-import { Box } from "@/components/ui/box";
-import { Panel } from "@/components/ui/panel";
-import { Small, Text } from "@/components/ui/text";
+import { Box, Panel, Small, Text } from "@/components/ui/big-design";
 import { ControlPanelLink } from "@/components/ui/control-panel-link";
 import { CustomerWithChannels, sumStoreCredit } from "@/lib/gift-certs-manager/customers/types";
 

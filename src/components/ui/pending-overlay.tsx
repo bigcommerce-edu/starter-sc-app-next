@@ -1,6 +1,4 @@
-import { Box } from "@/components/ui/box";
-import { Flex } from "@/components/ui/flex";
-import { ProgressCircle } from "@/components/ui/progress-circle";
+import { Box, Flex, ProgressCircle } from "@/components/ui/big-design";
 
 // Dims already-rendered content and overlays a spinner while isPending is
 // true. Used to show a "refreshing" state for content re-fetched via

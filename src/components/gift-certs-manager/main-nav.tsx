@@ -1,9 +1,7 @@
 "use client";
 
 import { useParams, usePathname } from "next/navigation";
-import { Box } from "@/components/ui/box";
-import { Flex } from "@/components/ui/flex";
-import { Text } from "@/components/ui/text";
+import { Box, Flex, Text } from "@/components/ui/big-design";
 import { AppLink } from "@/components/ui/app-link";
 import { getAppUrl } from "@/lib/routing/app-url";
 

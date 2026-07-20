@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Box } from "@/components/ui/box";
-import { Button } from "@/components/ui/button";
-import { Flex } from "@/components/ui/flex";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
-import { Panel } from "@/components/ui/panel";
-import { Small, Text } from "@/components/ui/text";
+import { Box, Button, Flex, Input, Modal, Panel, Small, Text } from "@/components/ui/big-design";
 import {
   addToGiftCertificateBalance,
   refillGiftCertificateBalance,

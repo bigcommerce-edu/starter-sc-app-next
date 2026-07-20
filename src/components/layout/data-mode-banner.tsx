@@ -1,5 +1,4 @@
-import { Box } from "@/components/ui/box";
-import { InlineMessage } from "@/components/ui/inline-message";
+import { Box, InlineMessage } from "@/components/ui/big-design";
 import { getDataMode } from "@/lib/bc-api-client/resolve-store-credentials";
 
 const DATA_MODE_LABEL: Record<"MOCK" | "STATIC", string> = {

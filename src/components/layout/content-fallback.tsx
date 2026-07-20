@@ -1,5 +1,4 @@
-import { Flex } from "@/components/ui/flex";
-import { ProgressCircle } from "@/components/ui/progress-circle";
+import { Flex, ProgressCircle } from "@/components/ui/big-design";
 
 // Shared Suspense fallback for any content area waiting on a server render —
 // the [storeHash]/(root) layout's outer content boundary (covers the

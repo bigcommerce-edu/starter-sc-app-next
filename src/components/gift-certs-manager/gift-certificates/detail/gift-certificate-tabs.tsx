@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Box } from "@/components/ui/box";
-import { Tabs } from "@/components/ui/tabs";
+import { Box, Tabs } from "@/components/ui/big-design";
 import { GiftCertificateBalanceTab } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-balance-tab";
 import { GiftCertificateDetailsTab } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-details-tab";
 import { GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";

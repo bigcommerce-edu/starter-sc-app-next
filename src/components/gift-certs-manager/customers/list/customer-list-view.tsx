@@ -1,6 +1,5 @@
 // import { cacheLife, cacheTag } from "next/cache";
-import { Box } from "@/components/ui/box";
-import { Panel } from "@/components/ui/panel";
+import { Box, Panel } from "@/components/ui/big-design";
 import { ControlPanelLink } from "@/components/ui/control-panel-link";
 import { CustomerTable } from "@/components/gift-certs-manager/customers/list/customer-table";
 import { fetchChannels } from "@/lib/gift-certs-manager/channels/channels-api";

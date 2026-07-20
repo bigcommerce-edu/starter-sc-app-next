@@ -33,7 +33,7 @@ export async function CustomerView({
   searchParams: Record<string, string | string[] | undefined>;
   storeHash: string | undefined;
 }) {
-  "use cache: remote";
+  "use cache";
   cacheLife("standard");
   cacheTag(customerTag(id));
   cacheTag(GIFT_CERTIFICATES_LIST_TAG);

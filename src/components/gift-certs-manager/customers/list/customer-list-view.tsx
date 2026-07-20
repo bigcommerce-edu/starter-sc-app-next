@@ -36,7 +36,7 @@ export async function CustomerListView({
   searchParams: Record<string, string | string[] | undefined>;
   storeHash: string | undefined;
 }) {
-  "use cache: remote";
+  "use cache";
   cacheLife("standard");
   cacheTag(CUSTOMERS_LIST_TAG);
 

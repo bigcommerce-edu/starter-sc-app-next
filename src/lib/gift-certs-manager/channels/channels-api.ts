@@ -19,7 +19,7 @@ export interface ChannelsResult {
 // instance — `use cache` cannot serialize class instances, so the client is
 // constructed here instead of being passed in.
 export async function fetchChannels(storeHash: string | undefined): Promise<ChannelsResult> {
-  "use cache: remote";
+  "use cache";
   cacheLife("extended");
   cacheTag("channels:list");
 

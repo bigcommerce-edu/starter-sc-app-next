@@ -1,8 +1,9 @@
 import { cache } from "react";
+import { PostgresCredentialsStore } from "@/lib/credentials-store/postgres-driver/postgres-credentials-store";
 import { SqliteCredentialsStore } from "@/lib/credentials-store/sqlite-driver/sqlite-credentials-store";
 import { CredentialsStore, CredentialsStoreDriver } from "@/lib/credentials-store/types";
 
-const VALID_DRIVERS: CredentialsStoreDriver[] = ["SQLITE"];
+const VALID_DRIVERS: CredentialsStoreDriver[] = ["SQLITE", "POSTGRES"];
 const DEFAULT_DRIVER: CredentialsStoreDriver = "SQLITE";
 
 function getConfiguredDriver(): CredentialsStoreDriver {
@@ -21,14 +22,16 @@ const getCachedCredentialsStore = cache((driver: CredentialsStoreDriver): Creden
   switch (driver) {
     case "SQLITE":
       return new SqliteCredentialsStore();
+    case "POSTGRES":
+      return new PostgresCredentialsStore();
   }
 });
 
 // Selects the CredentialsStore implementation to use, based on
-// CREDENTIALS_STORE_DRIVER. SQLite is the only driver today (suitable for
-// local development and single-instance use); a future multi-instance
-// deployment will add a driver here (e.g. Postgres/D1) without callers
-// needing to change.
+// CREDENTIALS_STORE_DRIVER. SQLite is for local development and
+// single-instance use; POSTGRES (see postgres-driver/) is for any real
+// multi-instance deployment (e.g. Vercel + Neon) — a shared remote database
+// every instance can see, rather than a local file.
 export function getCredentialsStore(): CredentialsStore {
   return getCachedCredentialsStore(getConfiguredDriver());
 }

@@ -1,12 +1,13 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { Box, Flex, Link, Panel } from "@/components/ui/big-design";
+import { Box, Flex, Panel } from "@/components/ui/big-design";
 import { ArrowBackIcon } from "@/components/ui/big-design-icons";
+import { AppLink } from "@/components/ui/app-link";
 import { CustomerInfoPanel } from "@/components/gift-certs-manager/customers/detail/customer-info-panel";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
 import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { decorateCustomerWithChannels } from "@/lib/gift-certs-manager/customers/decorate-with-channels";
 import { fetchCustomer } from "@/lib/gift-certs-manager/customers/customers-api";
-import { GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+import { GIFT_CERTIFICATES_LIST_TAG, giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { parseGiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/query";
 import { getAppUrl } from "@/lib/routing/app-url";
@@ -50,6 +51,10 @@ export async function CustomerView({
     fetchGiftCertificates({ ...query, to_email: rawCustomer.email }, storeHash),
   ]);
 
+  for (const item of items) {
+    cacheTag(giftCertificateTag(item.id));
+  }
+
   // Every row's recipient is this customer, so there's no need to decorate
   // via a separate customer lookup — the account is already known.
   const decoratedItems = items.map((certificate) => ({ ...certificate, recipientAccount: customer }));
@@ -57,16 +62,16 @@ export async function CustomerView({
   return (
     <Box>
       <Box marginBottom="medium">
-        <Link href={getAppUrl(storeHash, "/customers")}>
+        <AppLink href={getAppUrl(storeHash, "/customers")}>
           <Flex alignItems="center" flexGap="0.25rem">
             <ArrowBackIcon size="small" />
             Back to Customers
           </Flex>
-        </Link>
+        </AppLink>
       </Box>
 
       <Box marginBottom="medium">
-        <CustomerInfoPanel customer={customer} />
+        <CustomerInfoPanel customer={customer} storeHash={storeHash} />
       </Box>
 
       <Panel header="Gift Certificates">

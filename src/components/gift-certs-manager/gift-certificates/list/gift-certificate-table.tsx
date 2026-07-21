@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Badge, Box, Link, Table, TableColumn } from "@/components/ui/big-design";
+import { Badge, Box, Table, TableColumn } from "@/components/ui/big-design";
+import { AppLink } from "@/components/ui/app-link";
 import { GiftCertificateActionsMenu } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-actions-menu";
 import { GiftCertificateFilters } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-filters";
 import { PendingOverlay } from "@/components/ui/pending-overlay";
@@ -25,7 +26,7 @@ function getColumns(
       header: "Certificate #",
       hash: "id",
       render: ({ id, code }: GiftCertificateWithRecipientAccount) => (
-        <Link href={getAppUrl(storeHash, `/gift-certs/${id}`)}>{code}</Link>
+        <AppLink href={getAppUrl(storeHash, `/gift-certs/${id}`)}>{code}</AppLink>
       ),
       // BigCommerce's v2 gift certificates endpoint only supports sort=id,
       // so this is the only sortable column — id isn't otherwise displayed,
@@ -68,7 +69,7 @@ function getColumns(
             hash: "to_email",
             render: ({ to_email, recipientAccount }: GiftCertificateWithRecipientAccount) =>
               recipientAccount ? (
-                <Link href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{to_email}</Link>
+                <AppLink href={getAppUrl(storeHash, `/customers/${recipientAccount.id}`)}>{to_email}</AppLink>
               ) : (
                 to_email
               ),
@@ -162,11 +163,11 @@ export function GiftCertificateTable({
 
   return (
     <Box>
-      {showFilters && (
-        <GiftCertificateFilters onChange={(filters) => navigate({ ...query, ...filters, page: 1 })} query={query} />
-      )}
-
       <PendingOverlay isPending={isPending}>
+        {showFilters && (
+          <GiftCertificateFilters onChange={(filters) => navigate({ ...query, ...filters, page: 1 })} query={query} />
+        )}
+
         <Table
           columns={columns}
           items={giftCertificates}

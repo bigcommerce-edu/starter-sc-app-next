@@ -4,6 +4,8 @@ allowBuilds:
 onlyBuiltDependencies:
   - sharp
   - unrs-resolver
+patchedDependencies:
+  '@bigcommerce/big-design': patches/@bigcommerce__big-design+modal-removechild-detached-node.patch
 peerDependencyRules:
   allowedVersions:
     "@bigcommerce/big-design>react": "19"

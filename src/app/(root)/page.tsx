@@ -1,4 +1,4 @@
-import HomePage from "@/app/[storeHash]/(authenticated)/page";
+import HomePage from "@/app/[storeHash]/page";
 
 // This route exists only for MOCK/STATIC development, when there's no store hash
 // context in the page request. The root layout enforces this by rendering an

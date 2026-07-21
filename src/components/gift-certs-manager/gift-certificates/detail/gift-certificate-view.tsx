@@ -1,6 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { Box, Flex, Link } from "@/components/ui/big-design";
+import { Box, Flex } from "@/components/ui/big-design";
 import { ArrowBackIcon } from "@/components/ui/big-design-icons";
+import { AppLink } from "@/components/ui/app-link";
 import { GiftCertificateTabs } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-tabs";
 import { decorateGiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/decorate-with-accounts";
 import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
@@ -36,12 +37,12 @@ export async function GiftCertificateView({
   return (
     <Box>
       <Box marginBottom="medium">
-        <Link href={getAppUrl(storeHash, "/gift-certs")}>
+        <AppLink href={getAppUrl(storeHash, "/gift-certs")}>
           <Flex alignItems="center" flexGap="0.25rem">
             <ArrowBackIcon size="small" />
             Back to Gift Certificates
           </Flex>
-        </Link>
+        </AppLink>
       </Box>
 
       <GiftCertificateTabs giftCertificate={giftCertificate} storeHash={storeHash} />

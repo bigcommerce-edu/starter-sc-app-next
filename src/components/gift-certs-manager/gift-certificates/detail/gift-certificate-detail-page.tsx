@@ -1,4 +1,6 @@
 import { GiftCertificateView } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-view";
+import { ContentFallback } from "@/components/layout/content-fallback";
+import { Suspense } from "react";
 
 export async function GiftCertificateDetailPage({
   params,
@@ -16,5 +18,9 @@ export async function GiftCertificateDetailPage({
   const storeHash = resolvedParams.storeHash;
   const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
 
-  return <GiftCertificateView id={idString ?? ""} storeHash={storeHashString} />;
+  return (
+    <Suspense fallback={<ContentFallback />}>
+      <GiftCertificateView id={idString ?? ""} storeHash={storeHashString} />
+    </Suspense>
+  );
 }

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { GiftCertificateDetailPage } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-detail-page";
-import { GiftCertificatesFallback } from "@/components/gift-certs-manager/gift-certificates/gift-certificates-fallback";
+import { AuthorizedPage } from "@/components/layout/authorized-page";
+import { ContentFallback } from "@/components/layout/content-fallback";
 
 export default function Page({
   params,
@@ -10,8 +11,8 @@ export default function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   return (
-    <Suspense fallback={<GiftCertificatesFallback />}>
-      <GiftCertificateDetailPage params={params} searchParams={searchParams} />
+    <Suspense fallback={<ContentFallback />}>
+      <AuthorizedPage params={params} searchParams={searchParams} pageComponent={GiftCertificateDetailPage} />
     </Suspense>
   );
 }

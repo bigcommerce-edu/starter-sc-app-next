@@ -1,6 +1,7 @@
 import { Suspense } from "react";
-import { CustomersFallback } from "@/components/gift-certs-manager/customers/customers-fallback";
 import { CustomersPage } from "@/components/gift-certs-manager/customers/list/customers-page";
+import { AuthorizedPage } from "@/components/layout/authorized-page";
+import { ContentFallback } from "@/components/layout/content-fallback";
 
 export default function Page({
   params,
@@ -10,8 +11,8 @@ export default function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   return (
-    <Suspense fallback={<CustomersFallback />}>
-      <CustomersPage params={params} searchParams={searchParams} />
+    <Suspense fallback={<ContentFallback />}>
+      <AuthorizedPage params={params} searchParams={searchParams} pageComponent={CustomersPage} />
     </Suspense>
   );
 }

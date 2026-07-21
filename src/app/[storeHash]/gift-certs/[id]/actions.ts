@@ -1,7 +1,6 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { getDataMode } from "@/lib/bc-api-client/get-rest-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { addToCustomerStoreCredit, fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";
@@ -15,12 +14,21 @@ import {
   updateGiftCertificateStatus as updateGiftCertificateStatusRequest,
 } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
+import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
 
 export async function updateGiftCertificateStatus(
   id: number | string,
   status: GiftCertificateStatus,
   storeHash: string | undefined,
 ): Promise<ActionResult> {
+  // A page/layout-level auth check does not extend to Server Actions (they're
+  // directly POST-able independent of any page render), so this re-verifies
+  // on its own rather than trusting the client-supplied storeHash — see
+  // isAuthorizedForStore.
+  if (!(await isAuthorizedForStore(storeHash))) {
+    throw new Error("Not authorized for this store.");
+  }
+
   // The caller only supplies id/status — every other field used to build the
   // update request (and any future validation against the certificate's real
   // state) comes from this fresh fetch, never from client-supplied data.
@@ -31,20 +39,6 @@ export async function updateGiftCertificateStatus(
   updateTag(giftCertificateTag(id));
 
   return { success: true, message: "Gift certificate status updated." };
-}
-
-// Re-send is only meaningful in MULTITENANT mode (MOCK/STATIC have no real
-// recipient to email), and MULTITENANT itself isn't implemented yet.
-export async function resendGiftCertificateEmail(id: number | string): Promise<ActionResult> {
-  void id;
-
-  const dataMode = getDataMode();
-
-  if (dataMode !== "MULTITENANT") {
-    throw new Error(`Re-send is not available in ${dataMode} mode.`);
-  }
-
-  throw new Error("Re-send not yet implemented.");
 }
 
 // Refilling only makes sense for a certificate that's still usable (active
@@ -60,6 +54,10 @@ export async function refillGiftCertificateBalance(
   newBalance: number,
   storeHash: string | undefined,
 ): Promise<ActionResult> {
+  if (!(await isAuthorizedForStore(storeHash))) {
+    throw new Error("Not authorized for this store.");
+  }
+
   const giftCertificate = await fetchGiftCertificate(id, storeHash);
 
   if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
@@ -91,6 +89,10 @@ export async function addToGiftCertificateBalance(
   amount: number,
   storeHash: string | undefined,
 ): Promise<ActionResult> {
+  if (!(await isAuthorizedForStore(storeHash))) {
+    throw new Error("Not authorized for this store.");
+  }
+
   const giftCertificate = await fetchGiftCertificate(id, storeHash);
 
   if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
@@ -131,6 +133,10 @@ export async function transferGiftCertificateBalanceToStoreCredit(
   amount: number,
   storeHash: string | undefined,
 ): Promise<ActionResult> {
+  if (!(await isAuthorizedForStore(storeHash))) {
+    throw new Error("Not authorized for this store.");
+  }
+
   const giftCertificate = await fetchGiftCertificate(id, storeHash);
 
   if (giftCertificate.status !== "active") {

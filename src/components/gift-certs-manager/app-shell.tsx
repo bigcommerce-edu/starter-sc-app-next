@@ -2,34 +2,28 @@ import { Box, Flex, FlexItem } from "@/components/ui/big-design";
 import { DataModeBanner } from "@/components/layout/data-mode-banner";
 import { DeveloperInfoPanel } from "@/components/layout/developer-info-panel";
 import { MainNav } from "@/components/gift-certs-manager/main-nav";
+import { Suspense } from "react";
+import { ContentFallback } from "../layout/content-fallback";
 
 const SIDEBAR_WIDTH = "280px";
 
-// Unpacks storeHash itself (same pattern as every *Page component) rather
-// than having each layout that renders this do it and pass the result down —
-// so [storeHash]/layout.tsx and (root)/layout.tsx can just forward params
-// straight through. The layout wraps this whole component in a Suspense
-// boundary, since awaiting params here is itself a dynamic read under
-// cacheComponents — but by the time that await resolves and MainNav renders,
-// storeHash is already a plain resolved value, not a pending read, so
-// MainNav doesn't need (and can't benefit from) a Suspense boundary of its
-// own.
-export async function AppShell({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const resolvedParams = await params;
-  const storeHash = resolvedParams.storeHash;
-  const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
-
+// The shell chrome (nav, data-mode banner, developer info sidebar) has no
+// dynamic dependency of its own — DataModeBanner only reads getDataMode()
+// (sync env var), DeveloperInfoPanel only reads env vars, and MainNav reads
+// its own storeHash via useParams() client-side. So this is a plain, sync
+// Server Component: it takes no params, awaits nothing, and can render
+// immediately regardless of how long `children` takes to resolve.
+// [storeHash]/layout.tsx and (root)/layout.tsx wrap `children` (not this
+// component) in the Suspense boundary that covers the auth check and page
+// data — this component itself never needs one.
+export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <Box>
       <DataModeBanner />
       <Box paddingHorizontal="large" paddingTop="large">
-        <MainNav storeHash={storeHashString} />
+        <Suspense>
+          <MainNav />
+        </Suspense>
       </Box>
       <Flex padding="large" flexGap="1rem" alignItems="flex-start">
         <FlexItem flexGrow={1} flexShrink={1}>

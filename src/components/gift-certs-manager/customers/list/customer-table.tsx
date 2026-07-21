@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Box, Link, Table, TableColumn } from "@/components/ui/big-design";
+import { Box, Table, TableColumn } from "@/components/ui/big-design";
+import { AppLink } from "@/components/ui/app-link";
 import { CustomerActionsMenu } from "@/components/gift-certs-manager/customers/list/customer-actions-menu";
 import { CustomerFilters } from "@/components/gift-certs-manager/customers/list/customer-filters";
 import { PendingOverlay } from "@/components/ui/pending-overlay";
@@ -26,7 +27,7 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<CustomerWi
       header: "Name",
       hash: "name",
       render: ({ id, first_name, last_name }: CustomerWithChannels) => (
-        <Link href={getAppUrl(storeHash, `/customers/${id}`)}>{`${first_name} ${last_name}`}</Link>
+        <AppLink href={getAppUrl(storeHash, `/customers/${id}`)}>{`${first_name} ${last_name}`}</AppLink>
       ),
       isSortable: true,
     },
@@ -34,7 +35,7 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<CustomerWi
       header: "Email",
       hash: "email",
       render: ({ id, email }: CustomerWithChannels) => (
-        <Link href={getAppUrl(storeHash, `/customers/${id}`)}>{email}</Link>
+        <AppLink href={getAppUrl(storeHash, `/customers/${id}`)}>{email}</AppLink>
       ),
     },
     {
@@ -116,9 +117,9 @@ export function CustomerTable({ customers, totalItems, query, storeHash }: Custo
 
   return (
     <Box>
-      <CustomerFilters onChange={(filters) => navigate({ ...query, ...filters, page: 1 })} query={query} />
-
       <PendingOverlay isPending={isPending}>
+        <CustomerFilters onChange={(filters) => navigate({ ...query, ...filters, page: 1 })} query={query} />
+
         <Table
           columns={columns}
           items={customers}

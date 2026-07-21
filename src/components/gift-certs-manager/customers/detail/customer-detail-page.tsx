@@ -19,8 +19,8 @@ export async function CustomerDetailPage({
   const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
 
   return (
-    <Suspense fallback={<ContentFallback />}>
-      {/* Content fallback because CustomerView must perform data fetching */}
+    <Suspense>
+      {/* Simple Suspense because CustomerView must perform data fetching; higher component already handles fallback */}
       <CustomerView id={idString ?? ""} searchParams={resolvedSearchParams} storeHash={storeHashString} />
     </Suspense>
   );

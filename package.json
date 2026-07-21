@@ -11,7 +11,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "scaffold": "node scripts/scaffold.mjs"
+    "scaffold": "node scripts/scaffold.mjs",
+    "db:postgres:migrate": "node scripts/postgres/migrate.mjs",
+    "vercel-build": "pnpm db:postgres:migrate && next build"
   },
   "dependencies": {
     "@bigcommerce/big-design": "^3.2.0",

@@ -34,25 +34,28 @@ export async function exchangeCodeForToken(params: ExchangeCodeParams): Promise<
     throw new Error("BIGCOMMERCE_CLIENT_ID and BIGCOMMERCE_CLIENT_SECRET must be set to exchange an auth code.");
   }
 
+  const payload = {
+    client_id: clientId,
+    client_secret: clientSecret,
+    code: params.code,
+    context: params.context,
+    scope: params.scope,
+    grant_type: "authorization_code",
+    redirect_uri: params.redirectUri,
+  };
+  
   const response = await fetch(`${BC_LOGIN_URL}/oauth2/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({
-      client_id: clientId,
-      client_secret: clientSecret,
-      code: params.code,
-      context: params.context,
-      scope: params.scope,
-      grant_type: "authorization_code",
-      redirect_uri: params.redirectUri,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
     throw new Error(`BigCommerce token exchange failed with status ${response.status}: ${await response.text()}`);
+    console.log(payload);
   }
 
   return tokenResponseSchema.parse(await response.json());

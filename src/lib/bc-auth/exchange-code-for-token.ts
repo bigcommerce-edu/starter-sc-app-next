@@ -54,7 +54,6 @@ export async function exchangeCodeForToken(params: ExchangeCodeParams): Promise<
   });
 
   if (!response.ok) {
-    console.log(payload);
     throw new Error(`BigCommerce token exchange failed with status ${response.status}: ${await response.text()}`);
   }
 

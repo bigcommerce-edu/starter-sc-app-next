@@ -19,8 +19,8 @@ export async function GiftCertificateDetailPage({
   const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
 
   return (
-    <Suspense>
-      {/* Simple Suspense because GiftCertificateView must perform data fetching; higher component already handles fallback */}
+    <Suspense fallback={<ContentFallback />}>
+      {/* Content fallback because GiftCertificateView must perform data fetching */}
       <GiftCertificateView id={idString ?? ""} storeHash={storeHashString} />
     </Suspense>
   );

@@ -1,4 +1,4 @@
-export type CredentialsStoreDriver = "SQLITE";
+export type CredentialsStoreDriver = "SQLITE" | "POSTGRES";
 
 // A store's OAuth grant, as returned by BigCommerce's token exchange (see
 // lib/bc-auth/exchange-code-for-token.ts). adminUserId is the id of the user
@@ -40,7 +40,7 @@ export interface StoreExtensionRecord {
 }
 
 // Generic persistence for per-store API credentials, implemented by one
-// driver per backing DB (see sqlite-driver/ for the first one). Modeled on
+// driver per backing DB (see sqlite-driver/ and postgres-driver/). Modeled on
 // BcRestApiClient (see lib/bc-api-client/types.ts): a small interface named
 // for what it stores rather than how, so a future Postgres/D1/etc. driver
 // can implement it without changing callers.

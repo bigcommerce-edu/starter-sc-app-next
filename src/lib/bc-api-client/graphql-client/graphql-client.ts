@@ -38,12 +38,27 @@ export class GraphqlApiClient implements BcGraphqlApiClient {
     // syntax, a mistyped enum value, etc.) as a non-2xx with the actual
     // detail in the JSON body's `errors` array, not just a bare status —
     // reading only response.status here would discard the one piece of
-    // information that explains the failure.
+    // information that explains the failure. But the body isn't guaranteed
+    // to be JSON at all: a proxy/gateway failure in front of the API (e.g. a
+    // 502 with an HTML error page) has the same shape as a real response
+    // (some status, some text), and JSON.parse throwing there would discard
+    // response.status — the one thing this error handling exists to
+    // preserve — behind a raw, unrelated SyntaxError instead. Falling back
+    // to the raw text (truncated, in case it's a large HTML page) keeps that
+    // diagnostic intact rather than losing it to a parse failure.
     const responseText = await response.text();
-    const body = responseText ? (JSON.parse(responseText) as GraphqlResponseBody<TResult>) : undefined;
+    let body: GraphqlResponseBody<TResult> | undefined;
+
+    try {
+      body = responseText ? (JSON.parse(responseText) as GraphqlResponseBody<TResult>) : undefined;
+    } catch {
+      body = undefined;
+    }
 
     if (!response.ok || body?.errors?.length) {
-      const errorDetail = body?.errors?.length ? body.errors.map((error) => error.message).join("; ") : responseText;
+      const errorDetail = body?.errors?.length
+        ? body.errors.map((error) => error.message).join("; ")
+        : responseText.slice(0, 500);
 
       throw new Error(`BigCommerce GraphQL request failed with status ${response.status}: ${errorDetail}`);
     }

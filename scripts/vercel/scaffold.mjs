@@ -110,13 +110,26 @@ function findLineIndex(lines, key) {
   return lines.findIndex((line) => new RegExp(`^#?\\s*${key}=`).test(line));
 }
 
+// A "===== SOME SECTION =====" line belongs to the file's overall structure
+// (see e.g. "# ===== POSTGRES SETTINGS =====" above DATABASE_URL in
+// .env.example), not to whichever var happens to sit directly below it —
+// unlike this file's own DEV_ONLY_START/END markers, there's no blank line
+// guaranteed between a section header and the first var under it. Without
+// this check, findBlockStart would walk straight through it into whatever
+// came before, and applyOverride would delete it as if it were part of the
+// overridden var's own comment.
+function isSectionHeader(line) {
+  return /^#\s*=+.*=+\s*$/.test(line);
+}
+
 // Comment lines immediately preceding the KEY= line belong to it and get
 // replaced along with it; walks upward from lineIndex while lines start
-// with "#" and stops at the first blank line or non-comment line.
+// with "#" and stops at the first blank line, section header, or
+// non-comment line.
 function findBlockStart(lines, lineIndex) {
   let start = lineIndex;
 
-  while (start > 0 && lines[start - 1].startsWith("#")) {
+  while (start > 0 && lines[start - 1].startsWith("#") && !isSectionHeader(lines[start - 1])) {
     start -= 1;
   }
 

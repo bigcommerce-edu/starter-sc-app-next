@@ -1,10 +1,10 @@
 "use server";
 
-// import { updateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { ActionResult } from "@/lib/actions/action-result";
-// import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
+import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { addToCustomerStoreCredit, fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";
-// import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   addToGiftCertificateBalance as addToGiftCertificateBalanceRequest,
   debitGiftCertificateForTransfer,
@@ -36,7 +36,7 @@ export async function updateGiftCertificateStatus(
 
   await updateGiftCertificateStatusRequest(giftCertificate, status, storeHash);
 
-  // updateTag(giftCertificateTag(id));
+  updateTag(giftCertificateTag(id));
 
   return { success: true, message: "Gift certificate status updated." };
 }
@@ -74,7 +74,7 @@ export async function refillGiftCertificateBalance(
 
   await refillGiftCertificateBalanceRequest(giftCertificate, newBalance, storeHash);
 
-  // updateTag(giftCertificateTag(id));
+  updateTag(giftCertificateTag(id));
 
   return { success: true, message: "Gift certificate balance refilled." };
 }
@@ -105,7 +105,7 @@ export async function addToGiftCertificateBalance(
 
   await addToGiftCertificateBalanceRequest(giftCertificate, amount, storeHash);
 
-  // updateTag(giftCertificateTag(id));
+  updateTag(giftCertificateTag(id));
 
   return { success: true, message: "Amount added to gift certificate balance." };
 }
@@ -171,7 +171,7 @@ export async function transferGiftCertificateBalanceToStoreCredit(
     } catch {
       // Only the certificate was actually mutated (the debit) — the customer
       // credit never succeeded, so there's no customer tag to invalidate here.
-      // updateTag(giftCertificateTag(id));
+      updateTag(giftCertificateTag(id));
 
       return {
         success: false,
@@ -179,7 +179,7 @@ export async function transferGiftCertificateBalanceToStoreCredit(
       };
     }
 
-    // updateTag(giftCertificateTag(id));
+    updateTag(giftCertificateTag(id));
 
     return {
       success: false,
@@ -190,8 +190,8 @@ export async function transferGiftCertificateBalanceToStoreCredit(
   // Both resources were mutated on the success path, so both tags need
   // invalidating: the certificate's own balance/status, and this customer's
   // store credit balance shown on their detail page.
-  // updateTag(giftCertificateTag(id));
-  // updateTag(customerTag(customer.id));
+  updateTag(giftCertificateTag(id));
+  updateTag(customerTag(customer.id));
 
   return { success: true, message: "Gift certificate balance transferred to store credit." };
 }

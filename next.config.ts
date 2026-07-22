@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
   // `"use cache: remote"`, `cacheTag(...)`, and `updateTag(...)` call site
   // in this app is commented out alongside this flag; re-enable together
   // once upstream fixes the streaming/hang issue.
-  // cacheComponents: true,
+  cacheComponents: true,
   
   // Swaps the Postgres credentials-store driver for a `pg`-free stub
   // whenever CREDENTIALS_STORE_DRIVER isn't "POSTGRES" — see
@@ -48,17 +48,17 @@ const nextConfig: NextConfig = {
       allowedOrigins,
     },
   },
-  // cacheLife: {
-  //   // This is an admin-privileged app, so most fetches use a short lifetime —
-  //   // changes made directly in the BigCommerce control panel, or by another
-  //   // admin, shouldn't stay stale for long even where no cache tag invalidates
-  //   // them.
-  //   standard: { stale: 300, revalidate: 300, expire: 300 },
-  //   // Channels change far less often than gift certificates or customers
-  //   // (they're a store configuration concern, not day-to-day transactional
-  //   // data), so this can tolerate a much longer lifetime.
-  //   extended: { stale: 600, revalidate: 600, expire: 600 },
-  // },
+  cacheLife: {
+    // This is an admin-privileged app, so most fetches use a short lifetime —
+    // changes made directly in the BigCommerce control panel, or by another
+    // admin, shouldn't stay stale for long even where no cache tag invalidates
+    // them.
+    standard: { stale: 300, revalidate: 300, expire: 300 },
+    // Channels change far less often than gift certificates or customers
+    // (they're a store configuration concern, not day-to-day transactional
+    // data), so this can tolerate a much longer lifetime.
+    extended: { stale: 600, revalidate: 600, expire: 600 },
+  },
 };
 
 export default nextConfig;

@@ -38,19 +38,17 @@ export async function installStore(params: InstallStoreParams): Promise<InstallS
   const storeHash = parseStoreHash(tokenResponse.context);
   const credentialsStore = getCredentialsStore();
 
-  await Promise.all([
-    credentialsStore.setStore({
-      storeHash,
-      accessToken: tokenResponse.access_token,
-      scope: tokenResponse.scope,
-      adminUserId: tokenResponse.user.id,
-    }),
-    credentialsStore.setUser({
-      userId: tokenResponse.user.id,
-      email: tokenResponse.user.email,
-    }),
-    credentialsStore.setStoreUser({ storeHash, userId: tokenResponse.user.id }),
-  ]);
+  await credentialsStore.setStore({
+    storeHash,
+    accessToken: tokenResponse.access_token,
+    scope: tokenResponse.scope,
+    adminUserId: tokenResponse.user.id,
+  });
+  await credentialsStore.setUser({
+    userId: tokenResponse.user.id,
+    email: tokenResponse.user.email,
+  });
+  await credentialsStore.setStoreUser({ storeHash, userId: tokenResponse.user.id });
 
   await upsertSessionStore(tokenResponse.user.id, storeHash);
 

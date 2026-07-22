@@ -22,6 +22,27 @@ const nextConfig: NextConfig = {
   // in this app is commented out alongside this flag; re-enable together
   // once upstream fixes the streaming/hang issue.
   // cacheComponents: true,
+  
+  // Swaps the Postgres credentials-store driver for a `pg`-free stub
+  // whenever CREDENTIALS_STORE_DRIVER isn't "POSTGRES" — see
+  // lib/credentials-store/postgres-driver-loader.ts and
+  // postgres-driver-loader.unavailable.ts. This isn't just an unused-code
+  // optimization: `pg` does an unconditional `require("pg-cloudflare")`
+  // internally that fails to resolve when bundled for some deployment
+  // targets (e.g. Cloudflare Workers via @opennextjs/cloudflare), even
+  // though that branch would never actually execute there — a build-time
+  // alias is the only lever that keeps `pg` out of the compiled output
+  // entirely, since neither a runtime env check nor a dynamic import stops
+  // a bundler from tracing into a statically-reachable module.
+  turbopack: {
+    resolveAlias:
+      process.env.CREDENTIALS_STORE_DRIVER !== "POSTGRES"
+        ? {
+            "@/lib/credentials-store/postgres-driver-loader":
+              "@/lib/credentials-store/postgres-driver-loader.unavailable",
+          }
+        : {},
+  },
   experimental: {
     serverActions: {
       allowedOrigins,

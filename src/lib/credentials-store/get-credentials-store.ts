@@ -1,5 +1,12 @@
 import { cache } from "react";
-import { PostgresCredentialsStore } from "@/lib/credentials-store/postgres-driver/postgres-credentials-store";
+// Imported from postgres-driver-loader.ts, not directly from
+// postgres-driver/postgres-credentials-store.ts — next.config.ts's
+// turbopack.resolveAlias swaps this specifier for a `pg`-free stub on builds
+// where CREDENTIALS_STORE_DRIVER isn't "POSTGRES", so `pg` (which breaks
+// bundling on some deployment targets, e.g. Cloudflare Workers) is never
+// compiled in on a build that would never select this branch anyway. See
+// postgres-driver-loader.ts's own comment.
+import { PostgresCredentialsStore } from "@/lib/credentials-store/postgres-driver-loader";
 import { SqliteCredentialsStore } from "@/lib/credentials-store/sqlite-driver/sqlite-credentials-store";
 import { CredentialsStore, CredentialsStoreDriver } from "@/lib/credentials-store/types";
 

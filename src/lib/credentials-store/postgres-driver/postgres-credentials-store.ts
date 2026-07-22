@@ -15,10 +15,6 @@ interface UserIdRow {
   user_id: number;
 }
 
-interface CountRow {
-  c: string;
-}
-
 // Generic Postgres driver — works against Neon or any other standard
 // Postgres server via DATABASE_URL (a plain libpq connection string), using
 // node-postgres (pg) rather than any Neon-specific client. Suitable for
@@ -164,13 +160,17 @@ export class PostgresCredentialsStore implements CredentialsStore {
 
 // Shared by deleteStore's cascade (many candidate user ids) and deleteUser
 // (always exactly one) — drops any of the given users that have no
-// remaining store_users row at all.
+// remaining store_users row at all. One set-based statement rather than a
+// per-user SELECT COUNT + conditional DELETE loop: both callers have
+// already deleted the relevant store_users rows earlier in the same
+// transaction, so this only needs to ask "does this user still have any row
+// left at all," which NOT EXISTS answers directly without a per-id
+// round-trip.
 async function deleteUsersWithNoRemainingStores(client: PoolClient, userIds: number[]): Promise<void> {
-  for (const userId of userIds) {
-    const { c } = (await client.query<CountRow>("SELECT COUNT(*) as c FROM store_users WHERE user_id = $1", [userId])).rows[0];
-
-    if (Number(c) === 0) {
-      await client.query("DELETE FROM users WHERE user_id = $1", [userId]);
-    }
-  }
+  await client.query(
+    `DELETE FROM users
+     WHERE user_id = ANY($1)
+       AND NOT EXISTS (SELECT 1 FROM store_users su WHERE su.user_id = users.user_id)`,
+    [userIds],
+  );
 }

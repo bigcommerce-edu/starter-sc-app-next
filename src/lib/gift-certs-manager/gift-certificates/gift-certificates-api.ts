@@ -35,7 +35,7 @@ async function fetchGiftCertificatesPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
 ): Promise<GiftCertificateWireRecord[]> {
-  "use cache";
+  "use cache: remote";
   cacheLife("standard");
   cacheTag(GIFT_CERTIFICATES_LIST_TAG);
 

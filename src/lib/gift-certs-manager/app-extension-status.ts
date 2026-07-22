@@ -12,7 +12,7 @@ export function appExtensionStatusTag(storeHash: string): string {
 }
 
 async function fetchStoreExtensionStatus(storeHash: string): Promise<{ isRegistered: boolean }> {
-  "use cache";
+  "use cache: remote";
   cacheLife("extended");
   cacheTag(appExtensionStatusTag(storeHash));
 

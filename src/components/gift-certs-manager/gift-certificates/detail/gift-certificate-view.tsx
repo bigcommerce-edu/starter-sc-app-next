@@ -26,7 +26,7 @@ export async function GiftCertificateView({
   id: string;
   storeHash: string | undefined;
 }) {
-  "use cache";
+  "use cache: remote";
   cacheLife("standard");
   cacheTag(giftCertificateTag(id));
 

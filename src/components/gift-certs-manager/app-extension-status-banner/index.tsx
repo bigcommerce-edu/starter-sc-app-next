@@ -35,7 +35,15 @@ export function AppExtensionStatusBanner() {
         const url = storeHash
           ? `/api/internal/app-extension-status?storeHash=${encodeURIComponent(storeHash)}`
           : "/api/internal/app-extension-status";
-        const response = await fetch(url);
+        // no-store: this status can change server-side (a successful retry,
+        // or install-time registration finally succeeding) without this
+        // URL ever changing, so the browser's default HTTP caching for a GET
+        // request would otherwise keep serving whatever response it first
+        // saw — completely invisible to (and not invalidated by) the
+        // server-side cacheTag/updateTag machinery in app-extension-status.ts,
+        // which only affects the server's own render cache, not what a
+        // browser does with the response it already has.
+        const response = await fetch(url, { cache: "no-store" });
 
         if (!response.ok) {
           return;
@@ -70,7 +78,7 @@ export function AppExtensionStatusBanner() {
 
       if (result.success) {
         setStatus(true);
-        showSuccessAlert("App extension registration succeeded");
+        showSuccessAlert(result.message);
       } else {
         showErrorAlert(result.message);
       }

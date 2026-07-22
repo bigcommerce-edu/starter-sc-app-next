@@ -1,8 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { CREATE_CREDENTIALS_STORE_SCHEMA } from "@/lib/credentials-store/schema";
-import { decrypt, encrypt } from "@/lib/credentials-store/sqlite-driver/encryption";
+import { CREATE_CREDENTIALS_STORE_SCHEMA } from "@/lib/credentials-store/sqlite-driver/schema";
+import { decrypt, encrypt } from "@/lib/credentials-store/encryption";
 import { CredentialsStore, StoreExtensionRecord, StoreRecord, StoreUserRecord, UserRecord } from "@/lib/credentials-store/types";
 
 const DEFAULT_DB_PATH = "./data/credentials.sqlite";

@@ -47,11 +47,32 @@ export function GiftCertificateActionsMenu({
 }) {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isPending, startTransition] = useTransition();
+  // Bumped on every selection to force Dropdown (downshift's useSelect
+  // underneath) to remount with a fresh internal reducer instead of reusing
+  // its existing one. Without this, selecting an item once leaves
+  // downshift's internal selectedItem state set; if this component later
+  // re-renders with new items/onItemClick closures (e.g. after a
+  // client-side navigation away and back, since `items` below is rebuilt
+  // fresh every render), downshift's own useEnhancedReducer effect (see
+  // node_modules/downshift's useControlledReducer$1) detects its recomputed
+  // state no longer matches its last state and re-fires onSelectedItemChange
+  // with that stale selectedItem — re-invoking the same onItemClick a
+  // second time with no actual click. Remounting the whole Dropdown clears
+  // downshift's internal state so there's nothing stale left to replay.
+  const [dropdownKey, setDropdownKey] = useState(0);
 
   const closeModal = () => setPendingAction(null);
 
   const handleConfirm = () => {
     const action = pendingAction;
+
+    // Closed synchronously on click, not after the action resolves — this
+    // component can get frozen mid-transition in Next.js's client Router
+    // Cache if the user navigates away before the transition finishes (e.g.
+    // clicking "View" right after confirming), which previously replayed a
+    // stale pendingAction (and therefore a re-opened modal) when navigating
+    // back to this cached page. Closing first removes that race entirely.
+    closeModal();
 
     startTransition(async () => {
       switch (action) {
@@ -64,8 +85,6 @@ export function GiftCertificateActionsMenu({
           );
           break;
       }
-
-      closeModal();
     });
   };
 
@@ -81,18 +100,25 @@ export function GiftCertificateActionsMenu({
         certificate.balance >= certificate.amount ||
         certificate.status === "pending" ||
         certificate.status === "disabled",
-      onItemClick: () => setPendingAction("refill"),
+      onItemClick: () => {
+        setPendingAction("refill");
+        setDropdownKey((key) => key + 1);
+      },
     },
     {
       content: "Transfer to Credit",
       disabled: !certificate.recipientAccount || certificate.balance <= 0 || certificate.status !== "active",
-      onItemClick: () => setPendingAction("transfer"),
+      onItemClick: () => {
+        setPendingAction("transfer");
+        setDropdownKey((key) => key + 1);
+      },
     },
   ];
 
   return (
     <>
       <Dropdown
+        key={dropdownKey}
         items={items}
         maxHeight={250}
         placement="bottom-end"

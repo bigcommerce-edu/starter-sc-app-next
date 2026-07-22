@@ -30,6 +30,15 @@ export interface StoreUserRecord {
   userId: number;
 }
 
+// Links a store to the App Extension registered for it at install time (see
+// lib/gift-certs-manager/register-app-extension.ts). extensionId is
+// BigCommerce's own opaque id for the App Extension, returned by the
+// createAppExtension mutation — not something this app generates.
+export interface StoreExtensionRecord {
+  storeHash: string;
+  extensionId: string;
+}
+
 // Generic persistence for per-store API credentials, implemented by one
 // driver per backing DB (see sqlite-driver/ for the first one). Modeled on
 // BcRestApiClient (see lib/bc-api-client/types.ts): a small interface named
@@ -43,10 +52,23 @@ export interface StoreUserRecord {
 // caller needs, and it's the one read that has to decrypt.
 //
 // deleteStore encapsulates the full /uninstall cascade: the store, its
-// store-user links, and any user left with no remaining store association.
-// deleteUser scopes to one store+user pair (the /remove_user callback's
-// actual semantics — a user is removed from one store, not globally), and
-// likewise drops the user row if that was their last association.
+// store-user links, its extension link (if any), and any user left with no
+// remaining store association. deleteUser scopes to one store+user pair (the
+// /remove_user callback's actual semantics — a user is removed from one
+// store, not globally), and likewise drops the user row if that was their
+// last association.
+//
+// setStoreExtension is an upsert (like setStore/setUser/setStoreUser), but
+// register-app-extension.ts only ever calls it after a successful
+// createAppExtension mutation — a failed registration should leave no row,
+// not a partial one. getStoreExtension returns just the extensionId (not the
+// full StoreExtensionRecord), mirroring getStoreToken, since that's the only
+// thing the app-extension-status check
+// (lib/gift-certs-manager/app-extension-status.ts) needs to report whether
+// registration succeeded. BigCommerce automatically cleans up an app's
+// extensions on uninstall, so this app has no deregistration step of its
+// own — deleteStore's cascade below still drops the store_extensions row
+// itself, just so no stale row lingers if the store is ever reinstalled.
 //
 // isStoreUserLinked is the authoritative half of isAuthorizedForStore's
 // check (see lib/session/is-authorized-for-store.ts) — the session cookie's
@@ -62,6 +84,8 @@ export interface CredentialsStore {
   setUser(user: UserRecord): Promise<void>;
   setStoreUser(storeUser: StoreUserRecord): Promise<void>;
   getStoreToken(storeHash: string): Promise<string | undefined>;
+  setStoreExtension(storeExtension: StoreExtensionRecord): Promise<void>;
+  getStoreExtension(storeHash: string): Promise<string | undefined>;
   isStoreUserLinked(storeHash: string, userId: number): Promise<boolean>;
   deleteStore(storeHash: string): Promise<void>;
   deleteUser(storeHash: string, userId: number): Promise<void>;

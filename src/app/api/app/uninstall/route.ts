@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { uninstallStore } from "@/lib/bc-auth/uninstall-store";
 
 // BigCommerce's uninstall callback (server-to-server, not browser-facing).
-// Business logic lives in lib/bc-auth/uninstall-store.ts — this route only
-// reads the request, delegates, and turns the result (or a thrown error)
-// into a response. A failed verification 401s instead of a no-op 200, so a
-// forged/expired call can't be mistaken for a real uninstall.
+// A failed verification 401s instead of a no-op 200, so a forged/expired
+// call can't be mistaken for a real uninstall.
+//
+// This app does not need to remove its own App Extension here — BigCommerce
+// automatically cleans up an app's extensions on uninstall.
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const signedPayloadJwt = request.nextUrl.searchParams.get("signed_payload_jwt");
 

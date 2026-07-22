@@ -14,9 +14,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   let storeHash: string;
+  let url: string;
 
   try {
-    ({ storeHash } = await loadStore(signedPayloadJwt));
+    ({ storeHash, url } = await loadStore(signedPayloadJwt));
   } catch (error) {
     if (error instanceof StoreNotInstalledError) {
       return NextResponse.json({ error: error.message }, { status: 403 });
@@ -25,5 +26,5 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid signed payload." }, { status: 401 });
   }
 
-  return NextResponse.redirect(getAbsoluteAppUrl(storeHash, "/"));
+  return NextResponse.redirect(getAbsoluteAppUrl(storeHash, url));
 }

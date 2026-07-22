@@ -1,6 +1,5 @@
-import { MockRouteHandler, MockRouteResponse } from "@/lib/bc-api-client/mock-client/types";
-import { ApiRequestParams } from "@/lib/bc-api-client/types";
-import { V3ListResponse } from "@/lib/bc-api-client/types";
+import { MockRouteHandler, MockRouteResponse } from "@/lib/bc-api-client/rest-client/mock-rest-client/types";
+import { ApiRequestParams, V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
 import { CustomerWireRecord } from "@/lib/gift-certs-manager/customers/customers-api";
 import { mockCustomers } from "@/lib/gift-certs-manager/customers/mock/mock-customers";
 import { CUSTOMERS_PATH } from "@/lib/gift-certs-manager/customers/types";

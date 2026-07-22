@@ -17,6 +17,7 @@ export async function CustomersPage({
 
   return (
     <Suspense fallback={<ContentFallback />}>
+      {/* Content fallback because CustomerListView must perform data fetching */}
       <CustomerListView searchParams={resolvedSearchParams} storeHash={storeHashString} />
     </Suspense>
   );

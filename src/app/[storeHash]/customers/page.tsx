@@ -12,6 +12,7 @@ export default function Page({
 }) {
   return (
     <Suspense fallback={<ContentFallback />}>
+      {/* Content fallback because AuthorizedPage must perform auth check based on session cookie */}
       <AuthorizedPage params={params} searchParams={searchParams} pageComponent={CustomersPage} />
     </Suspense>
   );

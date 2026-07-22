@@ -5,6 +5,11 @@ import { upsertSessionStore } from "@/lib/session/session-cookie";
 
 export interface LoadStoreResult {
   storeHash: string;
+  // The deep link to redirect to after a successful load — see
+  // verifySignedPayload's url claim comment. Defaults to "/" when the
+  // payload omits it, matching BigCommerce's own default for a standard
+  // Apps-menu launch.
+  url: string;
 }
 
 // The full /load (launch) callback's business logic: verify the signed
@@ -33,5 +38,5 @@ export async function loadStore(signedPayloadJwt: string): Promise<LoadStoreResu
   await credentialsStore.setStoreUser({ storeHash, userId: payload.user.id });
   await upsertSessionStore(payload.user.id, storeHash);
 
-  return { storeHash };
+  return { storeHash, url: payload.url ?? "/" };
 }

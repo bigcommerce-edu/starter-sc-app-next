@@ -1,6 +1,4 @@
-import { Suspense } from "react";
 import { AppShell } from "@/components/gift-certs-manager/app-shell";
-import { ContentFallback } from "@/components/layout/content-fallback";
 import { renderRootRoute } from "@/lib/routing/root-route-guard";
 
 // Wraps the root-level dev routes (no [storeHash] segment) in the same
@@ -12,7 +10,7 @@ import { renderRootRoute } from "@/lib/routing/root-route-guard";
 export default function RootDevLayout({ children }: { children: React.ReactNode }) {
   return renderRootRoute(
     <AppShell>
-      <Suspense fallback={<ContentFallback />}>{children}</Suspense>
+      {children}
     </AppShell>,
   );
 }

@@ -17,6 +17,7 @@ export async function GiftCertificatesPage({
 
   return (
     <Suspense fallback={<ContentFallback />}>
+      {/* Content fallback because GiftCertificateListView must perform data fetching */}
       <GiftCertificateListView searchParams={resolvedSearchParams} storeHash={storeHashString} />
     </Suspense>
   );

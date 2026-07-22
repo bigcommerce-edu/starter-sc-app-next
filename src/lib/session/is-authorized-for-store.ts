@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { getDataMode, resolveApiToken } from "@/lib/bc-api-client/get-rest-api-client";
+import { getDataMode, resolveApiToken } from "@/lib/bc-api-client/resolve-store-credentials";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 import { readSession, removeSessionStore } from "@/lib/session/session-cookie";
 

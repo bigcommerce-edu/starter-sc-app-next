@@ -1,6 +1,4 @@
-import { Suspense } from "react";
 import { AppShell } from "@/components/gift-certs-manager/app-shell";
-import { ContentFallback } from "@/components/layout/content-fallback";
 
 // AppShell renders synchronously (no dynamic dependency of its own), so it
 // sits outside the Suspense boundary rather than wrapping it — the boundary
@@ -15,7 +13,7 @@ import { ContentFallback } from "@/components/layout/content-fallback";
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
     <AppShell>
-      <Suspense fallback={<ContentFallback />}>{children}</Suspense>
+      {children}
     </AppShell>
   );
 }

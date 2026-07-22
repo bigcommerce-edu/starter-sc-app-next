@@ -23,7 +23,26 @@ const signedPayloadSchema = z.object({
   // Optional defensively — not currently relied on for anything other than
   // /load's post-launch redirect, so a payload missing it shouldn't fail
   // verification.
-  url: z.string().optional(),
+  //
+  // Required to start with "/" but not "//": getAbsoluteAppUrl resolves this
+  // against APP_ORIGIN via new URL(), which treats a leading "//" as
+  // protocol-relative — i.e. "//evil.com" resolves to https://evil.com,
+  // ignoring the base entirely. That's not reachable today (every current
+  // caller of getAbsoluteAppUrl passes a real storeHash, whose "/{hash}"
+  // prefix breaks the leading "//" before this value ever reaches new URL()
+  // — see app-url.ts), but that safety is incidental to callers passing a
+  // storeHash, not something this value's own shape guarantees. Rejecting
+  // "//" here makes the payload itself safe to redirect to regardless of
+  // what a future caller does, rather than relying on every caller knowing
+  // about this. BigCommerce's own documented url claim is always a
+  // same-origin deep link ("/" or an App Extension path), so this rejects
+  // nothing legitimate.
+  url: z
+    .string()
+    .refine((url) => url.startsWith("/") && !url.startsWith("//"), {
+      message: "url must be a root-relative path (not protocol-relative).",
+    })
+    .optional(),
 });
 
 export type SignedPayload = z.infer<typeof signedPayloadSchema>;

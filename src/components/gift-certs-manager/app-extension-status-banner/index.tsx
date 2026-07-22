@@ -69,7 +69,7 @@ export function AppExtensionStatusBanner() {
 
       if (result.success) {
         setStatus(true);
-        showSuccessAlert("App extension registration succeeded");
+        showSuccessAlert(result.message);
       } else {
         showErrorAlert(result.message);
       }

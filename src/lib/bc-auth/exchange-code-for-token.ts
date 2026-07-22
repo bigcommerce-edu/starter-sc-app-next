@@ -33,7 +33,7 @@ export async function exchangeCodeForToken(params: ExchangeCodeParams): Promise<
   if (!clientId || !clientSecret) {
     throw new Error("BIGCOMMERCE_CLIENT_ID and BIGCOMMERCE_CLIENT_SECRET must be set to exchange an auth code.");
   }
-
+  
   const response = await fetch(`${BC_LOGIN_URL}/oauth2/token`, {
     method: "POST",
     headers: {

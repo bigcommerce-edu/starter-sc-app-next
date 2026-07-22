@@ -4,8 +4,8 @@
 import { getGraphqlApiClient } from "@/lib/bc-api-client/get-graphql-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
-import { APP_EXTENSION_INPUT, CREATE_APP_EXTENSION_MUTATION, CreateAppExtensionResult } from "@/lib/gift-certs-manager/app-extension-mutation";
 // import { appExtensionStatusTag } from "@/lib/gift-certs-manager/app-extension-status";
+import { findOrCreateAppExtension } from "@/lib/gift-certs-manager/register-app-extension";
 import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
 
 // User-triggered retry for a failed install-time registration — called only
@@ -14,11 +14,16 @@ import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
 // registerAppExtension (called only from the /auth route, which swallows
 // failures so a bad registration never blocks install), this surfaces
 // success/failure as an ActionResult so the banner can show what happened.
-// Calls getGraphqlApiClient without an apiToken override — by the time a
-// user can click "Retry," install has already completed and persisted the
-// store's token, so the normal storage-backed lookup (see
-// resolveApiToken) is exactly what's needed; there's no handshake token to
-// thread through here the way registerAppExtension needs at install time.
+// Shares findOrCreateAppExtension with registerAppExtension so a retry after
+// a partial failure (createAppExtension succeeded on BigCommerce but the
+// setStoreExtension write below failed or the process died in between)
+// adopts the already-created extension's id instead of creating a duplicate
+// — see that function's own doc comment. Calls getGraphqlApiClient without
+// an apiToken override — by the time a user can click "Retry," install has
+// already completed and persisted the store's token, so the normal
+// storage-backed lookup (see resolveApiToken) is exactly what's needed;
+// there's no handshake token to thread through here the way
+// registerAppExtension needs at install time.
 export async function retryAppExtensionRegistration(storeHash: string | undefined): Promise<ActionResult> {
   if (!(await isAuthorizedForStore(storeHash))) {
     throw new Error("Not authorized for this store.");
@@ -34,12 +39,7 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
 
   try {
     const graphqlApiClient = await getGraphqlApiClient(storeHash);
-
-    const result = await graphqlApiClient.request<CreateAppExtensionResult>(CREATE_APP_EXTENSION_MUTATION, {
-      input: APP_EXTENSION_INPUT,
-    });
-
-    const extensionId = result.appExtension.createAppExtension.appExtension.id;
+    const extensionId = await findOrCreateAppExtension(graphqlApiClient);
 
     await getCredentialsStore().setStoreExtension({ storeHash, extensionId });
   } catch (error) {
@@ -51,5 +51,5 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
 
   // updateTag(appExtensionStatusTag(storeHash));
 
-  return { success: true, message: "App Extension registered." };
+  return { success: true, message: "App extension registration succeeded" };
 }

@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { connection } from "next/server";
 import { getDataMode, resolveApiToken } from "@/lib/bc-api-client/resolve-store-credentials";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 import { readSession, removeSessionStore } from "@/lib/session/session-cookie";
@@ -82,6 +83,15 @@ const isStoreUserLinked = cache((storeHash: string, userId: number): Promise<boo
 // MOCK/STATIC have no real session/store concept (see get-rest-api-client.ts)
 // — there's nothing to authorize in those modes, so this trivially passes.
 export async function isAuthorizedForStore(storeHash: string | undefined): Promise<boolean> {
+  // Forces this render path to be treated as dynamic unconditionally, before
+  // the getDataMode() branch below. Without this, Next's build-time
+  // prerender pass (under cacheComponents) only discovers a dynamic
+  // dependency (cookies(), via readSession() further down) if it happens to
+  // take the MULTITENANT branch — otherwise the page looks fully static and
+  // gets prerendered. connection() is Next's primitive for exactly this: opt
+  // into dynamic rendering without needing a real cookie/header read.
+  await connection();
+
   if (getDataMode() !== "MULTITENANT") {
     return true;
   }

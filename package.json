@@ -2,6 +2,7 @@
   "name": "starter-sc-app-next",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@11.5.0",
   "engines": {
     "node": ">=24.0.0"
   },
@@ -10,6 +11,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "scaffold": "node scripts/scaffold.mjs",
 
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
@@ -23,6 +25,7 @@
     "@opennextjs/cloudflare": "^1.20.1",
     "jose": "^6.2.3",
     "next": "16.2.9",
+    "pg": "^8.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "styled-components": "^5.3.11",
@@ -30,11 +33,13 @@
   },
   "devDependencies": {
     "@types/node": "^24",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/styled-components": "^5.1.36",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "node-pg-migrate": "^9.0.0",
     "typescript": "^5",
     "wrangler": "^4.111.0"
   }

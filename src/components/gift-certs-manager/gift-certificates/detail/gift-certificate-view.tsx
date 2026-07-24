@@ -1,4 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
+import { notFound } from "next/navigation";
 import { Box, Flex } from "@/components/ui/big-design";
 import { ArrowBackIcon } from "@/components/ui/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
@@ -7,6 +8,7 @@ import { decorateGiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gi
 import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { fetchGiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { getAppUrl } from "@/lib/routing/app-url";
+import { AppError } from "@/lib/errors/app-error";
 
 // Tagged per-id (rather than the shared list tag) so the detail page's
 // action layer can invalidate exactly the certificate it just mutated and
@@ -29,10 +31,26 @@ export async function GiftCertificateView({
   cacheLife("standard");
   cacheTag(giftCertificateTag(id));
 
-  const giftCertificate = await decorateGiftCertificateWithAccounts(
-    await fetchGiftCertificate(id, storeHash),
-    storeHash,
-  );
+  // A missing id is a real 404 from BigCommerce's v2 single-resource
+  // endpoint (see fetchGiftCertificate's own comment on why the 404-to-404
+  // translation happens here rather than in that shared function) —
+  // notFound() is safe to call from inside this "use cache: remote"
+  // boundary (verified against Next's own error-handling source: its
+  // digest survives the cache wrapper's error handler unmodified, the same
+  // path a plain page-level notFound() call takes).
+  let rawGiftCertificate;
+
+  try {
+    rawGiftCertificate = await fetchGiftCertificate(id, storeHash);
+  } catch (error) {
+    if (error instanceof AppError && error.status === 404) {
+      notFound();
+    }
+
+    throw error;
+  }
+
+  const giftCertificate = await decorateGiftCertificateWithAccounts(rawGiftCertificate, storeHash);
 
   return (
     <Box>

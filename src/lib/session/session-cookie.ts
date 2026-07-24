@@ -1,19 +1,7 @@
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { signSession, verifySession } from "@/lib/session/session-jwt";
-import { SessionPayload, SESSION_COOKIE_NAME } from "@/lib/session/types";
-
-// SameSite=None + Secure + Partitioned (CHIPS) are all required for this
-// cookie to work at all inside the BigCommerce control panel's cross-origin
-// iframe. httpOnly keeps the session JWT (identity only, never the store
-// access token) out of reach of any client-side script.
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: true,
-  sameSite: "none" as const,
-  partitioned: true,
-  path: "/",
-};
+import { SessionPayload, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "@/lib/session/types";
 
 // Reads and verifies the current session cookie, if any. A missing cookie
 // and a failed verification (expired, bad signature, wrong shape) are
@@ -65,7 +53,7 @@ export async function upsertSessionStore(userId: number, storeHash: string): Pro
   const jwt = await signSession({ userId, authenticatedStores });
   const cookieStore = await cookies();
 
-  cookieStore.set(SESSION_COOKIE_NAME, jwt, COOKIE_OPTIONS);
+  cookieStore.set(SESSION_COOKIE_NAME, jwt, SESSION_COOKIE_OPTIONS);
 }
 
 // Called by isAuthorizedForStore when the session cookie's optimistic
@@ -94,5 +82,5 @@ export async function removeSessionStore(storeHash: string): Promise<void> {
   const jwt = await signSession({ userId: existing.userId, authenticatedStores });
   const cookieStore = await cookies();
 
-  cookieStore.set(SESSION_COOKIE_NAME, jwt, COOKIE_OPTIONS);
+  cookieStore.set(SESSION_COOKIE_NAME, jwt, SESSION_COOKIE_OPTIONS);
 }

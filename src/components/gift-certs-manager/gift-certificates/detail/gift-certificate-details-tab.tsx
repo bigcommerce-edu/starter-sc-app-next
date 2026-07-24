@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Button, Flex, FlexItem, Modal, Text } from "@/components/ui/big-design";
-import { updateGiftCertificateStatus } from "@/app/[storeHash]/gift-certs/[id]/actions";
+import { updateGiftCertificateStatus } from "@/app/store/[storeHash]/gift-certs/[id]/actions";
 import { GiftCertificatePartyPanel } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-party-panel";
 import { GiftCertificateStatusPanel } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-status-panel";
 import { runServerAction } from "@/components/ui/action-alerts";

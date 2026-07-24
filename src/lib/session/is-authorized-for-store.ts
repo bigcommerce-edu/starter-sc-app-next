@@ -17,6 +17,25 @@ const isStoreUserLinked = cache((storeHash: string, userId: number): Promise<boo
   return getCredentialsStore().isStoreUserLinked(storeHash, userId);
 });
 
+// Shared, single copy of the message every isAuthorizedForStore caller uses
+// on a failed check — AuthorizedPage and Server Actions throw Error(this),
+// the /api/internal/app-extension-status route returns it as a 403 JSON
+// body — so the wording only has to be defined (and changed, if it ever
+// needs to) in one place rather than re-typed identically at each call site.
+export const NOT_AUTHORIZED_FOR_STORE_MESSAGE = "Not authorized for this store.";
+
+// SECONDARY, authoritative check — proxy.ts is the PRIMARY gate, running
+// first for every matched request and rejecting the cheap, common cases (no
+// cookie, wrong store, expired/invalid JWT) before any shell/page content
+// ever streams. But the proxy is deliberately shallow: it only verifies the
+// cookie's own signature and its authenticatedStores claim, with no DB
+// access — it can't detect a store_users link that was revoked (e.g. via
+// /remove_user) after the cookie was issued, since a stateless JWT can't be
+// revoked before its own TTL expires. This function is what actually
+// confirms that claim against the credentials store, the real source of
+// truth. Passing the proxy is necessary but not sufficient — every
+// protected page and Server Action must still call this itself.
+//
 // Whether the current session is authorized to act on the given store —
 // called from two kinds of places that can't rely on each other: each
 // page's own AuthorizedPage wrapper (see e.g.
@@ -36,15 +55,11 @@ const isStoreUserLinked = cache((storeHash: string, userId: number): Promise<boo
 // a Server Action throws too, but could choose to return an ActionResult
 // instead).
 //
-// Two-tier: the session cookie's authenticatedStores is only an optimistic
-// claim, signed once and unrevocable before its own TTL expires — it can't
-// reflect a store_users link removed after the cookie was issued (e.g. via
-// /remove_user), so a stale cookie would otherwise keep granting access for
-// up to an hour. This cheap cookie check is kept as a fast-reject path
-// (worth it on its own, and intended to back a future proxy-level
-// optimistic gate), but a pass here is provisional until the store_users
-// link is confirmed to still exist against the credentials store — the
-// actual source of truth.
+// Two-tier within this function, for the same reason it's secondary to the
+// proxy overall: the session cookie's authenticatedStores is only an
+// optimistic claim (checked first, cheaply, below), and a pass there is
+// provisional until the store_users link is separately confirmed still to
+// exist.
 //
 // The link check (isStoreUserLinked, keyed on storeHash+userId — inherently
 // session-specific) and the token check (resolveApiToken, keyed on storeHash

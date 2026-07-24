@@ -1,8 +1,14 @@
 // Generic path builder: if a store hash is available, scope the path under
-// it (matching the [storeHash] route segment); otherwise return the path
-// unchanged (matching the root-level route aliases used in MOCK/STATIC dev).
-// Callers don't need to know about DataMode — see resolveStoreHash, which
-// enforces that a storeHash is only ever missing when that's valid.
+// a literal /store/ segment plus the hash itself (matching the
+// app/store/[storeHash] route); otherwise return the path unchanged
+// (matching the root-level route aliases used in MOCK/STATIC dev). The
+// static "/store" prefix (not just the [storeHash] segment alone) exists so
+// proxy.ts's matcher can unambiguously target real store-scoped routes —
+// without it, a bare "/:storeHash" pattern can't be distinguished from this
+// app's own top-level routes (e.g. /unauthorized, /app-error), which are
+// also single path segments; see proxy.ts's own comment. Callers don't need
+// to know about DataMode — see resolveStoreHash, which enforces that a
+// storeHash is only ever missing when that's valid.
 //
 // Deliberately relative — every current caller renders this as an in-app
 // href for client-side navigation (main-nav, tables, etc.), where a relative
@@ -18,7 +24,7 @@ export function getAppUrl(storeHash: string | undefined, path: string): string {
     return normalizedPath;
   }
 
-  return `/${storeHash}${normalizedPath}`;
+  return `/store/${storeHash}${normalizedPath}`;
 }
 
 // Absolute counterpart to getAppUrl, anchored to APP_ORIGIN rather than

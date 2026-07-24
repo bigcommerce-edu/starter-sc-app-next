@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { logError } from "@/lib/errors/logger";
 
 function getConnectionString(): string {
   const connectionString = process.env.DATABASE_URL;
@@ -63,7 +64,7 @@ export function getPool(): Pool {
     // next query), so logging is enough to make the failure visible without
     // treating it as fatal.
     pool.on("error", (error) => {
-      console.error("Unexpected error on idle Postgres client", error);
+      logError("Postgres pool: unexpected error on idle client", error);
     });
   }
 

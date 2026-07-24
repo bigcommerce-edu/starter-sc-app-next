@@ -6,7 +6,9 @@ import { ActionResult } from "@/lib/actions/action-result";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 import { appExtensionStatusTag } from "@/lib/gift-certs-manager/app-extension-status";
 import { findOrCreateAppExtension } from "@/lib/gift-certs-manager/register-app-extension";
-import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
+import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/session/is-authorized-for-store";
+import { toSafeMessage } from "@/lib/errors/app-error";
+import { logError } from "@/lib/errors/logger";
 
 // User-triggered retry for a failed install-time registration — called only
 // from AppExtensionStatusBanner's "Retry" action, so this action is
@@ -25,8 +27,11 @@ import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
 // there's no handshake token to thread through here the way
 // registerAppExtension needs at install time.
 export async function retryAppExtensionRegistration(storeHash: string | undefined): Promise<ActionResult> {
+  // Returned as an ActionResult, not thrown — see actions.ts's identical
+  // check for why (Next strips a thrown error's message to a generic digest
+  // in production before it reaches runServerAction's catch).
   if (!(await isAuthorizedForStore(storeHash))) {
-    throw new Error("Not authorized for this store.");
+    return { success: false, message: NOT_AUTHORIZED_FOR_STORE_MESSAGE };
   }
 
   // isAuthorizedForStore only passes with storeHash undefined in MOCK/STATIC
@@ -43,9 +48,11 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
 
     await getCredentialsStore().setStoreExtension({ storeHash, extensionId });
   } catch (error) {
+    logError(`retryAppExtensionRegistration: store "${storeHash}"`, error);
+
     return {
       success: false,
-      message: error instanceof Error ? error.message : "Failed to register the App Extension.",
+      message: toSafeMessage(error, "Failed to register the App Extension."),
     };
   }
 

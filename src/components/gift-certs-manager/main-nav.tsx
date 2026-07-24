@@ -15,9 +15,15 @@ const NAV_ITEMS = [
 // below via useParams() (undefined on root-level dev routes, which have no
 // [storeHash] segment at all — same behavior as before, just read here
 // instead of passed down from a server layout).
+//
+// A store-scoped path is "/store/<storeHash>/<section>" (see app-url.ts's
+// getAppUrl for why the literal "/store" segment exists) — segments[0] is
+// always "store" in that case, segments[1] the hash, segments[2] the
+// section. A root-level dev route (no storeHash at all) has no "/store"
+// prefix, so its section is segments[0] instead.
 function getActiveSection(pathname: string, storeHash: string | undefined): string | undefined {
   const segments = pathname.split("/").filter(Boolean);
-  const sectionSegment = storeHash ? segments[1] : segments[0];
+  const sectionSegment = storeHash ? segments[2] : segments[0];
 
   return NAV_ITEMS.some((item) => item.id === sectionSegment) ? sectionSegment : undefined;
 }

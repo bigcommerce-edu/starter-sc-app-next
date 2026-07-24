@@ -88,9 +88,17 @@ export async function fetchCustomers(
 
 // BigCommerce's v3 customers endpoint has no single-resource path (unlike
 // gift certificates/channels) — GET /v3/customers?id:in={id} is the
-// documented way to fetch one customer by id. See fetchCustomersByEmail —
+// documented way to fetch one customer by id. A non-existent id isn't a 404
+// from BigCommerce (this is a list endpoint, filtered down to zero rows), so
+// a missing record here is returned as undefined rather than this function
+// deciding what "not found" means to a caller — same reasoning as
+// fetchGiftCertificate's own doc comment: this function has no way to know
+// whether its caller is a page render (where Next's notFound() is the right
+// response) or something else (e.g. a future Server Action, where a
+// navigation away would be wrong) — see CustomerView for where the
+// only current caller does that translation. See fetchCustomersByEmail —
 // caching lives in the calling *View component (CustomerView).
-export async function fetchCustomer(id: number | string, storeHash: string | undefined): Promise<Customer> {
+export async function fetchCustomer(id: number | string, storeHash: string | undefined): Promise<Customer | undefined> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: { "id:in": id, include: "storecredit" },
@@ -98,11 +106,7 @@ export async function fetchCustomer(id: number | string, storeHash: string | und
 
   const record = body.data[0];
 
-  if (!record) {
-    throw new Error(`No customer found with id "${id}".`);
-  }
-
-  return parseCustomer(record);
+  return record ? parseCustomer(record) : undefined;
 }
 
 // BigCommerce's v3 customers PUT is a bulk endpoint (an array of updates,

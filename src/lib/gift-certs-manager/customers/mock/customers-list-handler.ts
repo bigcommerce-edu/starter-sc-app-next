@@ -49,10 +49,9 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
     .map((value) => Number(value))
     .filter((value) => Number.isInteger(value));
 
-  // id:in is used by fetchCustomer for single-record lookups (BigCommerce's
-  // v3 customers endpoint has no dedicated /{id} path), and takes priority
-  // over the listing page's own filters/pagination — the two callers never
-  // combine both in a single request.
+  // id:in is used by fetchCustomer for single-record lookups and takes
+  // priority over the listing page's own filters/pagination — the two
+  // callers never combine both in a single request.
   if (idIn.length > 0) {
     const matches = mockCustomers.filter((customer) => idIn.includes(customer.id));
 
@@ -82,14 +81,8 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
       return false;
     }
 
-    // dateCreatedMin/Max are plain dates (e.g. "2024-01-05"), but
-    // customer.date_created is a full ISO datetime — comparing the two
-    // directly as strings would make :max exclude the entire boundary day
-    // (any same-day record has a later, "greater" datetime string than the
-    // bare date), which reads as "before this day" rather than the more
-    // natural "up to and including this day." Comparing only the date
-    // portion of date_created keeps both bounds inclusive of their
-    // respective boundary day.
+    // Comparing only the date portion (not the full ISO datetime) keeps
+    // both bounds inclusive of their boundary day.
     const customerDateCreated = customer.date_created.slice(0, 10);
 
     if (dateCreatedMin && customerDateCreated < dateCreatedMin) {

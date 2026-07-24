@@ -31,11 +31,10 @@ interface GiftCertificateFiltersProps {
   onChange(filters: FilterFields): void;
 }
 
-// Implements the BigDesign "advanced filtering" pattern: a Filter button opens
-// a modal with every filterable field, applied filters render as removable
-// chips, and nothing takes effect until the caller's onChange is invoked (on
-// Apply, chip delete, or Clear all). GiftCertificateTable owns the actual
-// query/navigation; this component only stages and reports filter values.
+// A Filter button opens a modal with every filterable field; applied filters
+// render as removable chips. Nothing takes effect until the caller's
+// onChange is invoked (Apply, chip delete, or Clear all) — GiftCertificateTable
+// owns the actual query/navigation.
 export function GiftCertificateFilters({ query, onChange }: GiftCertificateFiltersProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draft, setDraft] = useState<FilterFields>(query);

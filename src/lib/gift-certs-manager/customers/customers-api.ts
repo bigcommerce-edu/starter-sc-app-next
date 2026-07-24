@@ -25,15 +25,9 @@ function parseCustomer(record: CustomerWireRecord): Customer {
   return { ...record, channel_ids: record.channel_ids ?? [], store_credit_amounts: record.store_credit_amounts ?? [] };
 }
 
-// Looks up registered customer accounts by email. Gift certificates (and any
-// other feature that only knows an email address) use this to find out
-// whether that email belongs to a registered customer, and if so, their
-// account details — this data intentionally does not come back from the
-// gift certificates endpoint itself. Caching lives in the calling *View
-// component, not here, so the whole rendered view is cached together. Takes
-// storeHash (rather than a BcRestApiClient) and resolves the client itself —
-// this function is never itself a `use cache` boundary, so that's just a
-// normal function call, not a cache-serialization concern.
+// Looks up registered customer accounts by email — this data isn't returned
+// by the gift certificates endpoint itself. Caching lives in the calling
+// *View component, not here.
 export async function fetchCustomersByEmail(
   emails: string[],
   storeHash: string | undefined,
@@ -62,9 +56,8 @@ const SORT_FIELD: Record<CustomersQuery["sortColumn"], string> = {
   date_created: "date_created",
 };
 
-// BigCommerce v3 customers endpoint uses suffix-operator filters (:like/:in)
-// and a single sort value with the direction embedded (e.g. "last_name:asc").
-// See fetchCustomersByEmail — caching lives in the calling *View component.
+// BigCommerce's v3 endpoint uses suffix-operator filters (:like/:in) and a
+// single sort value with direction embedded (e.g. "last_name:asc").
 export async function fetchCustomers(
   query: CustomersQuery,
   storeHash: string | undefined,
@@ -86,18 +79,11 @@ export async function fetchCustomers(
   return { items: body.data.map(parseCustomer), totalItems: body.meta.pagination.total };
 }
 
-// BigCommerce's v3 customers endpoint has no single-resource path (unlike
-// gift certificates/channels) — GET /v3/customers?id:in={id} is the
-// documented way to fetch one customer by id. A non-existent id isn't a 404
-// from BigCommerce (this is a list endpoint, filtered down to zero rows), so
-// a missing record here is returned as undefined rather than this function
-// deciding what "not found" means to a caller — same reasoning as
-// fetchGiftCertificate's own doc comment: this function has no way to know
-// whether its caller is a page render (where Next's notFound() is the right
-// response) or something else (e.g. a future Server Action, where a
-// navigation away would be wrong) — see CustomerView for where the
-// only current caller does that translation. See fetchCustomersByEmail —
-// caching lives in the calling *View component (CustomerView).
+// No single-resource path in BigCommerce's v3 API — GET
+// /v3/customers?id:in={id} is the documented way to fetch one by id. A
+// missing id is a list filtered to zero rows, not a 404, so this returns
+// undefined rather than deciding what "not found" means — see CustomerView
+// for the notFound() translation.
 export async function fetchCustomer(id: number | string, storeHash: string | undefined): Promise<Customer | undefined> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
@@ -109,14 +95,10 @@ export async function fetchCustomer(id: number | string, storeHash: string | und
   return record ? parseCustomer(record) : undefined;
 }
 
-// BigCommerce's v3 customers PUT is a bulk endpoint (an array of updates,
-// keyed by id) even though this app only ever updates one customer at a
-// time, and only id is actually required per item — unlike gift
-// certificates' v2 PUT, there's no need to resend every other field.
-// store_credit_amounts is append-only from the caller's perspective: BigCommerce
-// collapses the store's existing per-currency entries plus this new one into
-// a single summed amount on the next fetch, so the request just adds one
-// more entry to the array rather than replacing it.
+// BigCommerce's v3 customers PUT is a bulk endpoint (array of updates keyed
+// by id), but only id is required per item — no need to resend other
+// fields. store_credit_amounts is append-only: BigCommerce sums the
+// store's existing entries plus this new one on the next fetch.
 export async function addToCustomerStoreCredit(
   customer: Customer,
   amount: number,

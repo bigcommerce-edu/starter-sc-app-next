@@ -1,10 +1,9 @@
 import { CustomerWireRecord } from "@/lib/gift-certs-manager/customers/customers-api";
 
-// Registered customer accounts for the emails that mock-gift-certificates.ts
-// marks as belonging to a registered customer. Account names occasionally
-// differ from the name entered on the certificate (e.g. a middle initial) to
-// demonstrate that the two are independent. store_credit_amounts models the
-// real per-currency array shape even though every mock store is USD-only.
+// Registered customer accounts for the emails referenced in
+// mock-gift-certificates.ts. Names occasionally differ from the name
+// entered on the certificate (e.g. a middle initial) to demonstrate that
+// the two are independent.
 function withStoreCredit(amount: number): Array<{ amount: string }> {
   return amount > 0 ? [{ amount: amount.toFixed(2) }] : [];
 }

@@ -38,45 +38,25 @@ export class GraphqlApiClient implements BcGraphqlApiClient {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ query, variables }),
-        // No timeout at all for a mutation — see GraphqlRequestOptions'
-        // own comment (same reasoning as rest-client.ts's mutate()): a
-        // client-side abort doesn't cancel the write on BigCommerce's side,
-        // so timing out risks reporting failure for a mutation that
-        // actually landed.
+        // No timeout for a mutation — an aborted client-side request
+        // doesn't cancel the write on BigCommerce's side (see rest-client.ts).
         ...(options.isMutation ? {} : { signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS) }),
       });
     } catch (error) {
-      // fetch itself throws for a network failure (DNS, connection refused)
-      // or an AbortSignal.timeout firing — neither has a response to read a
-      // status/body from, so this is a distinct failure mode from the
-      // non-2xx/malformed-body handling below.
       throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });
     }
 
-    // TODO: BigCommerce's GraphQL Admin API has been empirically confirmed
-    // (manual testing) to return the same X-Rate-Limit-* headers as the
-    // REST API, even though this isn't documented for GraphQL anywhere.
-    // Once BigCommerce engineering confirms this is intentional, guaranteed
-    // behavior (not an implementation detail that could change), wire in
-    // the same proactive throttle rest-client.ts already applies:
-    // `await throttleOnLowRateLimit(response.headers);` (from
-    // bc-api-client/rate-limit.ts) — right here, before the error check
-    // below, same placement as both RestApiClient methods. Deliberately not
-    // added yet since it's undocumented behavior this app shouldn't rely on
-    // silently.
+    // TODO: manual testing shows BigCommerce's GraphQL Admin API also
+    // returns X-Rate-Limit-* headers, though this isn't documented for
+    // GraphQL. Once confirmed as guaranteed (not incidental) behavior, wire
+    // in the same throttle rest-client.ts applies:
+    // `await throttleOnLowRateLimit(response.headers);`
 
-    // BigCommerce's GraphQL Admin API reports validation errors (bad query
-    // syntax, a mistyped enum value, etc.) as a non-2xx with the actual
-    // detail in the JSON body's `errors` array, not just a bare status —
-    // reading only response.status here would discard the one piece of
-    // information that explains the failure. But the body isn't guaranteed
-    // to be JSON at all: a proxy/gateway failure in front of the API (e.g. a
-    // 502 with an HTML error page) has the same shape as a real response
-    // (some status, some text), and JSON.parse throwing there would discard
-    // response.status — the one thing this error handling exists to
-    // preserve — behind a raw, unrelated SyntaxError instead. Falling back
-    // to the raw text (truncated, in case it's a large HTML page) keeps that
-    // diagnostic intact rather than losing it to a parse failure.
+    // Validation errors arrive as a non-2xx with detail in the body's
+    // `errors` array — but the body isn't guaranteed to be JSON (a
+    // proxy/gateway failure can return an HTML error page with a real
+    // status), so a parse failure falls back to raw text rather than
+    // losing the diagnostic to an unrelated SyntaxError.
     const responseText = await response.text();
     let body: GraphqlResponseBody<TResult> | undefined;
 
@@ -91,10 +71,8 @@ export class GraphqlApiClient implements BcGraphqlApiClient {
         ? body.errors.map((error) => error.message).join("; ")
         : responseText.slice(0, 500);
 
-      // errorDetail is not shown to end users (callers only see the message
-      // below) — it's attached as `cause` purely for logs/debugging, since
-      // BigCommerce's own error text is the most useful signal available
-      // when a caller needs to diagnose why a request failed.
+      // errorDetail is attached as `cause` for logs only, never shown to
+      // end users.
       throw new AppError("UPSTREAM_API", "A BigCommerce API request failed.", {
         cause: `status ${response.status}: ${errorDetail}`,
       });

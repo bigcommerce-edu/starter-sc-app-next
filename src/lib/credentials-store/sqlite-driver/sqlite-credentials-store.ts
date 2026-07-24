@@ -7,14 +7,9 @@ import { CredentialsStore, StoreExtensionRecord, StoreRecord, StoreUserRecord, U
 import { AppError } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
 
-// node:sqlite's own errors can embed the local database file path (e.g.
-// "unable to open database file: ./data/credentials.sqlite") — safe in a
-// local-dev context but not something that should reach a client response
-// regardless. Every public method below routes its query work through this
-// so a raw driver error is always logged (with full detail, for local
-// debugging) and never returned to a caller as anything but a generic, safe
-// AppError — kept consistent with PostgresCredentialsStore's equivalent
-// helper even though the local-only risk here is lower.
+// node:sqlite's own errors can embed the local database file path, which
+// shouldn't reach a client response — every method routes through this so a
+// raw error is logged and never returned as anything but a generic AppError.
 function withDatabaseErrorHandling<T>(context: string, run: () => T): T {
   try {
     return run();
@@ -30,11 +25,9 @@ function getDbPath(): string {
   return process.env.CREDENTIALS_SQLITE_PATH ?? DEFAULT_DB_PATH;
 }
 
-// DatabaseSync creates the database file itself if it's missing, but not any
-// missing parent directory — the default ./data/ is gitignored (it's a
-// runtime artifact, not something the repo ships) and nothing else creates
-// it, so without this, a first run fails with a raw "unable to open
-// database file" (SQLITE_CANTOPEN) rather than a clear error.
+// DatabaseSync creates the database file itself if missing, but not any
+// missing parent directory (the gitignored ./data/) — without this, a first
+// run fails with a raw SQLITE_CANTOPEN.
 function openDatabase(path: string): DatabaseSync {
   mkdirSync(dirname(path), { recursive: true });
 
@@ -66,14 +59,10 @@ interface ExistsRow {
 }
 
 // Local-development driver for single-instance use — node:sqlite gives
-// synchronous, in-process access to a file on disk, with no server process
-// or extra dependency to install. Not suitable for MULTITENANT once this
-// app runs across multiple instances (no shared file to point them all at),
-// but that's a future driver's problem, not this one's.
-//
-// All methods are synchronous under the hood (node:sqlite has no async
-// API) but return Promises to satisfy CredentialsStore, whose signature
-// stays async for drivers that do need real I/O.
+// synchronous, in-process access to a file on disk. Not suitable for
+// MULTITENANT once this app runs across multiple instances (no shared file
+// to point them all at). Methods return Promises to satisfy
+// CredentialsStore, but run synchronously under the hood.
 export class SqliteCredentialsStore implements CredentialsStore {
   private readonly db: DatabaseSync;
 

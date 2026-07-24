@@ -22,15 +22,10 @@ function parseGiftCertificate(record: GiftCertificateWireRecord): GiftCertificat
   return { ...record, amount: Number(record.amount), balance: Number(record.balance) };
 }
 
-// Cached on its own (not just at the calling *View's render boundary) because
-// resolveHasNextPage below peeks ahead at the next page using this exact same
-// function with the next page's own query — tagging/caching it here means
-// that peek is a real, reusable cache entry: if the user actually clicks
-// "next," fetchGiftCertificates's own call to this function for that page
-// hits this same cache entry instead of re-fetching. This only works because
-// the peek uses the real page limit (see resolveHasNextPage) rather than a
-// smaller probe size — a probe with a different limit would produce a
-// different cache key and never be reused by the real navigation.
+// Cached on its own (not just at the calling *View's render boundary)
+// because resolveHasNextPage below peeks ahead at the next page using this
+// same function — tagging/caching it here means a real "next" click reuses
+// that peek's cache entry instead of re-fetching. See docs/ARCHITECTURE.md.
 async function fetchGiftCertificatesPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
@@ -52,18 +47,13 @@ async function fetchGiftCertificatesPage(
     },
   });
 
-  // BigCommerce's v2 gift certificates endpoint responds 204 No Content
-  // (rather than 200 with an empty array) when nothing matches the query —
-  // BcRestApiClient.get returns undefined for a 204, so treat that the same as [].
+  // BigCommerce's v2 endpoint responds 204 (not 200 + []) when nothing
+  // matches.
   const records = items ?? [];
 
-  // Same reasoning as GiftCertificateListView: beyond the shared list tag,
-  // tag this cache entry with every certificate id actually present in the
-  // result set (added after the fetch resolves, since the ids aren't known
-  // before then — the documented "creating tags from external data"
-  // cacheTag pattern), so a mutation to one of these certificates
-  // invalidates this page/peek immediately rather than waiting out the
-  // cacheLife.
+  // Tag with every certificate id in the result (known only after the
+  // fetch resolves), so a mutation to one invalidates this page/peek
+  // immediately rather than waiting out the cacheLife.
   for (const record of records) {
     cacheTag(giftCertificateTag(record.id));
   }
@@ -71,15 +61,10 @@ async function fetchGiftCertificatesPage(
   return records;
 }
 
-// BigCommerce's v2 gift certificates endpoint reports no total count
-// anywhere (not in the body, not in a header) — the only way to know if
-// there's another page is to ask for it. A full page (items.length === limit)
-// means there might be more, so peek at page + 1 — using the same limit as
-// the current page, not just enough to detect presence — so the peek's
-// cache entry (see fetchGiftCertificatesPage) is identical to, and therefore
-// reusable by, the real fetch that happens if the user actually navigates to
-// that next page. This is all the table's stateless pagination needs:
-// whether to enable "next", not how many pages exist in total.
+// BigCommerce's v2 endpoint reports no total count anywhere, so the only
+// way to know if there's another page is to peek at page + 1, using the
+// same limit (so the peek's cache entry is reusable by the real fetch if
+// the user navigates there).
 async function resolveHasNextPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
@@ -94,12 +79,6 @@ async function resolveHasNextPage(
   return nextPage.length > 0;
 }
 
-// Domain-level adapter: query already matches the request shape field for
-// field, so the only translation needed is lowercasing direction to match
-// the wire's asc/desc. The outer *View component (see
-// GiftCertificateListView/CustomerView) caches its whole rendered output,
-// but fetchGiftCertificatesPage also caches itself independently — see its
-// comment for why.
 export async function fetchGiftCertificates(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
@@ -110,16 +89,11 @@ export async function fetchGiftCertificates(
   return { items: items.map(parseGiftCertificate), hasNextPage };
 }
 
-// See fetchGiftCertificates — caching lives in the calling *View component
-// (GiftCertificateView), not here. Deliberately does NOT call Next's
-// notFound() itself on a 404, even though that's a real possibility here
-// (BigCommerce's v2 single-resource endpoint 404s for a missing id) — this
-// function is shared by GiftCertificateView (a page render, where notFound()
-// is the right response) and the Server Actions in actions.ts (where a 404
-// means "this certificate was deleted since the page loaded," which should
-// surface as an ActionResult failure, not a navigation to a 404 boundary).
-// See GiftCertificateView for where the 404-to-notFound() translation
-// actually happens.
+// Deliberately does not call notFound() on a 404 — shared by
+// GiftCertificateView (a page render, where notFound() is right) and
+// Server Actions (where a 404 means the certificate was deleted since page
+// load, which should be an ActionResult failure, not a navigation). See
+// GiftCertificateView for the 404-to-notFound() translation.
 export async function fetchGiftCertificate(
   id: number | string,
   storeHash: string | undefined,
@@ -130,12 +104,9 @@ export async function fetchGiftCertificate(
   return parseGiftCertificate(record);
 }
 
-// BigCommerce's v2 PUT is a full-object replacement rather than a partial
-// patch, but to_name/to_email/from_name/from_email/amount are the only
-// fields it actually requires on every request — everything else only needs
-// to be included when that's the field actually being changed. Pulling these
-// off the existing certificate (rather than sending the whole object) means
-// each update function below only has to name the field(s) it's changing.
+// BigCommerce's v2 PUT is a full-object replacement, but only these fields
+// are required on every request — pulling them off the existing certificate
+// means each update function below only has to name what's actually changing.
 function getRequiredFields(giftCertificate: GiftCertificate): Pick<
   GiftCertificateWireRecord,
   "to_name" | "to_email" | "from_name" | "from_email" | "amount"
@@ -173,9 +144,8 @@ export async function updateGiftCertificateStatus(
   return updateGiftCertificate(giftCertificate, { status }, storeHash);
 }
 
-// Refilling always (re-)activates the certificate — the caller (the action
-// layer) has already confirmed status was active/expired going in, and a
-// refill of a previously-expired certificate should make it usable again.
+// Refilling always (re-)activates the certificate, making a previously
+// expired one usable again.
 export async function refillGiftCertificateBalance(
   giftCertificate: GiftCertificate,
   newBalance: number,
@@ -184,10 +154,8 @@ export async function refillGiftCertificateBalance(
   return updateGiftCertificate(giftCertificate, { balance: String(newBalance), status: "active" }, storeHash);
 }
 
-// Adding to balance always (re-)activates the certificate, same as refilling
-// — the caller has already confirmed status was active/expired going in.
-// Unlike refilling, the resulting balance is never capped at the original
-// amount (the caller doesn't validate that here either).
+// Same as refilling, but the resulting balance is never capped at the
+// original amount.
 export async function addToGiftCertificateBalance(
   giftCertificate: GiftCertificate,
   amount: number,
@@ -200,13 +168,10 @@ export async function addToGiftCertificateBalance(
   );
 }
 
-// Debits the certificate by exactly the amount being moved to store credit,
-// and expires it once nothing is left to redeem — unlike refill/add-to-balance,
-// this never (re-)activates a certificate, since transferring out is the
-// opposite operation. This is only the certificate half of a transfer — see
-// transferGiftCertificateBalanceToStoreCredit in actions.ts, which also
-// grants the corresponding store credit and is the only place that name
-// should mean "the whole transfer."
+// Debits the certificate and expires it once nothing is left to redeem —
+// never (re-)activates it, unlike refill/add-to-balance. Only the
+// certificate half of a transfer; see transferGiftCertificateBalanceToStoreCredit
+// in actions.ts for the store-credit grant.
 export async function debitGiftCertificateForTransfer(
   giftCertificate: GiftCertificate,
   amount: number,
@@ -221,12 +186,8 @@ export async function debitGiftCertificateForTransfer(
   );
 }
 
-// Restores a certificate's balance/status exactly as they were before a
-// transfer — used to compensate if the transfer's second step (granting
-// store credit) fails after the certificate has already been debited. Takes
-// the pre-transfer values explicitly (rather than re-deriving them) so the
-// caller doesn't have to trust a second fetch to still reflect the original
-// state.
+// Compensates a failed store-credit grant by restoring the certificate's
+// pre-transfer balance/status, passed explicitly rather than re-derived.
 export async function restoreGiftCertificateBalance(
   giftCertificate: GiftCertificate,
   previousBalance: number,

@@ -23,22 +23,16 @@ export async function updateGiftCertificateStatus(
   status: GiftCertificateStatus,
   storeHash: string | undefined,
 ): Promise<ActionResult> {
-  // A page/layout-level auth check does not extend to Server Actions (they're
-  // directly POST-able independent of any page render), so this re-verifies
-  // on its own rather than trusting the client-supplied storeHash — see
-  // isAuthorizedForStore. Returned as an ActionResult, not thrown — a
-  // thrown error's message is stripped to a generic digest by Next in
-  // production before it reaches runServerAction's catch, which would
-  // replace this specific message with "Something went wrong."
+  // A page/layout-level auth check does not extend to Server Actions, since
+  // they're directly POST-able independent of any page render — see
+  // isAuthorizedForStore.
   if (!(await isAuthorizedForStore(storeHash))) {
     return { success: false, message: NOT_AUTHORIZED_FOR_STORE_MESSAGE };
   }
 
   try {
-    // The caller only supplies id/status — every other field used to build
-    // the update request (and any future validation against the
-    // certificate's real state) comes from this fresh fetch, never from
-    // client-supplied data.
+    // The caller only supplies id/status — every other field comes from this
+    // fresh fetch, never from client-supplied data.
     const giftCertificate = await fetchGiftCertificate(id, storeHash);
 
     await updateGiftCertificateStatusRequest(giftCertificate, status, storeHash);
@@ -54,13 +48,10 @@ export async function updateGiftCertificateStatus(
 }
 
 // Refilling only makes sense for a certificate that's still usable (active
-// or expired — not pending, which hasn't gone out yet, and not disabled,
-// which was deliberately turned off) and can't set a balance above the
-// certificate's original value. Both are validation failures rather than
-// API errors, so they're returned as ActionResult failures instead of thrown.
-// Critically, that validation runs against a fresh fetch of the certificate
-// (by id — the only value trusted from the client), not the client-supplied
-// status/amount a caller could otherwise forge to bypass both checks.
+// or expired, not pending or disabled) and can't set a balance above the
+// original value. Validated against a fresh fetch of the certificate (by
+// id, the only value trusted from the client), not client-supplied
+// status/amount.
 export async function refillGiftCertificateBalance(
   id: number | string,
   newBalance: number,
@@ -97,11 +88,8 @@ export async function refillGiftCertificateBalance(
   return { success: true, message: "Gift certificate balance refilled." };
 }
 
-// Same usability restriction as refilling (active/expired only), but unlike
-// refilling there's no ceiling on the resulting balance — adding is allowed
-// to push it above the certificate's original amount. Validated against a
-// fresh fetch of the certificate for the same reason as refillGiftCertificateBalance:
-// status is not something a caller should be able to forge to bypass this.
+// Same usability restriction as refilling, but no ceiling on the resulting
+// balance — adding can push it above the certificate's original amount.
 export async function addToGiftCertificateBalance(
   id: number | string,
   amount: number,
@@ -134,24 +122,20 @@ export async function addToGiftCertificateBalance(
   return { success: true, message: "Amount added to gift certificate balance." };
 }
 
-// Transferring requires the certificate to be active (not pending/disabled/
-// already expired — there's no balance left on an expired certificate to
-// transfer), the amount to be no more than what's actually on the
-// certificate, and a registered customer account to receive the credit
-// (looked up by recipient email — never trusted from the client). All three
-// are validation failures rather than API errors.
+// Transferring requires the certificate to be active, the amount to be no
+// more than the current balance, and a registered customer account to
+// receive the credit (looked up by recipient email, never trusted from the
+// client).
 //
 // This is two independent API calls with no shared transaction: the
-// certificate is debited first, then the customer is credited. Ordering it
-// this way means a failure on the *second* call leaves the certificate
-// already debited with nothing credited yet — worse for the customer than
-// the reverse order, but it avoids ever creating store credit that isn't
-// backed by an actual debit, which is the more dangerous failure mode (an
-// admin can always manually grant a missed credit; reclaiming an
-// over-granted one is a much harder conversation). If the second call does
-// fail, one compensating call attempts to restore the certificate's prior
-// balance/status; if that also fails, the error message says exactly what
-// state was left so it can be reconciled by hand.
+// certificate is debited first, then the customer is credited. A failure on
+// the second call leaves the certificate already debited with nothing
+// credited yet — worse for the customer, but it avoids ever creating store
+// credit unbacked by an actual debit, the more dangerous failure mode (see
+// docs/ARCHITECTURE.md). If the second call fails, one compensating call
+// attempts to restore the certificate's prior balance/status; if that also
+// fails, the error message says exactly what state was left to reconcile by
+// hand.
 export async function transferGiftCertificateBalanceToStoreCredit(
   id: number | string,
   amount: number,
@@ -210,8 +194,8 @@ export async function transferGiftCertificateBalanceToStoreCredit(
     try {
       await restoreGiftCertificateBalance(giftCertificate, previousBalance, previousStatus, storeHash);
     } catch {
-      // Only the certificate was actually mutated (the debit) — the customer
-      // credit never succeeded, so there's no customer tag to invalidate here.
+      // Only the certificate was mutated — the customer credit never
+      // succeeded, so there's no customer tag to invalidate here.
       updateTag(giftCertificateTag(id));
 
       return {

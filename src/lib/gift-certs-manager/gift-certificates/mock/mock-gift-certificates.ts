@@ -1,9 +1,8 @@
 import { GiftCertificateWireRecord } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 
 // purchase_date is a Unix timestamp (as a string), matching the real
-// BigCommerce v2 wire format. Certificates that were previously modeled with
-// a synthetic "redeemed" status are "active" with balance "0.00" instead —
-// see status.ts for why.
+// BigCommerce v2 wire format. A fully-used certificate is "active" with
+// balance "0.00" — see status.ts for why there's no "redeemed" status.
 export const mockGiftCertificates: GiftCertificateWireRecord[] = [
   {
     id: 1,

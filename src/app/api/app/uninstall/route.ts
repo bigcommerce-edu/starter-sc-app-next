@@ -24,12 +24,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return jsonError(401, "Invalid signed payload.");
     }
 
-    // Anything else (a credentials-store failure) is not a bad JWT — see
-    // isSignedPayloadVerificationError's own comment. Logged (rather than
-    // silently swallowed, as before) since this is the only way to notice a
-    // real outage here; BigCommerce may interpret a 401 as "don't retry,"
-    // which could permanently leave stale credentials behind after an
-    // uninstall that failed for infra reasons, not a bad signature.
+    // Anything else (a credentials-store failure) is not a bad JWT. Logged
+    // since this is the only way to notice a real outage here; BigCommerce
+    // may interpret a 401 as "don't retry," which could permanently leave
+    // stale credentials behind after an infra failure.
     logError("GET /api/app/uninstall", error);
 
     return jsonError(500, "Failed to uninstall the store.");

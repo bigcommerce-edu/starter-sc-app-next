@@ -1,8 +1,5 @@
-// Builds a URL into the BigCommerce control panel itself — a different
-// concern from app-url.ts's getAppUrl/getAbsoluteAppUrl, which build URLs
-// into this app. Always absolute and always targets
-// store-<hash>.mybigcommerce.com, regardless of DataMode, since there's no
-// "relative" control-panel path from inside this app's iframe.
+// Builds a URL into the BigCommerce control panel itself, a different
+// concern from app-url.ts's getAppUrl, which builds URLs into this app.
 export function getControlPanelUrl(storeHash: string, path: string): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 

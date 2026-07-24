@@ -12,10 +12,9 @@ const sessionPayloadSchema = z.object({
 // stays usable.
 const SESSION_TTL_SECONDS = 60 * 60;
 
-// Deliberately a separate secret from BIGCOMMERCE_CLIENT_SECRET: that one
-// verifies BigCommerce's inbound signed_payload_jwt (see
-// bc-auth/verify-signed-payload.ts), a different trust boundary from this
-// app signing its own outbound session cookie.
+// Deliberately a separate secret from BIGCOMMERCE_CLIENT_SECRET, which
+// verifies BigCommerce's inbound signed_payload_jwt — a different trust
+// boundary from this app signing its own outbound session cookie.
 function getSessionSecret(): Uint8Array {
   const secret = process.env.SESSION_SECRET;
 

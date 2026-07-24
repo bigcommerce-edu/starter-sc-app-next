@@ -6,14 +6,10 @@ function findChannelById(channels: Channel[], id: number): Channel | undefined {
   return channels.find((channel) => channel.id === id);
 }
 
-// Attaches channel names to a customer's origin_channel_id/channel_ids.
-// Customers only ever know channels by id — this is the one place that
-// looks up what those ids actually refer to. Callers that already have the
-// full channel list on hand (e.g. because they also need it to populate a
-// filter) can pass it in directly to avoid fetching it twice. Takes
-// storeHash (rather than a BcRestApiClient) purely to forward into
-// fetchChannels, which is itself a `use cache` boundary and so can't accept a
-// class instance.
+// Attaches channel names to a customer's origin_channel_id/channel_ids, since
+// customers only know channels by id. Callers that already have the full
+// channel list (e.g. to populate a filter) can pass it in to avoid fetching
+// twice.
 export async function decorateCustomersWithChannels(
   customers: Customer[],
   storeHash: string | undefined,

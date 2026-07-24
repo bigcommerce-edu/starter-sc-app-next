@@ -8,6 +8,7 @@ import {
   CreateAppExtensionResult,
 } from "@/lib/gift-certs-manager/app-extension-gql";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
+import { logError } from "@/lib/errors/logger";
 
 // Finds this app's own App Extension among the store's existing extensions,
 // if BigCommerce already has one — matched on url, since that (set from
@@ -42,9 +43,11 @@ export async function findOrCreateAppExtension(graphqlApiClient: BcGraphqlApiCli
     return existingExtensionId;
   }
 
-  const result = await graphqlApiClient.request<CreateAppExtensionResult>(CREATE_APP_EXTENSION_MUTATION, {
-    input: APP_EXTENSION_INPUT,
-  });
+  const result = await graphqlApiClient.request<CreateAppExtensionResult>(
+    CREATE_APP_EXTENSION_MUTATION,
+    { input: APP_EXTENSION_INPUT },
+    { isMutation: true },
+  );
 
   return result.appExtension.createAppExtension.appExtension.id;
 }
@@ -78,6 +81,6 @@ export async function registerAppExtension(storeHash: string, apiToken: string):
 
     await getCredentialsStore().setStoreExtension({ storeHash, extensionId });
   } catch (error) {
-    console.error(`Failed to register the App Extension for store "${storeHash}".`, error);
+    logError(`registerAppExtension: store "${storeHash}"`, error);
   }
 }

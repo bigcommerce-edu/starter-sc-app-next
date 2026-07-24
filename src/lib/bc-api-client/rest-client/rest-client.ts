@@ -1,5 +1,7 @@
 import { ApiMutationOptions, ApiRequestOptions, ApiResponse, BcRestApiClient } from "@/lib/bc-api-client/rest-client/types";
 import { StoreApiCredentials } from "@/lib/bc-api-client/types";
+import { API_REQUEST_TIMEOUT_MS } from "@/lib/bc-api-client/request-timeout";
+import { AppError } from "@/lib/errors/app-error";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
 
@@ -13,6 +15,35 @@ function buildUrl(storeHash: string, path: string, params: ApiRequestOptions["pa
   }
 
   return url.toString();
+}
+
+// Query-string values can carry customer PII for this app's endpoints (e.g.
+// a customer/gift-certificate search by email) — this diagnostic log must
+// never write that to stdout in plaintext, so only the path + param *names*
+// (never values) are logged, not the full URL.
+function toLoggableUrl(url: string): string {
+  const parsed = new URL(url);
+
+  return `${parsed.origin}${parsed.pathname}${
+    [...parsed.searchParams.keys()].length ? `?${[...parsed.searchParams.keys()].map((key) => `${key}=<redacted>`).join("&")}` : ""
+  }`;
+}
+
+// A 2xx response isn't guaranteed to actually be JSON — a CDN/WAF in front
+// of BigCommerce's API can return an HTML error page with a 200/success-ish
+// status in some failure modes — so response.json() throwing a raw
+// SyntaxError here would otherwise surface as an opaque, unrelated-looking
+// parse error rather than a clear "the API response was malformed" failure.
+async function parseJsonResponse<TResponse>(response: Response, path: string): Promise<TResponse> {
+  const responseText = await response.text();
+
+  try {
+    return JSON.parse(responseText) as TResponse;
+  } catch (error) {
+    throw new AppError("UPSTREAM_API", "A BigCommerce API request failed.", {
+      cause: `Response to "${path}" was not valid JSON: ${responseText.slice(0, 500)} (${error})`,
+    });
+  }
 }
 
 // This is also the app's cache-observability signal: a fetch only happens on
@@ -35,7 +66,7 @@ function logApiRequest(method: string, url: string, status: number, durationMs: 
     return;
   }
 
-  console.log(`[BigCommerce API] ${method} ${url} -> ${status} (${durationMs.toFixed(0)}ms)`);
+  console.log(`[BigCommerce API] ${method} ${toLoggableUrl(url)} -> ${status} (${durationMs.toFixed(0)}ms)`);
 }
 
 // Talks to the real BigCommerce Admin REST API. Used by both STATIC and
@@ -49,7 +80,7 @@ export class RestApiClient implements BcRestApiClient {
     const { storeHash, apiToken } = this.credentials;
 
     if (!storeHash || !apiToken) {
-      throw new Error("A store hash and API token are required to make a request.");
+      throw new AppError("VALIDATION", "A store hash and API token are required to make a request.");
     }
 
     return { storeHash, apiToken };
@@ -60,17 +91,27 @@ export class RestApiClient implements BcRestApiClient {
     const url = buildUrl(storeHash, path, options.params);
 
     const startedAt = performance.now();
-    const response = await fetch(url, {
-      headers: {
-        "X-Auth-Token": apiToken,
-        Accept: "application/json",
-      },
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(url, {
+        headers: {
+          "X-Auth-Token": apiToken,
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS),
+      });
+    } catch (error) {
+      throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });
+    }
 
     logApiRequest("GET", url, response.status, performance.now() - startedAt);
 
     if (!response.ok) {
-      throw new Error(`BigCommerce API request to "${path}" failed with status ${response.status}.`);
+      throw new AppError("UPSTREAM_API", `A BigCommerce API request failed.`, {
+        cause: `GET "${path}" failed with status ${response.status}.`,
+        status: response.status,
+      });
     }
 
     // Some GET endpoints (e.g. v2 gift certificates, when nothing matches the
@@ -78,7 +119,7 @@ export class RestApiClient implements BcRestApiClient {
     // parsing an empty body as JSON would throw, so only attempt it when
     // there's actually a body. Callers that expect a list should treat a
     // missing/undefined data as empty, the same way they'd treat [].
-    const data = response.status === 204 ? undefined : ((await response.json()) as TResponse);
+    const data = response.status === 204 ? undefined : await parseJsonResponse<TResponse>(response, path);
 
     return { data: data as TResponse, headers: response.headers };
   }
@@ -92,25 +133,43 @@ export class RestApiClient implements BcRestApiClient {
     const url = buildUrl(storeHash, path, undefined);
 
     const startedAt = performance.now();
-    const response = await fetch(url, {
-      method,
-      headers: {
-        "X-Auth-Token": apiToken,
-        Accept: "application/json",
-        ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
-      },
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(url, {
+        method,
+        headers: {
+          "X-Auth-Token": apiToken,
+          Accept: "application/json",
+          ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
+        },
+        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+        // Deliberately no AbortSignal.timeout here, unlike get() — a client-
+        // side timeout on a mutation only stops us from *waiting* for the
+        // response; it does nothing to cancel the write on BigCommerce's
+        // side. If the request had already landed by the time we gave up,
+        // the mutation can still succeed after we've told the caller it
+        // failed — an ambiguous outcome that's worse than just waiting
+        // however long BigCommerce/the deployment platform actually takes.
+        // Reads have no such risk (aborting a GET has no side effect to
+        // leave dangling), which is why get() keeps its own timeout above.
+      });
+    } catch (error) {
+      throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });
+    }
 
     logApiRequest(method, url, response.status, performance.now() - startedAt);
 
     if (!response.ok) {
-      throw new Error(`BigCommerce API request to "${path}" failed with status ${response.status}.`);
+      throw new AppError("UPSTREAM_API", `A BigCommerce API request failed.`, {
+        cause: `${method} "${path}" failed with status ${response.status}.`,
+        status: response.status,
+      });
     }
 
     // DELETE responses are typically 204 No Content — parsing an empty body
     // as JSON would throw, so only attempt it when there's actually a body.
-    const data = response.status === 204 ? undefined : ((await response.json()) as TResponse);
+    const data = response.status === 204 ? undefined : await parseJsonResponse<TResponse>(response, path);
 
     return { data: data as TResponse, headers: response.headers };
   }

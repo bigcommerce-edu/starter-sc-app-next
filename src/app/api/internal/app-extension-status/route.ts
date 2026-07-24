@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchAppExtensionStatus } from "@/lib/gift-certs-manager/app-extension-status";
-import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
+import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/session/is-authorized-for-store";
+import { logError } from "@/lib/errors/logger";
+import { jsonError } from "@/lib/errors/json-error";
 
 // Called by AppExtensionStatusBanner (a client component) to check whether
 // this app's App Extension is registered for the current store, without
@@ -27,10 +29,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const storeHash = request.nextUrl.searchParams.get("storeHash") ?? undefined;
 
   if (!(await isAuthorizedForStore(storeHash))) {
-    return NextResponse.json({ error: "Not authorized for this store." }, { status: 403 });
+    return jsonError(403, NOT_AUTHORIZED_FOR_STORE_MESSAGE);
   }
 
-  const status = await fetchAppExtensionStatus(storeHash);
+  try {
+    const status = await fetchAppExtensionStatus(storeHash);
 
-  return NextResponse.json(status, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json(status, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    // This route is polled by a purely cosmetic client-side banner (see
+    // AppExtensionStatusBanner) — a failure here should never surface as a
+    // broken fetch to that component; a 500 with no body detail lets the
+    // banner's own catch treat it the same as any other check failure (see
+    // that component's comment on why a failed check simply hides the
+    // banner rather than showing an error state).
+    logError("GET /api/internal/app-extension-status", error);
+
+    return jsonError(500, "Failed to check app extension status.");
+  }
 }

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { StoreNotInstalledError } from "@/lib/bc-auth/errors";
+import { isSignedPayloadVerificationError, StoreNotInstalledError } from "@/lib/bc-auth/errors";
 import { loadStore } from "@/lib/bc-auth/load-store";
 import { getAbsoluteAppUrl } from "@/lib/routing/app-url";
+import { logError } from "@/lib/errors/logger";
+import { jsonError } from "@/lib/errors/json-error";
 
 // BigCommerce's launch callback. Business logic lives in
 // lib/bc-auth/load-store.ts — this route only reads the request, delegates,
@@ -10,7 +12,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const signedPayloadJwt = request.nextUrl.searchParams.get("signed_payload_jwt");
 
   if (!signedPayloadJwt) {
-    return NextResponse.json({ error: "signed_payload_jwt is required." }, { status: 400 });
+    return jsonError(400, "signed_payload_jwt is required.");
   }
 
   let storeHash: string;
@@ -20,10 +22,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     ({ storeHash, url } = await loadStore(signedPayloadJwt));
   } catch (error) {
     if (error instanceof StoreNotInstalledError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
+      return jsonError(403, error.message);
     }
 
-    return NextResponse.json({ error: "Invalid signed payload." }, { status: 401 });
+    if (isSignedPayloadVerificationError(error)) {
+      return jsonError(401, "Invalid signed payload.");
+    }
+
+    // Anything else (a credentials-store failure, a missing env var) is not
+    // a bad JWT — reporting it as "Invalid signed payload" would send anyone
+    // debugging a DB outage looking at the wrong system. See
+    // isSignedPayloadVerificationError's own comment.
+    logError("GET /api/app/load", error);
+
+    return jsonError(500, "Failed to load the store.");
   }
 
   return NextResponse.redirect(getAbsoluteAppUrl(storeHash, url));

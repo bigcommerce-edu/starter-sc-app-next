@@ -15,6 +15,21 @@ export interface GraphqlResponseBody<TResult> {
   errors?: GraphqlError[];
 }
 
+// GraphQL has no REST-style verb to distinguish a read from a write the way
+// RestApiClient.get vs. post/put/delete can — every request is a POST to the
+// same endpoint, whether it's a query or a mutation — so the caller has to
+// say so explicitly. isMutation defaults to false (a timeout applies) so a
+// caller that forgets this opts into the safer read-like behavior rather
+// than silently getting the no-timeout mutation behavior; every real
+// mutation call site must pass isMutation: true deliberately. See
+// GraphqlApiClient.request and rest-client.ts's mutate() for why a mutation
+// gets no client-side timeout at all: aborting only stops us from waiting,
+// it doesn't cancel the write on BigCommerce's side, so timing out a
+// mutation risks reporting failure for a write that actually succeeded.
+export interface GraphqlRequestOptions {
+  isMutation?: boolean;
+}
+
 // Modeled on the BigCommerce Admin GraphQL API: every request is a single
 // query/mutation document plus variables, sent to one endpoint, and
 // returns just the unwrapped `data` (request() throws on transport failure,
@@ -26,5 +41,6 @@ export interface BcGraphqlApiClient {
   request<TResult, TVariables extends Record<string, unknown> = Record<string, unknown>>(
     query: string,
     variables?: TVariables,
+    options?: GraphqlRequestOptions,
   ): Promise<TResult>;
 }

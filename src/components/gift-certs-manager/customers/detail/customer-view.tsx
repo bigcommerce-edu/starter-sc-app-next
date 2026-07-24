@@ -1,4 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
+import { notFound } from "next/navigation";
 import { Box, Flex, Panel } from "@/components/ui/big-design";
 import { ArrowBackIcon } from "@/components/ui/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
@@ -37,6 +38,18 @@ export async function CustomerView({
   cacheTag(GIFT_CERTIFICATES_LIST_TAG);
 
   const rawCustomer = await fetchCustomer(id, storeHash);
+
+  // A missing customer isn't a 404 from BigCommerce itself (see
+  // fetchCustomer's own comment — this is a list endpoint filtered down to
+  // zero rows), so this is the one place that decides a missing record
+  // means "render the not-found boundary" — notFound() is safe to call from
+  // inside this "use cache: remote" boundary (verified against Next's own
+  // error-handling source: its digest survives the cache wrapper's error
+  // handler unmodified, the same path a plain page-level notFound() call
+  // takes).
+  if (!rawCustomer) {
+    notFound();
+  }
 
   // to_email scopes the fetch to this customer's certificates, but it's
   // implied by the route (not a user-chosen filter) and must never be echoed

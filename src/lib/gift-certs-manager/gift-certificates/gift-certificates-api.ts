@@ -111,7 +111,15 @@ export async function fetchGiftCertificates(
 }
 
 // See fetchGiftCertificates — caching lives in the calling *View component
-// (GiftCertificateView), not here.
+// (GiftCertificateView), not here. Deliberately does NOT call Next's
+// notFound() itself on a 404, even though that's a real possibility here
+// (BigCommerce's v2 single-resource endpoint 404s for a missing id) — this
+// function is shared by GiftCertificateView (a page render, where notFound()
+// is the right response) and the Server Actions in actions.ts (where a 404
+// means "this certificate was deleted since the page loaded," which should
+// surface as an ActionResult failure, not a navigation to a 404 boundary).
+// See GiftCertificateView for where the 404-to-notFound() translation
+// actually happens.
 export async function fetchGiftCertificate(
   id: number | string,
   storeHash: string | undefined,

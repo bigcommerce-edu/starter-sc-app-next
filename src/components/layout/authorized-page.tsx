@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
 
 type PageProps = {
@@ -34,7 +35,13 @@ export async function AuthorizedPage({
   const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
 
   if (!(await isAuthorizedForStore(storeHashString))) {
-    throw new Error("Not authorized for this store.");
+    // Redirects rather than rendering an inline "not authorized" view — by
+    // the time this runs, [storeHash]/layout.tsx has already committed to
+    // rendering AppShell unconditionally around `children` (this component
+    // is nested inside that), so nothing returned from here can remove the
+    // site frame; only a genuinely new navigation (this redirect) can. See
+    // app/unauthorized/page.tsx and UnauthorizedStoreRoute's own comment.
+    redirect("/unauthorized");
   }
 
   return <PageComponent params={params} searchParams={searchParams} />;

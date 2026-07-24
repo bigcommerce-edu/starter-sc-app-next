@@ -1,5 +1,7 @@
-import { BcGraphqlApiClient, GraphqlResponseBody } from "@/lib/bc-api-client/graphql-client/types";
+import { BcGraphqlApiClient, GraphqlRequestOptions, GraphqlResponseBody } from "@/lib/bc-api-client/graphql-client/types";
 import { StoreApiCredentials } from "@/lib/bc-api-client/types";
+import { API_REQUEST_TIMEOUT_MS } from "@/lib/bc-api-client/request-timeout";
+import { AppError } from "@/lib/errors/app-error";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
 
@@ -15,24 +17,41 @@ export class GraphqlApiClient implements BcGraphqlApiClient {
   async request<TResult, TVariables extends Record<string, unknown> = Record<string, unknown>>(
     query: string,
     variables?: TVariables,
+    options: GraphqlRequestOptions = {},
   ): Promise<TResult> {
     const { storeHash, apiToken } = this.credentials;
 
     if (!storeHash || !apiToken) {
-      throw new Error("A store hash and API token are required to make a request.");
+      throw new AppError("VALIDATION", "A store hash and API token are required to make a request.");
     }
 
     const url = `${API_BASE_URL}/stores/${storeHash}/graphql`;
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "X-Auth-Token": apiToken,
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query, variables }),
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "X-Auth-Token": apiToken,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query, variables }),
+        // No timeout at all for a mutation — see GraphqlRequestOptions'
+        // own comment (same reasoning as rest-client.ts's mutate()): a
+        // client-side abort doesn't cancel the write on BigCommerce's side,
+        // so timing out risks reporting failure for a mutation that
+        // actually landed.
+        ...(options.isMutation ? {} : { signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS) }),
+      });
+    } catch (error) {
+      // fetch itself throws for a network failure (DNS, connection refused)
+      // or an AbortSignal.timeout firing — neither has a response to read a
+      // status/body from, so this is a distinct failure mode from the
+      // non-2xx/malformed-body handling below.
+      throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });
+    }
 
     // BigCommerce's GraphQL Admin API reports validation errors (bad query
     // syntax, a mistyped enum value, etc.) as a non-2xx with the actual
@@ -60,7 +79,13 @@ export class GraphqlApiClient implements BcGraphqlApiClient {
         ? body.errors.map((error) => error.message).join("; ")
         : responseText.slice(0, 500);
 
-      throw new Error(`BigCommerce GraphQL request failed with status ${response.status}: ${errorDetail}`);
+      // errorDetail is not shown to end users (callers only see the message
+      // below) — it's attached as `cause` purely for logs/debugging, since
+      // BigCommerce's own error text is the most useful signal available
+      // when a caller needs to diagnose why a request failed.
+      throw new AppError("UPSTREAM_API", "A BigCommerce API request failed.", {
+        cause: `status ${response.status}: ${errorDetail}`,
+      });
     }
 
     return body?.data as TResult;

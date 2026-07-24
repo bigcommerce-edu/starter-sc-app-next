@@ -14,7 +14,9 @@ import {
   updateGiftCertificateStatus as updateGiftCertificateStatusRequest,
 } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
-import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
+import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/session/is-authorized-for-store";
+import { toSafeMessage } from "@/lib/errors/app-error";
+import { logError } from "@/lib/errors/logger";
 
 export async function updateGiftCertificateStatus(
   id: number | string,
@@ -24,17 +26,27 @@ export async function updateGiftCertificateStatus(
   // A page/layout-level auth check does not extend to Server Actions (they're
   // directly POST-able independent of any page render), so this re-verifies
   // on its own rather than trusting the client-supplied storeHash — see
-  // isAuthorizedForStore.
+  // isAuthorizedForStore. Returned as an ActionResult, not thrown — a
+  // thrown error's message is stripped to a generic digest by Next in
+  // production before it reaches runServerAction's catch, which would
+  // replace this specific message with "Something went wrong."
   if (!(await isAuthorizedForStore(storeHash))) {
-    throw new Error("Not authorized for this store.");
+    return { success: false, message: NOT_AUTHORIZED_FOR_STORE_MESSAGE };
   }
 
-  // The caller only supplies id/status — every other field used to build the
-  // update request (and any future validation against the certificate's real
-  // state) comes from this fresh fetch, never from client-supplied data.
-  const giftCertificate = await fetchGiftCertificate(id, storeHash);
+  try {
+    // The caller only supplies id/status — every other field used to build
+    // the update request (and any future validation against the
+    // certificate's real state) comes from this fresh fetch, never from
+    // client-supplied data.
+    const giftCertificate = await fetchGiftCertificate(id, storeHash);
 
-  await updateGiftCertificateStatusRequest(giftCertificate, status, storeHash);
+    await updateGiftCertificateStatusRequest(giftCertificate, status, storeHash);
+  } catch (error) {
+    logError(`updateGiftCertificateStatus: certificate ${id}`, error);
+
+    return { success: false, message: toSafeMessage(error, "Failed to update the gift certificate status.") };
+  }
 
   updateTag(giftCertificateTag(id));
 
@@ -55,24 +67,30 @@ export async function refillGiftCertificateBalance(
   storeHash: string | undefined,
 ): Promise<ActionResult> {
   if (!(await isAuthorizedForStore(storeHash))) {
-    throw new Error("Not authorized for this store.");
+    return { success: false, message: NOT_AUTHORIZED_FOR_STORE_MESSAGE };
   }
 
-  const giftCertificate = await fetchGiftCertificate(id, storeHash);
+  try {
+    const giftCertificate = await fetchGiftCertificate(id, storeHash);
 
-  if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
-    return { success: false, message: "Only active or expired gift certificates can be refilled." };
+    if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
+      return { success: false, message: "Only active or expired gift certificates can be refilled." };
+    }
+
+    if (!Number.isFinite(newBalance) || newBalance < 0) {
+      return { success: false, message: "Refill balance must be a non-negative number." };
+    }
+
+    if (newBalance > giftCertificate.amount) {
+      return { success: false, message: "Refill balance cannot exceed the original gift certificate amount." };
+    }
+
+    await refillGiftCertificateBalanceRequest(giftCertificate, newBalance, storeHash);
+  } catch (error) {
+    logError(`refillGiftCertificateBalance: certificate ${id}`, error);
+
+    return { success: false, message: toSafeMessage(error, "Failed to refill the gift certificate balance.") };
   }
-
-  if (!Number.isFinite(newBalance) || newBalance < 0) {
-    return { success: false, message: "Refill balance must be a non-negative number." };
-  }
-
-  if (newBalance > giftCertificate.amount) {
-    return { success: false, message: "Refill balance cannot exceed the original gift certificate amount." };
-  }
-
-  await refillGiftCertificateBalanceRequest(giftCertificate, newBalance, storeHash);
 
   updateTag(giftCertificateTag(id));
 
@@ -90,20 +108,26 @@ export async function addToGiftCertificateBalance(
   storeHash: string | undefined,
 ): Promise<ActionResult> {
   if (!(await isAuthorizedForStore(storeHash))) {
-    throw new Error("Not authorized for this store.");
+    return { success: false, message: NOT_AUTHORIZED_FOR_STORE_MESSAGE };
   }
 
-  const giftCertificate = await fetchGiftCertificate(id, storeHash);
+  try {
+    const giftCertificate = await fetchGiftCertificate(id, storeHash);
 
-  if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
-    return { success: false, message: "Only active or expired gift certificates can have balance added." };
+    if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
+      return { success: false, message: "Only active or expired gift certificates can have balance added." };
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { success: false, message: "Amount must be a positive number." };
+    }
+
+    await addToGiftCertificateBalanceRequest(giftCertificate, amount, storeHash);
+  } catch (error) {
+    logError(`addToGiftCertificateBalance: certificate ${id}`, error);
+
+    return { success: false, message: toSafeMessage(error, "Failed to add to the gift certificate balance.") };
   }
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return { success: false, message: "Amount must be a positive number." };
-  }
-
-  await addToGiftCertificateBalanceRequest(giftCertificate, amount, storeHash);
 
   updateTag(giftCertificateTag(id));
 
@@ -134,34 +158,51 @@ export async function transferGiftCertificateBalanceToStoreCredit(
   storeHash: string | undefined,
 ): Promise<ActionResult> {
   if (!(await isAuthorizedForStore(storeHash))) {
-    throw new Error("Not authorized for this store.");
+    return { success: false, message: NOT_AUTHORIZED_FOR_STORE_MESSAGE };
   }
 
-  const giftCertificate = await fetchGiftCertificate(id, storeHash);
+  let giftCertificate: Awaited<ReturnType<typeof fetchGiftCertificate>>;
+  let customer: Awaited<ReturnType<typeof fetchCustomersByEmail>>["items"][number];
 
-  if (giftCertificate.status !== "active") {
-    return { success: false, message: "Only active gift certificates can be transferred to store credit." };
-  }
+  try {
+    giftCertificate = await fetchGiftCertificate(id, storeHash);
 
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return { success: false, message: "Transfer amount must be a positive number." };
-  }
+    if (giftCertificate.status !== "active") {
+      return { success: false, message: "Only active gift certificates can be transferred to store credit." };
+    }
 
-  if (amount > giftCertificate.balance) {
-    return { success: false, message: "Transfer amount cannot exceed the current gift certificate balance." };
-  }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { success: false, message: "Transfer amount must be a positive number." };
+    }
 
-  const { items: customers } = await fetchCustomersByEmail([giftCertificate.to_email], storeHash);
-  const customer = customers.find((item) => item.email.toLowerCase() === giftCertificate.to_email.toLowerCase());
+    if (amount > giftCertificate.balance) {
+      return { success: false, message: "Transfer amount cannot exceed the current gift certificate balance." };
+    }
 
-  if (!customer) {
-    return { success: false, message: "The gift certificate recipient has no registered customer account." };
+    const { items: customers } = await fetchCustomersByEmail([giftCertificate.to_email], storeHash);
+    const foundCustomer = customers.find((item) => item.email.toLowerCase() === giftCertificate.to_email.toLowerCase());
+
+    if (!foundCustomer) {
+      return { success: false, message: "The gift certificate recipient has no registered customer account." };
+    }
+
+    customer = foundCustomer;
+  } catch (error) {
+    logError(`transferGiftCertificateBalanceToStoreCredit: certificate ${id}`, error);
+
+    return { success: false, message: toSafeMessage(error, "Failed to look up the gift certificate or recipient.") };
   }
 
   const previousBalance = giftCertificate.balance;
   const previousStatus = giftCertificate.status;
 
-  await debitGiftCertificateForTransfer(giftCertificate, amount, storeHash);
+  try {
+    await debitGiftCertificateForTransfer(giftCertificate, amount, storeHash);
+  } catch (error) {
+    logError(`transferGiftCertificateBalanceToStoreCredit: debit for certificate ${id}`, error);
+
+    return { success: false, message: toSafeMessage(error, "Failed to debit the gift certificate.") };
+  }
 
   try {
     await addToCustomerStoreCredit(customer, amount, storeHash);

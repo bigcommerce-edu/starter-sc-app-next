@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AppError } from "@/lib/errors/app-error";
 
 const BC_LOGIN_URL = "https://login.bigcommerce.com";
 
@@ -52,7 +53,9 @@ export async function exchangeCodeForToken(params: ExchangeCodeParams): Promise<
   });
 
   if (!response.ok) {
-    throw new Error(`BigCommerce token exchange failed with status ${response.status}: ${await response.text()}`);
+    throw new AppError("UPSTREAM_API", "Failed to install the app for this store.", {
+      cause: `BigCommerce token exchange failed with status ${response.status}: ${(await response.text()).slice(0, 500)}`,
+    });
   }
 
   return tokenResponseSchema.parse(await response.json());

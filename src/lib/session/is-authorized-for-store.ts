@@ -17,6 +17,13 @@ const isStoreUserLinked = cache((storeHash: string, userId: number): Promise<boo
   return getCredentialsStore().isStoreUserLinked(storeHash, userId);
 });
 
+// Shared, single copy of the message every isAuthorizedForStore caller uses
+// on a failed check — AuthorizedPage and Server Actions throw Error(this),
+// the /api/internal/app-extension-status route returns it as a 403 JSON
+// body — so the wording only has to be defined (and changed, if it ever
+// needs to) in one place rather than re-typed identically at each call site.
+export const NOT_AUTHORIZED_FOR_STORE_MESSAGE = "Not authorized for this store.";
+
 // Whether the current session is authorized to act on the given store —
 // called from two kinds of places that can't rely on each other: each
 // page's own AuthorizedPage wrapper (see e.g.

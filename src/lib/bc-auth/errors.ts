@@ -12,6 +12,36 @@ export class StoreNotInstalledError extends Error {
   }
 }
 
+// Thrown by exchangeCodeForToken for every failure mode of the OAuth call to
+// BigCommerce itself — a network failure reaching login.bigcommerce.com, a
+// non-2xx response (bad/expired code, an outage on BigCommerce's side), or a
+// 2xx response whose body doesn't match the expected shape. Wraps the
+// original error as `cause` for logs; the message is intentionally generic
+// (never shown to a merchant directly — see app-error-reason.ts) since all
+// three underlying causes point to the same actionable next step: the
+// install attempt itself failed before this app ever had a token, so
+// there's nothing to retry except starting the install over.
+export class TokenExchangeFailedError extends Error {
+  constructor(options?: { cause?: unknown }) {
+    super("Failed to exchange the authorization code for a BigCommerce access token.", options);
+    this.name = "TokenExchangeFailedError";
+  }
+}
+
+// Thrown by installStore when the token exchange with BigCommerce succeeded
+// but persisting the result (the credentials-store writes, or minting the
+// session cookie) failed — a materially different failure point from
+// TokenExchangeFailedError: BigCommerce already issued a real access token
+// by this point, so this is this app's own DB/session layer, not anything
+// BigCommerce-side. Distinguishing the two lets /auth's error page tell a
+// developer which system to look at first.
+export class InstallSaveFailedError extends Error {
+  constructor(options?: { cause?: unknown }) {
+    super("Failed to save the store's installation.", options);
+    this.name = "InstallSaveFailedError";
+  }
+}
+
 // True only for the failure modes that mean "this signed_payload_jwt itself
 // is invalid" — a bad/expired/not-yet-valid signature (jose's own error
 // classes) or a well-signed payload whose claims don't match the expected

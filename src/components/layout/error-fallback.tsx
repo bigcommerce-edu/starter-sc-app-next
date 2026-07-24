@@ -24,7 +24,7 @@ export function ErrorFallback({ onRetry }: { onRetry: () => void }) {
             An unexpected error occurred while loading this page. Try again, or navigate elsewhere using the menu.
           </Text>
           <Flex justifyContent="center">
-            <Button onClick={onRetry}>Try again</Button>
+            <Button onClick={onRetry} variant="secondary">Try again</Button>
           </Flex>
         </Panel>
       </Box>

@@ -1,4 +1,5 @@
 import { exchangeCodeForToken } from "@/lib/bc-auth/exchange-code-for-token";
+import { InstallSaveFailedError } from "@/lib/bc-auth/errors";
 import { parseStoreHash } from "@/lib/bc-auth/verify-signed-payload";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 import { upsertSessionStore } from "@/lib/session/session-cookie";
@@ -28,9 +29,10 @@ export interface InstallStoreResult {
 // establishes (or extends) this admin's session. Idempotent — re-installing
 // an already-known store just replaces its token/scope (see
 // CredentialsStore.setStore), and upsertSessionStore is itself idempotent
-// for the same reason. Throws whatever exchangeCodeForToken throws on a
-// failed exchange; the caller (the /auth route) decides what HTTP status
-// that becomes.
+// for the same reason. Throws whatever exchangeCodeForToken throws
+// (TokenExchangeFailedError) on a failed exchange, or InstallSaveFailedError
+// if the exchange succeeded but persisting its result failed; the caller
+// (the /auth route) decides what HTTP status/error page each becomes.
 //
 // This is agnostic single-click-app plumbing — it knows nothing about any
 // specific app extension. Returns accessToken (not just storeHash) so the
@@ -68,7 +70,7 @@ export async function installStore(params: InstallStoreParams): Promise<InstallS
     await upsertSessionStore(tokenResponse.user.id, storeHash);
   } catch (error) {
     logError(`installStore: store "${storeHash}"`, error);
-    throw error;
+    throw new InstallSaveFailedError({ cause: error });
   }
 
   return { storeHash, accessToken: tokenResponse.access_token };

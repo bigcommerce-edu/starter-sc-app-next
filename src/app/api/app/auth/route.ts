@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { installStore } from "@/lib/bc-auth/install-store";
+import { InstallSaveFailedError, TokenExchangeFailedError } from "@/lib/bc-auth/errors";
+import { getAppErrorUrl } from "@/lib/bc-auth/app-error-reason";
 import { registerAppExtension } from "@/lib/gift-certs-manager/register-app-extension";
 import { getAbsoluteAppUrl } from "@/lib/routing/app-url";
 import { logError } from "@/lib/errors/logger";
-import { jsonError } from "@/lib/errors/json-error";
 
 // BigCommerce's install callback. Agnostic install logic lives in
 // lib/bc-auth/install-store.ts — this route calls that, then separately
@@ -12,13 +13,18 @@ import { jsonError } from "@/lib/errors/json-error";
 // into a response. registerAppExtension is called here rather than from
 // within installStore, since installStore is agnostic single-click-app
 // plumbing that shouldn't need to know this specific extension exists.
+// Like /load, BigCommerce navigates the merchant's iframe directly to this
+// route, so an install failure redirects to /app-error rather than
+// returning JSON — see app-error-reason.ts.
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const code = request.nextUrl.searchParams.get("code");
   const context = request.nextUrl.searchParams.get("context");
   const scope = request.nextUrl.searchParams.get("scope");
 
   if (!code || !context || !scope) {
-    return jsonError(400, "code, context, and scope are required.");
+    logError("GET /api/app/auth", new Error("code, context, and scope are required."));
+
+    return NextResponse.redirect(getAbsoluteAppUrl(undefined, getAppErrorUrl("INSTALL_FAILED")));
   }
 
   let storeHash: string;
@@ -36,15 +42,26 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       redirectUri: getAbsoluteAppUrl(undefined, "/api/app/auth"),
     }));
   } catch (error) {
-    // A failure here (a bad/expired code, a token-exchange outage, a
-    // credentials-store failure) means the store was never actually
-    // installed — nothing to roll back, but the merchant's browser is
-    // mid-redirect from BigCommerce and needs *some* response rather than
-    // an unhandled exception, which Next has no error boundary for in a
-    // Route Handler.
+    // A failure here means the store was never actually installed —
+    // nothing to roll back, but the merchant's browser is mid-redirect from
+    // BigCommerce and needs *some* response rather than an unhandled
+    // exception, which Next has no error boundary for in a Route Handler.
+    // Distinguishes which stage of installStore's execution actually failed
+    // (see install-store.ts/exchange-code-for-token.ts's own comments) so
+    // /app-error's message points a developer at the right system —
+    // BigCommerce's own OAuth endpoint vs. this app's credentials-store/
+    // session layer — rather than one blanket "something went wrong."
     logError("GET /api/app/auth: installStore", error);
 
-    return jsonError(500, "Failed to install the app for this store.");
+    if (error instanceof TokenExchangeFailedError) {
+      return NextResponse.redirect(getAbsoluteAppUrl(undefined, getAppErrorUrl("TOKEN_EXCHANGE_FAILED")));
+    }
+
+    if (error instanceof InstallSaveFailedError) {
+      return NextResponse.redirect(getAbsoluteAppUrl(undefined, getAppErrorUrl("INSTALL_SAVE_FAILED")));
+    }
+
+    return NextResponse.redirect(getAbsoluteAppUrl(undefined, getAppErrorUrl("INSTALL_FAILED")));
   }
 
   // Deliberately outside the try/catch above: registerAppExtension already

@@ -82,11 +82,21 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
       return false;
     }
 
-    if (dateCreatedMin && customer.date_created < dateCreatedMin) {
+    // dateCreatedMin/Max are plain dates (e.g. "2024-01-05"), but
+    // customer.date_created is a full ISO datetime — comparing the two
+    // directly as strings would make :max exclude the entire boundary day
+    // (any same-day record has a later, "greater" datetime string than the
+    // bare date), which reads as "before this day" rather than the more
+    // natural "up to and including this day." Comparing only the date
+    // portion of date_created keeps both bounds inclusive of their
+    // respective boundary day.
+    const customerDateCreated = customer.date_created.slice(0, 10);
+
+    if (dateCreatedMin && customerDateCreated < dateCreatedMin) {
       return false;
     }
 
-    if (dateCreatedMax && customer.date_created > dateCreatedMax) {
+    if (dateCreatedMax && customerDateCreated > dateCreatedMax) {
       return false;
     }
 

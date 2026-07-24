@@ -6,7 +6,7 @@ import { MoreHorizIcon } from "@/components/ui/big-design-icons";
 import {
   refillGiftCertificateBalance,
   transferGiftCertificateBalanceToStoreCredit,
-} from "@/app/[storeHash]/gift-certs/[id]/actions";
+} from "@/app/store/[storeHash]/gift-certs/[id]/actions";
 import { runServerAction } from "@/components/ui/action-alerts";
 import { GiftCertificateWithRecipientAccount } from "@/lib/gift-certs-manager/gift-certificates/types";
 
@@ -45,17 +45,10 @@ export function GiftCertificateActionsMenu({
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isPending, startTransition] = useTransition();
   // Bumped on every selection to force Dropdown (downshift's useSelect
-  // underneath) to remount with a fresh internal reducer instead of reusing
-  // its existing one. Without this, selecting an item once leaves
-  // downshift's internal selectedItem state set; if this component later
-  // re-renders with new items/onItemClick closures (e.g. after a
-  // client-side navigation away and back, since `items` below is rebuilt
-  // fresh every render), downshift's own useEnhancedReducer effect (see
-  // node_modules/downshift's useControlledReducer$1) detects its recomputed
-  // state no longer matches its last state and re-fires onSelectedItemChange
-  // with that stale selectedItem — re-invoking the same onItemClick a
-  // second time with no actual click. Remounting the whole Dropdown clears
-  // downshift's internal state so there's nothing stale left to replay.
+  // underneath) to remount with a fresh internal reducer. Without this,
+  // downshift's stale internal selectedItem state can re-fire
+  // onSelectedItemChange against new items/onItemClick closures on a later
+  // re-render, re-invoking the same onItemClick with no actual click.
   const [dropdownKey, setDropdownKey] = useState(0);
 
   const closeModal = () => setPendingAction(null);
@@ -64,11 +57,9 @@ export function GiftCertificateActionsMenu({
     const action = pendingAction;
 
     // Closed synchronously on click, not after the action resolves — this
-    // component can get frozen mid-transition in Next.js's client Router
-    // Cache if the user navigates away before the transition finishes (e.g.
-    // clicking "View" right after confirming), which previously replayed a
-    // stale pendingAction (and therefore a re-opened modal) when navigating
-    // back to this cached page. Closing first removes that race entirely.
+    // component can get frozen mid-transition in Next's client Router Cache,
+    // which would otherwise replay a stale pendingAction (and a re-opened
+    // modal) when navigating back to this cached page.
     closeModal();
 
     startTransition(async () => {

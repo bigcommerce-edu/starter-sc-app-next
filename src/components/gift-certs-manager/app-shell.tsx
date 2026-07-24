@@ -7,21 +7,13 @@ import { Suspense } from "react";
 
 const SIDEBAR_WIDTH = "280px";
 
-// The shell chrome (nav, data-mode banner, developer info sidebar) has no
-// dynamic dependency of its own — DataModeBanner only reads getDataMode()
-// (sync env var) and DeveloperInfoPanel only reads env vars. So this is a
-// plain, sync Server Component: it takes no params, awaits nothing, and can
-// render immediately regardless of how long `children` takes to resolve.
-// [storeHash]/layout.tsx and (root)/layout.tsx wrap `children` (not this
-// component) in the Suspense boundary that covers the auth check and page
-// data — this component itself never needs one.
+// The shell chrome has no dynamic dependency of its own, so this is a plain,
+// sync Server Component that renders immediately regardless of how long
+// `children` takes to resolve.
 //
 // MainNav and AppExtensionStatusBanner both read useParams() client-side —
-// under cacheComponents, route params are "blocks navigation" data even
-// when read from a Client Component, so each needs its own Suspense
-// boundary or Next throws ("Data that blocks navigation was accessed
-// outside of <Suspense>") rather than silently working the way a plain env
-// var read does.
+// under cacheComponents, route params are "blocks navigation" data even from
+// a Client Component, so each needs its own Suspense boundary or Next throws.
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <Box>
@@ -29,13 +21,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Suspense>
         <AppExtensionStatusBanner />
       </Suspense>
-      <Box paddingHorizontal="large" paddingTop="large">
-        <Suspense>
-          <MainNav />
-        </Suspense>
-      </Box>
-      <Flex padding="large" flexGap="1rem" alignItems="flex-start">
-        <FlexItem flexGrow={1} flexShrink={1}>
+      {/*
+        Below the "wide" breakpoint, a table-heavy page is wider than a
+        narrowed control-panel iframe can show alongside a fixed-width
+        sidebar. flexDirection uses BigDesign's ResponsiveProp (real CSS
+        @media queries), which measures the iframe's own content window
+        rather than the parent control panel page.
+
+        DeveloperInfoPanel is a flex item in this same container (not a
+        separate row alongside just `children`) so it reflows relative to
+        the nav — coming after the nav+content item places it to the right
+        in row mode and below in column mode via DOM order alone.
+      */}
+      <Flex
+        flexDirection={{ mobile: "column", wide: "row" }}
+        padding="large"
+        flexGap="1rem"
+        alignItems={{ mobile: "stretch", wide: "flex-start" }}
+      >
+        <FlexItem flexGrow={1} flexShrink={1} flexBasis={{ mobile: "auto", wide: "0" }}>
+          <Box paddingBottom="large">
+            <Suspense>
+              <MainNav />
+            </Suspense>
+          </Box>
           <Box>{children}</Box>
         </FlexItem>
         <FlexItem flexGrow={0} flexShrink={0} style={{ width: SIDEBAR_WIDTH }}>

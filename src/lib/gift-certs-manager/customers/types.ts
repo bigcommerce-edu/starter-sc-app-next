@@ -1,24 +1,19 @@
 import { Channel } from "@/lib/gift-certs-manager/channels/types";
 
-// Matches BigDesign's own TableSortDirection type (re-declared here so this
-// file has no dependency on BigDesign — see CustomersQuery below for why the
-// UI layer's Table component ultimately needs this exact shape).
+// Matches BigDesign's TableSortDirection type (re-declared here so this file
+// has no dependency on BigDesign).
 export type SortDirection = "ASC" | "DESC";
 
-// BigCommerce's v3 customers endpoint has no single-resource path — every
-// request, including a single-customer lookup, goes through this one path
-// with filters (e.g. id:in, email:in) rather than a /{id} suffix.
+// BigCommerce's v3 customers endpoint has no single-resource path — even a
+// single lookup goes through this path with filters (e.g. id:in) rather than
+// a /{id} suffix.
 export const CUSTOMERS_PATH = "/v3/customers";
 
-// Matches the BigCommerce v3 customer resource exactly (see
-// https://docs.bigcommerce.com/docs/rest-management/customers) — same field
-// names as the wire response, so there's no separate "API" vs. "app" shape
-// to keep in sync. channel_ids is normalized from the wire's nullable array
-// to always be an array (see customers-api.ts). store_credit_amounts is left
-// as the raw per-currency array the API returns — sumStoreCredit() below
-// collapses it into a single number at render time, since this demo assumes
-// a single-currency store. date_created is left as the raw ISO 8601 string
-// the API returns — components format it for display at render time.
+// Matches the BigCommerce v3 customer resource's field names directly.
+// channel_ids is normalized from the wire's nullable array to always be an
+// array (see customers-api.ts). store_credit_amounts stays the raw
+// per-currency array; sumStoreCredit() below collapses it to a single number
+// at render time (this demo assumes a single-currency store).
 export interface Customer {
   id: number;
   first_name: string;
@@ -37,28 +32,21 @@ export function sumStoreCredit(amounts: Array<{ amount: string }>): number {
 }
 
 // A Customer decorated with the Channel objects its origin_channel_id/
-// channel_ids refer to. originChannel is undefined only if the id doesn't
-// match any known channel, which shouldn't happen with real data.
+// channel_ids refer to.
 export interface CustomerWithChannels extends Customer {
   originChannel: Channel | undefined;
   channels: Channel[];
 }
 
-// BigCommerce's v3 customers endpoint supports sorting by last_name or
-// date_created (also date_modified, which this app doesn't expose) — these
-// are the two sortable columns in the UI (Name, Customer Since).
+// The two sortable columns in the UI (Name, Customer Since). BigCommerce's
+// v3 endpoint also supports date_modified, which this app doesn't expose.
 export type CustomersSortColumn = "name" | "date_created";
 
-// BigCommerce's v3 customers endpoint supports name:like, email:in, and
-// date_created:min/date_created:max filters, plus sorting. There's no
-// origin-channel filter: BigCommerce's v3 customers endpoint doesn't support
-// filtering by origin_channel_id at all (confirmed against the real API —
-// the "Origin Channel" table column, decorated via
-// decorateCustomersWithChannels, is purely a display concern, unrelated to
-// this query). Field names match the request params fetchCustomers sends
-// directly (with ":min"/":max" replaced by "_min"/"_max", since those aren't
-// valid identifier characters), so there's no separate translation step
-// beyond that between this and the wire request.
+// No origin-channel filter: BigCommerce's v3 customers endpoint doesn't
+// support filtering by origin_channel_id, so the "Origin Channel" column
+// (decorateCustomersWithChannels) is display-only. Field names otherwise
+// match the request params fetchCustomers sends directly (":min"/":max"
+// become "_min"/"_max", since those aren't valid identifier characters).
 export interface CustomersQuery {
   name: string;
   email: string;

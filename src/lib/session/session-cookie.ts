@@ -1,19 +1,7 @@
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { signSession, verifySession } from "@/lib/session/session-jwt";
-import { SessionPayload, SESSION_COOKIE_NAME } from "@/lib/session/types";
-
-// SameSite=None + Secure + Partitioned (CHIPS) are all required for this
-// cookie to work at all inside the BigCommerce control panel's cross-origin
-// iframe. httpOnly keeps the session JWT (identity only, never the store
-// access token) out of reach of any client-side script.
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: true,
-  sameSite: "none" as const,
-  partitioned: true,
-  path: "/",
-};
+import { SessionPayload, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "@/lib/session/types";
 
 // Reads and verifies the current session cookie, if any. A missing cookie
 // and a failed verification (expired, bad signature, wrong shape) are
@@ -65,24 +53,16 @@ export async function upsertSessionStore(userId: number, storeHash: string): Pro
   const jwt = await signSession({ userId, authenticatedStores });
   const cookieStore = await cookies();
 
-  cookieStore.set(SESSION_COOKIE_NAME, jwt, COOKIE_OPTIONS);
+  cookieStore.set(SESSION_COOKIE_NAME, jwt, SESSION_COOKIE_OPTIONS);
 }
 
-// Called by isAuthorizedForStore when the session cookie's optimistic
-// authenticatedStores claim turns out to be stale — the store_users link it
-// implies no longer actually exists (e.g. removed via /remove_user after
-// this cookie was issued). Re-signs the cookie without storeHash so the
-// cheap cookie-only fast path in isAuthorizedForStore stops claiming this
-// store on every subsequent request, rather than only self-correcting once
-// the JWT's own TTL expires. A no-op if there's no session, or the session
-// never claimed this store in the first place.
-//
-// Like upsertSessionStore, this calls cookies().set() — callable only from a
-// Server Action or Route Handler, never from a plain render. isAuthorizedForStore
-// is called from both a page's own render and from Server Actions, so it
-// wraps this call in a try/catch: the write throws (and is silently
-// skipped) when called during a page's render, and succeeds when called
-// from a Server Action.
+// Called by isAuthorizedForStore when the cookie's authenticatedStores claim
+// turns out to be stale (the store_users link it implies no longer exists).
+// Re-signs the cookie without storeHash so the cheap cookie-only fast path
+// stops claiming this store on every subsequent request. A no-op if there's
+// no session, or it never claimed this store. Only callable from a Server
+// Action/Route Handler (cookies().set() throws during a plain render) — see
+// isAuthorizedForStore's own try/catch around this call.
 export async function removeSessionStore(storeHash: string): Promise<void> {
   const existing = await readSession();
 
@@ -94,5 +74,5 @@ export async function removeSessionStore(storeHash: string): Promise<void> {
   const jwt = await signSession({ userId: existing.userId, authenticatedStores });
   const cookieStore = await cookies();
 
-  cookieStore.set(SESSION_COOKIE_NAME, jwt, COOKIE_OPTIONS);
+  cookieStore.set(SESSION_COOKIE_NAME, jwt, SESSION_COOKIE_OPTIONS);
 }

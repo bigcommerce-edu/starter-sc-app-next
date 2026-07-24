@@ -1,11 +1,8 @@
 import { cache } from "react";
 // Imported from postgres-driver-loader.ts, not directly from
-// postgres-driver/postgres-credentials-store.ts — next.config.ts's
-// turbopack.resolveAlias swaps this specifier for a `pg`-free stub on builds
-// where CREDENTIALS_STORE_DRIVER isn't "POSTGRES", so `pg` (which breaks
-// bundling on some deployment targets, e.g. Cloudflare Workers) is never
-// compiled in on a build that would never select this branch anyway. See
-// postgres-driver-loader.ts's own comment.
+// postgres-driver/postgres-credentials-store.ts — see that file's own
+// comment for why (a build-time alias keeps `pg` out of builds that don't
+// use it).
 import { PostgresCredentialsStore } from "@/lib/credentials-store/postgres-driver-loader";
 import { SqliteCredentialsStore } from "@/lib/credentials-store/sqlite-driver/sqlite-credentials-store";
 import { CredentialsStore, CredentialsStoreDriver } from "@/lib/credentials-store/types";
@@ -21,10 +18,8 @@ function getConfiguredDriver(): CredentialsStoreDriver {
     : DEFAULT_DRIVER;
 }
 
-// Cached by React's per-request memoization so every call within a request
-// shares one instance (and, for SqliteCredentialsStore, one open DB
-// connection) rather than reopening the file per call — same rationale as
-// getCachedRestApiClient in bc-api-client/get-rest-api-client.ts.
+// Memoized per request so every call shares one instance (and, for
+// SqliteCredentialsStore, one open DB connection).
 const getCachedCredentialsStore = cache((driver: CredentialsStoreDriver): CredentialsStore => {
   switch (driver) {
     case "SQLITE":

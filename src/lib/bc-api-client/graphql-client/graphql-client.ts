@@ -1,5 +1,7 @@
-import { BcGraphqlApiClient, GraphqlResponseBody } from "@/lib/bc-api-client/graphql-client/types";
+import { BcGraphqlApiClient, GraphqlRequestOptions, GraphqlResponseBody } from "@/lib/bc-api-client/graphql-client/types";
 import { StoreApiCredentials } from "@/lib/bc-api-client/types";
+import { API_REQUEST_TIMEOUT_MS } from "@/lib/bc-api-client/request-timeout";
+import { AppError } from "@/lib/errors/app-error";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
 
@@ -15,37 +17,46 @@ export class GraphqlApiClient implements BcGraphqlApiClient {
   async request<TResult, TVariables extends Record<string, unknown> = Record<string, unknown>>(
     query: string,
     variables?: TVariables,
+    options: GraphqlRequestOptions = {},
   ): Promise<TResult> {
     const { storeHash, apiToken } = this.credentials;
 
     if (!storeHash || !apiToken) {
-      throw new Error("A store hash and API token are required to make a request.");
+      throw new AppError("VALIDATION", "A store hash and API token are required to make a request.");
     }
 
     const url = `${API_BASE_URL}/stores/${storeHash}/graphql`;
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "X-Auth-Token": apiToken,
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query, variables }),
-    });
+    let response: Response;
 
-    // BigCommerce's GraphQL Admin API reports validation errors (bad query
-    // syntax, a mistyped enum value, etc.) as a non-2xx with the actual
-    // detail in the JSON body's `errors` array, not just a bare status —
-    // reading only response.status here would discard the one piece of
-    // information that explains the failure. But the body isn't guaranteed
-    // to be JSON at all: a proxy/gateway failure in front of the API (e.g. a
-    // 502 with an HTML error page) has the same shape as a real response
-    // (some status, some text), and JSON.parse throwing there would discard
-    // response.status — the one thing this error handling exists to
-    // preserve — behind a raw, unrelated SyntaxError instead. Falling back
-    // to the raw text (truncated, in case it's a large HTML page) keeps that
-    // diagnostic intact rather than losing it to a parse failure.
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "X-Auth-Token": apiToken,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query, variables }),
+        // No timeout for a mutation — an aborted client-side request
+        // doesn't cancel the write on BigCommerce's side (see rest-client.ts).
+        ...(options.isMutation ? {} : { signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS) }),
+      });
+    } catch (error) {
+      throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });
+    }
+
+    // TODO: manual testing shows BigCommerce's GraphQL Admin API also
+    // returns X-Rate-Limit-* headers, though this isn't documented for
+    // GraphQL. Once confirmed as guaranteed (not incidental) behavior, wire
+    // in the same throttle rest-client.ts applies:
+    // `await throttleOnLowRateLimit(response.headers);`
+
+    // Validation errors arrive as a non-2xx with detail in the body's
+    // `errors` array — but the body isn't guaranteed to be JSON (a
+    // proxy/gateway failure can return an HTML error page with a real
+    // status), so a parse failure falls back to raw text rather than
+    // losing the diagnostic to an unrelated SyntaxError.
     const responseText = await response.text();
     let body: GraphqlResponseBody<TResult> | undefined;
 
@@ -60,7 +71,11 @@ export class GraphqlApiClient implements BcGraphqlApiClient {
         ? body.errors.map((error) => error.message).join("; ")
         : responseText.slice(0, 500);
 
-      throw new Error(`BigCommerce GraphQL request failed with status ${response.status}: ${errorDetail}`);
+      // errorDetail is attached as `cause` for logs only, never shown to
+      // end users.
+      throw new AppError("UPSTREAM_API", "A BigCommerce API request failed.", {
+        cause: `status ${response.status}: ${errorDetail}`,
+      });
     }
 
     return body?.data as TResult;

@@ -10,32 +10,24 @@ const NAV_ITEMS = [
   { id: "customers", title: "Customers" },
 ];
 
-// The active section is the one piece of nav state that's legitimately
-// derived from the current route; storeHash is not — it's read directly
-// below via useParams() (undefined on root-level dev routes, which have no
-// [storeHash] segment at all — same behavior as before, just read here
-// instead of passed down from a server layout).
+// A store-scoped path is "/store/<storeHash>/<section>" (see app-url.ts's
+// getAppUrl) — segments[2] is the section. A root-level dev route (no
+// storeHash, no "/store" prefix) has its section at segments[0] instead.
 function getActiveSection(pathname: string, storeHash: string | undefined): string | undefined {
   const segments = pathname.split("/").filter(Boolean);
-  const sectionSegment = storeHash ? segments[1] : segments[0];
+  const sectionSegment = storeHash ? segments[2] : segments[0];
 
   return NAV_ITEMS.some((item) => item.id === sectionSegment) ? sectionSegment : undefined;
 }
 
-// This is cross-page navigation, not same-page tab panels, so it's built
-// from plain links rather than BigDesign's Tabs component — Tabs assumes an
-// ARIA tablist whose tabs each control a same-page panel identified by an
-// element id, which doesn't apply here (each "tab" is really a whole
-// separate route) and previously caused a console warning about a missing
-// aria-controls target. The pill-on-background look (vs. the underline look
-// `Tabs` uses for the gift certificate detail page's in-page tabs) is also
-// deliberate, so the two don't read as the same kind of control.
+// Built from plain links rather than BigDesign's Tabs component, since this
+// is cross-page navigation (each "tab" a separate route), not same-page tab
+// panels — Tabs assumes an ARIA tablist with same-page panels. The
+// pill-on-background look is deliberate, so it doesn't read as the same kind
+// of control as the underline-style Tabs used on the detail page.
 //
-// Reads storeHash via useParams() rather than taking it as a prop, so the
-// server component tree above this (AppShell) never needs to await params
-// just to compute a value only this client component uses — that await was
-// the one thing forcing the whole shell to block on route-param resolution
-// before painting anything.
+// Reads storeHash via useParams() rather than a prop, so AppShell never
+// needs to await params just to compute a value only this component uses.
 export function MainNav() {
   const params = useParams<{ storeHash?: string }>();
   const storeHash = params.storeHash;

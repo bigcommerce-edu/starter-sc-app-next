@@ -114,9 +114,9 @@ interface GiftCertificateTableProps {
   showRecipientColumns?: boolean;
 }
 
-// Purely presentational: renders the page of items the server already fetched
-// for the current query. Search/sort/pagination interactions navigate to a new
-// URL (via router.push) rather than holding state or fetching data themselves —
+// Purely presentational: renders the page of items the server already
+// fetched. Search/sort/pagination interactions navigate to a new URL (via
+// router.push) rather than holding state or fetching data themselves —
 // GiftCertificateListView reads the resulting searchParams and re-fetches server-side.
 export function GiftCertificateTable({
   giftCertificates,
@@ -132,27 +132,21 @@ export function GiftCertificateTable({
   const [isPending, setIsPending] = useState(false);
   const [lastQuery, setLastQuery] = useState(query);
 
-  // query is derived server-side from the URL and passed back down once the
-  // navigation below resolves, so a change here (vs. the query we were last
-  // rendered with) is the signal that the pending request finished. Adjusted
-  // directly during render (React's documented pattern for this) rather than
-  // in an effect, since setting state from an effect here would cause an
-  // extra, avoidable re-render.
+  // A change in query (vs. what we last rendered with) signals the pending
+  // navigation finished. Adjusted directly during render (React's documented
+  // pattern) rather than in an effect, to avoid an extra re-render.
   if (query !== lastQuery) {
     setLastQuery(query);
     setIsPending(false);
   }
 
-  // router.push re-renders this route's Server Components in place rather
-  // than remounting them, so the <Suspense> boundary around the page (which
-  // only shows its fallback on first mount) never fires again here. isPending
-  // gives us our own lightweight "refreshing" state instead, without losing
-  // the table that's already on screen. This intentionally avoids wrapping
-  // router.push in useTransition/startTransition: doing so here causes React
-  // to throw a "removeChild: not a child of this node" error when the table
-  // re-renders, seemingly due to the per-row Dropdown/Modal portals (in
-  // GiftCertificateActionsMenu) being torn down while React treats the
-  // update as interruptible.
+  // router.push re-renders this route's Server Components in place, so the
+  // page's <Suspense> fallback never fires again here — isPending gives us
+  // our own lightweight "refreshing" state instead. Deliberately avoids
+  // wrapping router.push in useTransition/startTransition: doing so causes a
+  // "removeChild: not a child of this node" error, seemingly from the
+  // per-row Dropdown/Modal portals in GiftCertificateActionsMenu being torn
+  // down while React treats the update as interruptible.
   const navigate = (nextQuery: GiftCertificatesQuery) => {
     const params = buildGiftCertificatesSearchParams(nextQuery);
     const queryString = params.toString();

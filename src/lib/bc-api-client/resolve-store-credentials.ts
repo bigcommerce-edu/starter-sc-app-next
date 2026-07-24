@@ -11,26 +11,11 @@ export function getDataMode(): DataMode {
   return VALID_DATA_MODES.includes(configuredMode as DataMode) ? (configuredMode as DataMode) : "MOCK";
 }
 
-// Resolves which store API calls should actually target, which is NOT
-// always storeHash (the route param — every *Page/*View/data-access function
-// calls it storeHash, but it's really just whatever the [storeHash] URL
-// segment happened to contain, or undefined on a root-level dev route):
-// STATIC mode always talks to the one store configured via env vars
-// regardless of that route param, and MULTITENANT resolves per-session.
-//
-// Every real MULTITENANT request is scoped to a store, so a missing route
-// param in that mode means a route is misconfigured (e.g. a root-level dev
-// alias got exposed) rather than something callers should handle
-// gracefully — this is the first (and only) place that matters, so it
-// throws here rather than requiring every *Page to separately assert it.
-//
-// Shared by every non-mock BigCommerce API client (REST, GraphQL, ...) — mode
-// resolution is identical regardless of which API ends up making the
-// request. Each getXApiClient calls this (and resolveApiToken below)
-// separately, rather than through one combined helper, so it can key its
-// per-request cache() on this primitive string: React's cache() memoizes
-// non-primitive args by reference, so caching on a freshly-built credentials
-// object would silently defeat memoization.
+// Resolves which store API calls should actually target — not always the
+// raw storeHash route param: STATIC mode always talks to the one store
+// configured via env vars regardless of the route, MOCK has no real store,
+// and MULTITENANT is scoped per-session. Throws if MULTITENANT is missing a
+// route param, since that means the route itself is misconfigured.
 export function resolveStoreHash(storeHash: string | undefined): string | undefined {
   switch (getDataMode()) {
     case "MOCK":
@@ -46,27 +31,12 @@ export function resolveStoreHash(storeHash: string | undefined): string | undefi
   }
 }
 
-// A BigCommerce API token is generated once for a store at install time and
-// stored server-side — it is never per-user. Resolves the token for an
-// already-resolved storeHash (see resolveStoreHash) — STATIC mode reads it
-// from env vars; MULTITENANT looks it up via the credentials store, which
-// was populated by the /auth install callback (see
-// app/api/app/auth/route.ts). Returning undefined (rather than throwing)
-// when no token is found lets each API client be the single place that
-// decides a missing token is an error, regardless of which mode caused it.
-// Takes an already-resolved storeHash (see resolveStoreHash) — not the raw
-// route param.
-//
-// Cached by React's per-request memoization, keyed on storeHash alone
-// (never userId — this is also called from inside `use cache` component
-// trees via getRestApiClient, which can only ever cross that boundary with
-// plain, serializable, session-agnostic arguments). Exported so
-// isAuthorizedForStore (see lib/session/is-authorized-for-store.ts) can call
-// this exact same wrapped function as half of its authorization check,
-// run in parallel with the store_users link check via Promise.all — since
-// it's the same cache() entry, the *View components' own later call to
-// getRestApiClient for this storeHash reuses this result for free instead
-// of triggering a second DB round-trip.
+// Resolves the API token for an already-resolved storeHash (never per-user
+// — one token per store). Returns undefined rather than throwing when
+// missing, so each API client decides for itself that a missing token is an
+// error. Memoized per request, keyed on storeHash alone — exported so
+// isAuthorizedForStore can call this same cache() entry as part of its own
+// check, reusing the result rather than triggering a second DB round-trip.
 export const resolveApiToken = cache(async (storeHash: string | undefined): Promise<string | undefined> => {
   if (getDataMode() === "STATIC") {
     return process.env.STATIC_STORE_TOKEN;

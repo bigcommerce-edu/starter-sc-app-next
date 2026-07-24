@@ -53,6 +53,18 @@ export class GraphqlApiClient implements BcGraphqlApiClient {
       throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });
     }
 
+    // TODO: BigCommerce's GraphQL Admin API has been empirically confirmed
+    // (manual testing) to return the same X-Rate-Limit-* headers as the
+    // REST API, even though this isn't documented for GraphQL anywhere.
+    // Once BigCommerce engineering confirms this is intentional, guaranteed
+    // behavior (not an implementation detail that could change), wire in
+    // the same proactive throttle rest-client.ts already applies:
+    // `await throttleOnLowRateLimit(response.headers);` (from
+    // bc-api-client/rate-limit.ts) — right here, before the error check
+    // below, same placement as both RestApiClient methods. Deliberately not
+    // added yet since it's undocumented behavior this app shouldn't rely on
+    // silently.
+
     // BigCommerce's GraphQL Admin API reports validation errors (bad query
     // syntax, a mistyped enum value, etc.) as a non-2xx with the actual
     // detail in the JSON body's `errors` array, not just a bare status —

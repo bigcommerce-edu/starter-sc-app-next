@@ -1,6 +1,7 @@
 import { ApiMutationOptions, ApiRequestOptions, ApiResponse, BcRestApiClient } from "@/lib/bc-api-client/rest-client/types";
 import { StoreApiCredentials } from "@/lib/bc-api-client/types";
 import { API_REQUEST_TIMEOUT_MS } from "@/lib/bc-api-client/request-timeout";
+import { throttleOnLowRateLimit } from "@/lib/bc-api-client/rate-limit";
 import { AppError } from "@/lib/errors/app-error";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
@@ -107,6 +108,12 @@ export class RestApiClient implements BcRestApiClient {
 
     logApiRequest("GET", url, response.status, performance.now() - startedAt);
 
+    // Runs before the error check below (and regardless of response.ok) —
+    // BigCommerce's rate-limit headers are present on every response, success
+    // or error alike, so this needs to see both. See rate-limit.ts's own
+    // comment on why a proactive wait (never a retry) is safe here.
+    await throttleOnLowRateLimit(response.headers);
+
     if (!response.ok) {
       throw new AppError("UPSTREAM_API", `A BigCommerce API request failed.`, {
         cause: `GET "${path}" failed with status ${response.status}.`,
@@ -159,6 +166,12 @@ export class RestApiClient implements BcRestApiClient {
     }
 
     logApiRequest(method, url, response.status, performance.now() - startedAt);
+
+    // See the identical call in get() above — same reasoning applies to
+    // mutations: this only ever delays returning the (already-final)
+    // response/thrown error, never resends the request, so it's safe here
+    // despite mutations otherwise getting no timeout/retry treatment.
+    await throttleOnLowRateLimit(response.headers);
 
     if (!response.ok) {
       throw new AppError("UPSTREAM_API", `A BigCommerce API request failed.`, {

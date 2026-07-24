@@ -24,3 +24,32 @@ export function logError(context: string, error: unknown): void {
 
   console.error(`[${context}]`, error);
 }
+
+// A rate-limit-driven wait isn't an error (nothing failed — this is exactly
+// the proactive throttle in bc-api-client/rate-limit.ts doing its job), so
+// it's logged distinctly from logError rather than through it — but still
+// gated the same way (ERROR_LOGGING_ENABLED covers both; there's no
+// separate flag for this, since anyone who wants error logging almost
+// certainly also wants visibility into the app deliberately pausing on
+// BigCommerce's rate limit). Takes the full header detail BigCommerce
+// reported (not just the two values that drove the decision) so a
+// developer reading logs sees the complete picture — see rate-limit.ts's
+// own comment on why timeWindowMs specifically is diagnostic-only here.
+export function logRateLimitThrottle(details: {
+  requestsLeft: number;
+  requestsQuota: number;
+  timeWindowMs: number | undefined;
+  timeResetMs: number;
+}): void {
+  if (!isErrorLoggingEnabled()) {
+    return;
+  }
+
+  const { requestsLeft, requestsQuota, timeWindowMs, timeResetMs } = details;
+
+  console.warn(
+    `[bc-api-client] Rate limit low (${requestsLeft}/${requestsQuota} requests left in a ${
+      timeWindowMs ?? "unknown"
+    }ms window) — waiting ${timeResetMs}ms before continuing.`,
+  );
+}

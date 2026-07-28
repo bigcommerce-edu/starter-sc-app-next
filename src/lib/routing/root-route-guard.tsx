@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { getDataMode } from "@/lib/bc-api-client/resolve-store-credentials";
+import { getDataMode } from "@/lib/bc-api-client/data-mode";
 import { UnauthorizedRootRoute } from "@/components/layout/unauthorized-root-route";
 
 // Root-level routes (outside the [storeHash] segment) only exist as a

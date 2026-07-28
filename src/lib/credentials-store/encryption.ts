@@ -6,9 +6,9 @@ const AUTH_TAG_LENGTH = 16;
 const KEY_LENGTH = 32;
 
 // Derives a fixed-length key from CREDENTIALS_ENCRYPTION_KEY rather than
-// requiring the env var itself to already be exactly 32 bytes of hex/base64.
-// The salt is fixed (not random-per-secret) since there's one static env
-// secret to derive from, not per-user passwords to individually protect.
+// requiring the env var itself to already be exactly 32 bytes. The salt is
+// fixed since there's one static env secret to derive from, not per-user
+// passwords to individually protect.
 function getKey(): Buffer {
   const secret = process.env.CREDENTIALS_ENCRYPTION_KEY;
 

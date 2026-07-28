@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Flex, FlexItem } from "@/components/ui/flex";
 import { Modal } from "@/components/ui/modal";
 import { Text } from "@/components/ui/text";
-import { updateGiftCertificateStatus } from "@/app/[storeHash]/gift-certs/[id]/actions";
+import { updateGiftCertificateStatus } from "@/app/store/[storeHash]/gift-certs/[id]/actions";
 import { GiftCertificatePartyPanel } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-party-panel";
 import { GiftCertificateStatusPanel } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-status-panel";
 import { runServerAction } from "@/components/ui/action-alerts";
@@ -13,10 +13,9 @@ import { GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certs-manager/gift-cer
 import { GiftCertificateStatus, GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 // Seeding status from props only works because the caller re-keys this
-// component on giftCertificate.status, forcing a remount (and a fresh
-// useState initializer) whenever a status update revalidates the
-// certificate — otherwise this would go stale after a successful update
-// (see gift-certificate-balance-tab.tsx for the same pattern).
+// component on giftCertificate.status, forcing a remount whenever a status
+// update revalidates the certificate — otherwise this would go stale (see
+// gift-certificate-balance-tab.tsx for the same pattern).
 export function GiftCertificateDetailsTab({
   giftCertificate,
   storeHash,

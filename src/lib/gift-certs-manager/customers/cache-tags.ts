@@ -1,8 +1,5 @@
-// Tag naming for `use cache` on customer fetches. Mirrors the gift
-// certificates cache-tags module: a per-id tag for the detail fetch so a
-// mutation to one customer's store credit never invalidates any other
-// customer's cached detail fetch, and a single shared tag for list/collection
-// fetches, which are left to expire on the standard cacheLife instead.
+// Per-id tag for detail fetches (so one customer's mutation doesn't
+// invalidate another's cache), plus one shared tag for list fetches.
 export function customerTag(id: number | string): string {
   return `customer:${id}`;
 }

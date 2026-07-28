@@ -49,10 +49,9 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
     .map((value) => Number(value))
     .filter((value) => Number.isInteger(value));
 
-  // id:in is used by fetchCustomer for single-record lookups (BigCommerce's
-  // v3 customers endpoint has no dedicated /{id} path), and takes priority
-  // over the listing page's own filters/pagination — the two callers never
-  // combine both in a single request.
+  // id:in is used by fetchCustomer for single-record lookups and takes
+  // priority over the listing page's own filters/pagination — the two
+  // callers never combine both in a single request.
   if (idIn.length > 0) {
     const matches = mockCustomers.filter((customer) => idIn.includes(customer.id));
 
@@ -82,11 +81,15 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
       return false;
     }
 
-    if (dateCreatedMin && customer.date_created < dateCreatedMin) {
+    // Comparing only the date portion (not the full ISO datetime) keeps
+    // both bounds inclusive of their boundary day.
+    const customerDateCreated = customer.date_created.slice(0, 10);
+
+    if (dateCreatedMin && customerDateCreated < dateCreatedMin) {
       return false;
     }
 
-    if (dateCreatedMax && customer.date_created > dateCreatedMax) {
+    if (dateCreatedMax && customerDateCreated > dateCreatedMax) {
       return false;
     }
 

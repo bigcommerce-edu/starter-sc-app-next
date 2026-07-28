@@ -7,10 +7,8 @@ import { AppLink } from "@/components/ui/app-link";
 import { getAppUrl } from "@/lib/routing/app-url";
 
 // Shared rendering for every not-found.tsx in the app. storeHash is read via
-// useParams() rather than a prop — not-found.tsx is rendered by Next without
-// route params passed to it, the same limitation AppExtensionStatusBanner's
-// own doc comment describes for a different component, so this is a Client
-// Component for the same reason.
+// useParams() rather than a prop, since not-found.tsx is rendered by Next
+// without route params passed to it — hence the Client Component.
 export function NotFoundFallback() {
   const params = useParams<{ storeHash?: string }>();
   const storeHash = params.storeHash;

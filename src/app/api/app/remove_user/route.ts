@@ -5,9 +5,7 @@ import { logError } from "@/lib/errors/logger";
 import { jsonError } from "@/lib/errors/json-error";
 
 // BigCommerce's remove-user callback (server-to-server, not browser-facing).
-// Business logic lives in lib/bc-auth/remove-store-user.ts — this route
-// only reads the request, delegates, and turns the result (or a thrown
-// error) into a response.
+// Business logic lives in lib/bc-auth/remove-store-user.ts.
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const signedPayloadJwt = request.nextUrl.searchParams.get("signed_payload_jwt");
 
@@ -22,10 +20,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return jsonError(401, "Invalid signed payload.");
     }
 
-    // Anything else (a credentials-store failure) is not a bad JWT — see
-    // isSignedPayloadVerificationError's own comment. Logged (rather than
-    // silently swallowed, as before) since this is the only way to notice a
-    // real outage here; BigCommerce may interpret a 401 as "don't retry."
+    // Anything else (a credentials-store failure) is not a bad JWT. Logged
+    // since this is the only way to notice a real outage here; BigCommerce
+    // may interpret a 401 as "don't retry."
     logError("GET /api/app/remove_user", error);
 
     return jsonError(500, "Failed to remove the user.");

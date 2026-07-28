@@ -17,18 +17,12 @@ const DEFAULT_FILTERS: FilterFields = {
   date_created_max: DEFAULT_QUERY.date_created_max,
 };
 
-// Datepicker's onDateChange always fires with a full ISO datetime string
-// regardless of dateFormat (that prop only affects the input's display text)
-// — specifically, BigDesign calls the underlying Date object's own
-// toISOString(), which always normalizes to UTC. But the Date itself was
-// constructed from the calendar day the user actually clicked, in the
-// browser's local timezone. For any user east of UTC, local midnight on the
-// clicked day is still "yesterday" in UTC — so naively slicing the first 10
-// characters of that UTC string (date.slice(0, 10)) silently shifts the
-// selected date back by one day. Reconstructing the date from the parsed
-// Date object's own local getters (getFullYear/getMonth/getDate, as opposed
-// to their UTC-suffixed counterparts) recovers the day the user actually
-// clicked, regardless of which side of UTC their timezone falls on.
+// Datepicker's onDateChange fires a full ISO datetime string normalized to
+// UTC via toISOString(), even though the Date was constructed from the
+// browser's local timezone — naively slicing the first 10 characters would
+// shift the selected date back a day for any user east of UTC. Reading the
+// parsed Date's local getters (getFullYear/getMonth/getDate) instead
+// recovers the day the user actually clicked.
 function toDateOnly(date: string): string {
   const parsed = new Date(date);
   const year = parsed.getFullYear();
@@ -52,10 +46,9 @@ interface CustomerFiltersProps {
   onChange(filters: FilterFields): void;
 }
 
-// Same BigDesign "advanced filtering" pattern used for gift certificates: a
-// Filter button opens a modal with every filterable field, applied filters
-// render as removable chips, and nothing takes effect until Apply/chip
-// delete/Clear all. CustomerTable owns the actual query/navigation.
+// A Filter button opens a modal with every filterable field; applied filters
+// render as removable chips. Nothing takes effect until Apply/chip
+// delete/Clear all — CustomerTable owns the actual query/navigation.
 export function CustomerFilters({ query, onChange }: CustomerFiltersProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draft, setDraft] = useState<FilterFields>(query);

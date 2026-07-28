@@ -10,10 +10,9 @@ import { GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certs-manager/gift-cer
 import { GiftCertificateStatus, GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 // Seeding status from props only works because the caller re-keys this
-// component on giftCertificate.status, forcing a remount (and a fresh
-// useState initializer) whenever a status update revalidates the
-// certificate — otherwise this would go stale after a successful update
-// (see gift-certificate-balance-tab.tsx for the same pattern).
+// component on giftCertificate.status, forcing a remount whenever a status
+// update revalidates the certificate — otherwise this would go stale (see
+// gift-certificate-balance-tab.tsx for the same pattern).
 export function GiftCertificateDetailsTab({
   giftCertificate,
   storeHash,

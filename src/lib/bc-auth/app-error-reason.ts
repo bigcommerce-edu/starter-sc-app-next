@@ -1,22 +1,12 @@
 // Closed set of reasons /auth and /load can redirect to /app-error with —
-// deliberately not the raw error message: BigCommerce navigates the
-// merchant's iframe directly to these routes, so a failure response has to
-// be something the iframe can actually render (an HTML page), and the
-// reason has to be a value this app itself resolved server-side (via
-// StoreNotInstalledError/isSignedPayloadVerificationError/
-// TokenExchangeFailedError/InstallSaveFailedError, the same classification
-// each route already does for its JSON-response callers), not something a
-// caller could set directly — see app-error/page.tsx, which maps each of
-// these to a fixed, human-written message rather than trusting arbitrary
-// query-string content.
+// never the raw error message, since the reason must be something
+// app-error/page.tsx can map to a fixed, human-written message rather than
+// trusting arbitrary query-string content.
 //
-// No single shared "server error" reason: /auth's fallback (INSTALL_FAILED)
-// and /load's fallback (LOAD_FAILED) need different copy — an install that
-// never completed should never tell a merchant to "reopen the app" (there's
-// nothing installed yet to reopen), while a /load failure legitimately can,
-// since the store was already installed successfully at some point. Keeping
-// them as separate reasons means neither route's fallback message has to be
-// vague enough to avoid contradicting the other's context.
+// No single shared "server error" reason: an install that never completed
+// (/auth's INSTALL_FAILED) should never tell a merchant to "reopen the app,"
+// while a /load failure (LOAD_FAILED) legitimately can, since the store was
+// already installed successfully at some point.
 export type AppErrorReason =
   | "NOT_INSTALLED"
   | "INVALID_SESSION"

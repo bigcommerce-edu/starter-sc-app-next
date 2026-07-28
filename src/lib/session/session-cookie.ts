@@ -43,34 +43,32 @@ export async function readSession(): Promise<SessionPayload | undefined> {
 // existing same-user session's authenticatedStores list. This is the
 // entire "create-or-append" logic both callbacks need — neither route
 // needs to know which case applied.
+//
+// issuedAt is preserved from the existing session (not reset to now) when
+// appending a store, so re-launching into an additional store mid-session
+// doesn't push back the absolute SESSION_MAX_AGE_SECONDS ceiling — only a
+// genuinely new login (no existing same-user session) starts a fresh clock.
 export async function upsertSessionStore(userId: number, storeHash: string): Promise<void> {
   const existing = await readSession();
-  const authenticatedStores =
-    existing && existing.userId === userId
-      ? Array.from(new Set([...existing.authenticatedStores, storeHash]))
-      : [storeHash];
+  const isSameUser = existing && existing.userId === userId;
+  const authenticatedStores = isSameUser
+    ? Array.from(new Set([...existing.authenticatedStores, storeHash]))
+    : [storeHash];
+  const issuedAt = isSameUser ? existing.issuedAt : Math.floor(Date.now() / 1000);
 
-  const jwt = await signSession({ userId, authenticatedStores });
+  const jwt = await signSession({ userId, authenticatedStores, issuedAt });
   const cookieStore = await cookies();
 
   cookieStore.set(SESSION_COOKIE_NAME, jwt, SESSION_COOKIE_OPTIONS);
 }
 
-// Called by isAuthorizedForStore when the session cookie's optimistic
-// authenticatedStores claim turns out to be stale — the store_users link it
-// implies no longer actually exists (e.g. removed via /remove_user after
-// this cookie was issued). Re-signs the cookie without storeHash so the
-// cheap cookie-only fast path in isAuthorizedForStore stops claiming this
-// store on every subsequent request, rather than only self-correcting once
-// the JWT's own TTL expires. A no-op if there's no session, or the session
-// never claimed this store in the first place.
-//
-// Like upsertSessionStore, this calls cookies().set() — callable only from a
-// Server Action or Route Handler, never from a plain render. isAuthorizedForStore
-// is called from both a page's own render and from Server Actions, so it
-// wraps this call in a try/catch: the write throws (and is silently
-// skipped) when called during a page's render, and succeeds when called
-// from a Server Action.
+// Called by isAuthorizedForStore when the cookie's authenticatedStores claim
+// turns out to be stale (the store_users link it implies no longer exists).
+// Re-signs the cookie without storeHash so the cheap cookie-only fast path
+// stops claiming this store on every subsequent request. A no-op if there's
+// no session, or it never claimed this store. Only callable from a Server
+// Action/Route Handler (cookies().set() throws during a plain render) — see
+// isAuthorizedForStore's own try/catch around this call.
 export async function removeSessionStore(storeHash: string): Promise<void> {
   const existing = await readSession();
 
@@ -79,7 +77,7 @@ export async function removeSessionStore(storeHash: string): Promise<void> {
   }
 
   const authenticatedStores = existing.authenticatedStores.filter((existingStoreHash) => existingStoreHash !== storeHash);
-  const jwt = await signSession({ userId: existing.userId, authenticatedStores });
+  const jwt = await signSession({ userId: existing.userId, authenticatedStores, issuedAt: existing.issuedAt });
   const cookieStore = await cookies();
 
   cookieStore.set(SESSION_COOKIE_NAME, jwt, SESSION_COOKIE_OPTIONS);

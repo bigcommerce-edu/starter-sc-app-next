@@ -3,13 +3,9 @@ import { ErrorIcon } from "@/components/ui/big-design-icons";
 
 // Rendered by app/unauthorized/page.tsx, which AuthorizedPage redirects to
 // when isAuthorizedForStore fails. A dedicated top-level route (outside both
-// (root) and [storeHash]) rather than something AuthorizedPage renders
-// inline — inline would still be wrapped in [storeHash]/layout.tsx's
-// AppShell (nav, banners), since that layout renders AppShell unconditionally
-// around children with no way for a nested Server Component to opt out; a
-// "not authorized" response should show no site frame at all. Mirrors
-// UnauthorizedRootRoute's visual pattern (same MULTITENANT-guard idea,
-// different trigger).
+// (root) and [storeHash]) since [storeHash]/layout.tsx renders AppShell
+// unconditionally around children with no way for a nested Server Component
+// to opt out, and a "not authorized" response should show no site frame.
 export function UnauthorizedStoreRoute() {
   return (
     <Flex justifyContent="center" paddingVertical="xxxLarge">

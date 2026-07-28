@@ -1,8 +1,7 @@
 export type CredentialsStoreDriver = "SQLITE" | "POSTGRES";
 
-// A store's OAuth grant, as returned by BigCommerce's token exchange (see
-// lib/bc-auth/exchange-code-for-token.ts). adminUserId is the id of the user
-// who completed the install — every store has exactly one.
+// A store's OAuth grant. adminUserId is the id of the user who completed
+// the install — every store has exactly one.
 export interface StoreRecord {
   storeHash: string;
   accessToken: string;
@@ -10,15 +9,9 @@ export interface StoreRecord {
   adminUserId: number;
 }
 
-// A BigCommerce user as identified by the JWT `user`/`owner` claims (see
-// lib/bc-auth/verify-signed-payload.ts) or the OAuth token-exchange response
-// (see lib/bc-auth/exchange-code-for-token.ts). Not scoped to a single store
-// — the same user id can be linked to multiple stores via StoreUserRecord.
-// No username: BigCommerce's token-exchange response includes one, but the
-// /load JWT (fired for every already-authenticated launch, not just install)
-// never does, and nothing in this app reads it — rather than store a field
-// that's guaranteed incomplete for anyone who never went through /auth,
-// email is the only identifying info kept.
+// A BigCommerce user, not scoped to a single store (linked to stores via
+// StoreUserRecord). No username: it's not present on every payload that
+// identifies a user, and nothing in this app reads it.
 export interface UserRecord {
   userId: number;
   email: string;
@@ -30,55 +23,19 @@ export interface StoreUserRecord {
   userId: number;
 }
 
-// Links a store to the App Extension registered for it at install time (see
-// lib/gift-certs-manager/register-app-extension.ts). extensionId is
-// BigCommerce's own opaque id for the App Extension, returned by the
-// createAppExtension mutation — not something this app generates.
+// Links a store to the App Extension registered for it at install time.
+// extensionId is BigCommerce's own opaque id, not something this app
+// generates.
 export interface StoreExtensionRecord {
   storeHash: string;
   extensionId: string;
 }
 
 // Generic persistence for per-store API credentials, implemented by one
-// driver per backing DB (see sqlite-driver/ and postgres-driver/). Modeled on
-// BcRestApiClient (see lib/bc-api-client/types.ts): a small interface named
-// for what it stores rather than how, so a future Postgres/D1/etc. driver
-// can implement it without changing callers.
-//
-// setStore/setUser/setStoreUser are all upserts, called from the /auth
-// (install) callback — a store re-installing simply replaces its token/scope
-// rather than erroring or duplicating rows. getStoreToken returns only the
-// token (not the full StoreRecord), since that's the only thing any current
-// caller needs, and it's the one read that has to decrypt.
-//
-// deleteStore encapsulates the full /uninstall cascade: the store, its
-// store-user links, its extension link (if any), and any user left with no
-// remaining store association. deleteUser scopes to one store+user pair (the
-// /remove_user callback's actual semantics — a user is removed from one
-// store, not globally), and likewise drops the user row if that was their
-// last association.
-//
-// setStoreExtension is an upsert (like setStore/setUser/setStoreUser), but
-// register-app-extension.ts only ever calls it after a successful
-// createAppExtension mutation — a failed registration should leave no row,
-// not a partial one. getStoreExtension returns just the extensionId (not the
-// full StoreExtensionRecord), mirroring getStoreToken, since that's the only
-// thing the app-extension-status check
-// (lib/gift-certs-manager/app-extension-status.ts) needs to report whether
-// registration succeeded. BigCommerce automatically cleans up an app's
-// extensions on uninstall, so this app has no deregistration step of its
-// own — deleteStore's cascade below still drops the store_extensions row
-// itself, just so no stale row lingers if the store is ever reinstalled.
-//
-// isStoreUserLinked is the authoritative half of isAuthorizedForStore's
-// check (see lib/session/is-authorized-for-store.ts) — the session cookie's
-// authenticatedStores list is only an optimistic, unrevocable-until-expiry
-// claim; this confirms the store_users link still actually exists (e.g. it
-// wasn't removed via /remove_user since the cookie was issued). Deliberately
-// a separate call from getStoreToken (rather than one query joining
-// stores+store_users) so each keeps a cache key that matches what it's
-// actually keyed on: this by (storeHash, userId), getStoreToken by storeHash
-// alone. Called in parallel with getStoreToken by isAuthorizedForStore.
+// driver per backing DB (see sqlite-driver/ and postgres-driver/) — see
+// docs/ARCHITECTURE.md for the full design (upsert semantics, the
+// deleteStore/deleteUser cascades, and isStoreUserLinked's role in
+// isAuthorizedForStore).
 export interface CredentialsStore {
   setStore(store: StoreRecord): Promise<void>;
   setUser(user: UserRecord): Promise<void>;

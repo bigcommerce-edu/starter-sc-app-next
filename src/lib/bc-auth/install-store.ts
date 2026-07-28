@@ -17,43 +17,25 @@ export interface InstallStoreResult {
   accessToken: string;
 }
 
-// The full /auth (install) callback's business logic: exchange the
-// authorization code for a store-scoped token, then persist the installing
-// admin, the store, and their store-user link — in that order, sequentially,
-// not in parallel, since the Postgres driver's schema enforces foreign keys
-// in the child-references-parent direction (store_users.user_id and
-// stores.admin_user_id both reference users.user_id; store_users.store_hash
-// references stores.store_hash — see postgres-driver/migrations/0001_initial_schema.sql):
-// setUser must land before setStore, which must land before setStoreUser, or
-// a fresh Postgres install would fail its own foreign key checks. Then
-// establishes (or extends) this admin's session. Idempotent — re-installing
-// an already-known store just replaces its token/scope (see
-// CredentialsStore.setStore), and upsertSessionStore is itself idempotent
-// for the same reason. Throws whatever exchangeCodeForToken throws
-// (TokenExchangeFailedError) on a failed exchange, or InstallSaveFailedError
-// if the exchange succeeded but persisting its result failed; the caller
-// (the /auth route) decides what HTTP status/error page each becomes.
+// The /auth (install) callback's business logic: exchange the code for a
+// store-scoped token, persist the admin/store/store-user link (in that
+// order — the Postgres schema's foreign keys require it), then establish
+// the admin's session. Idempotent — re-installing an already-known store
+// just replaces its token/scope. Throws TokenExchangeFailedError (from
+// exchangeCodeForToken) or InstallSaveFailedError (if persisting a
+// successful exchange fails); the /auth route decides what each becomes.
 //
-// This is agnostic single-click-app plumbing — it knows nothing about any
-// specific app extension. Returns accessToken (not just storeHash) so the
-// /auth route can register a Gift Certificates Manager-specific App
-// Extension using this handshake's token directly, without a redundant
-// storage round-trip — see app/api/app/auth/route.ts and
-// lib/gift-certs-manager/register-app-extension.ts.
+// Agnostic single-click-app plumbing — knows nothing about any specific app
+// extension. Returns accessToken (not just storeHash) so the /auth route
+// can register its own App Extension using this handshake's token directly.
 export async function installStore(params: InstallStoreParams): Promise<InstallStoreResult> {
   const tokenResponse = await exchangeCodeForToken(params);
   const storeHash = parseStoreHash(tokenResponse.context);
   const credentialsStore = getCredentialsStore();
 
-  // Each step is logged with which step it was on failure — there's no
-  // transaction spanning all four writes (setUser/setStore/setStoreUser live
-  // in the credentials store, upsertSessionStore in a separate session
-  // store), so a failure partway through can leave partial state (e.g. a
-  // users row with no matching store_users row yet). That's recoverable —
-  // a retried/re-attempted install just replaces/adds the missing rows (see
-  // this function's own module comment on idempotency) — but only if it's
-  // visible that it happened, rather than surfacing as an opaque 500 with no
-  // indication of which write actually failed.
+  // No transaction spans these four writes, so a failure partway through
+  // can leave partial state (recoverable — a retried install replaces/adds
+  // the missing rows) — logged so which step failed is visible.
   try {
     await credentialsStore.setUser({
       userId: tokenResponse.user.id,

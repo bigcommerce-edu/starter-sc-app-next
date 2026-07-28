@@ -15,14 +15,8 @@ import { getAppUrl } from "@/lib/routing/app-url";
 
 // Tagged with both this customer's own detail tag (so a store credit
 // mutation invalidates it instantly) and the shared gift-certificates list
-// tag (since this view also renders a filtered listing of this customer's
-// certificates, the same granularity as any other listing page). `use cache`
-// wraps the whole rendered view, so a cache hit skips re-rendering
-// CustomerInfoPanel/GiftCertificateTable too. storeHash is the raw
-// [storeHash] route param (or undefined on a root-level dev route) — a
-// plain, serializable string, so it's safe to cross this cache boundary. It's
-// used both for data-access calls (getRestApiClient resolves which store to
-// actually target internally) and for building URLs further down.
+// tag, since this view also renders a filtered listing of this customer's
+// certificates.
 export async function CustomerView({
   id,
   searchParams,
@@ -40,25 +34,19 @@ export async function CustomerView({
   const rawCustomer = await fetchCustomer(id, storeHash);
 
   // A missing customer isn't a 404 from BigCommerce itself (see
-  // fetchCustomer's own comment — this is a list endpoint filtered down to
-  // zero rows), so this is the one place that decides a missing record
-  // means "render the not-found boundary" — notFound() is safe to call from
-  // inside this "use cache: remote" boundary (verified against Next's own
-  // error-handling source: its digest survives the cache wrapper's error
-  // handler unmodified, the same path a plain page-level notFound() call
-  // takes).
+  // fetchCustomer) — this is the one place that decides a missing record
+  // means "render the not-found boundary." notFound() is safe to call from
+  // inside a "use cache: remote" boundary; its digest survives the cache
+  // wrapper's error handler unmodified.
   if (!rawCustomer) {
     notFound();
   }
 
   // to_email scopes the fetch to this customer's certificates, but it's
-  // implied by the route (not a user-chosen filter) and must never be echoed
-  // into the URL, so it's kept out of the query passed down to the table.
+  // implied by the route (not a user-chosen filter), so it's kept out of the
+  // query passed down to the table.
   const query = parseGiftCertificatesQuery(searchParams);
 
-  // Channel decoration and the gift-certificates fetch are independent once
-  // rawCustomer.email is known, so they run concurrently rather than one
-  // blocking the other.
   const [customer, { items, hasNextPage }] = await Promise.all([
     decorateCustomerWithChannels(rawCustomer, storeHash),
     fetchGiftCertificates({ ...query, to_email: rawCustomer.email }, storeHash),
@@ -68,8 +56,7 @@ export async function CustomerView({
     cacheTag(giftCertificateTag(item.id));
   }
 
-  // Every row's recipient is this customer, so there's no need to decorate
-  // via a separate customer lookup — the account is already known.
+  // Every row's recipient is this customer, so the account is already known.
   const decoratedItems = items.map((certificate) => ({ ...certificate, recipientAccount: customer }));
 
   return (

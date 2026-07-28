@@ -5,14 +5,10 @@ import { CredentialsStore, StoreExtensionRecord, StoreRecord, StoreUserRecord, U
 import { AppError } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
 
-// pg's own errors can embed connection detail (host/port, and depending on
-// the failure mode, more) that must never reach a client response or an
-// unredacted log — see get-pool.ts's DATABASE_POOL_MAX comment for why a
-// misconfigured connection string is a real, expected failure mode here, not
-// a hypothetical one. Every public method below routes its query work
-// through this so a raw driver error is always logged (with full detail,
-// for operators) and never returned to a caller as anything but a generic,
-// safe AppError.
+// pg's own errors can embed connection detail (host/port, etc.) that must
+// never reach a client or an unredacted log — every method routes through
+// this so a raw error is logged and never returned as anything but a
+// generic AppError.
 async function withDatabaseErrorHandling<T>(context: string, run: () => Promise<T>): Promise<T> {
   try {
     return await run();
@@ -34,17 +30,11 @@ interface UserIdRow {
   user_id: number;
 }
 
-// Generic Postgres driver — works against Neon or any other standard
-// Postgres server via DATABASE_URL (a plain libpq connection string), using
-// node-postgres (pg) rather than any Neon-specific client. Suitable for
-// MULTITENANT: unlike SqliteCredentialsStore, every instance/region talks to
-// the same remote database, so store/user state is shared correctly across
-// however many app instances are running.
-//
-// Every method below is functionally identical to SqliteCredentialsStore's
-// (see its comments for the reasoning behind each shape) — only the SQL
-// dialect (numbered $n placeholders, real async I/O, explicit
-// BEGIN/COMMIT/ROLLBACK via a checked-out client) differs.
+// Generic Postgres driver — works against Neon or any standard Postgres
+// server via DATABASE_URL, using node-postgres rather than a Neon-specific
+// client. Suitable for MULTITENANT: every instance/region shares the same
+// remote database. Functionally mirrors SqliteCredentialsStore; only the
+// SQL dialect and explicit transaction handling differ.
 export class PostgresCredentialsStore implements CredentialsStore {
   async setStore(store: StoreRecord): Promise<void> {
     await withDatabaseErrorHandling("setStore", async () => {

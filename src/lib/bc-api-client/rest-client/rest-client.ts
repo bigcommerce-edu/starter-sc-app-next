@@ -1,7 +1,7 @@
 import { ApiMutationOptions, ApiRequestOptions, ApiResponse, BcRestApiClient } from "@/lib/bc-api-client/rest-client/types";
 import { StoreApiCredentials } from "@/lib/bc-api-client/types";
 import { API_REQUEST_TIMEOUT_MS } from "@/lib/bc-api-client/request-timeout";
-import { throttleOnLowRateLimit } from "@/lib/bc-api-client/rate-limit";
+import { retryOnRateLimit } from "@/lib/bc-api-client/rate-limit";
 import { AppError } from "@/lib/errors/app-error";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
@@ -31,10 +31,8 @@ function toLoggableUrl(url: string): string {
 }
 
 // A 2xx response isn't guaranteed to actually be JSON — a CDN/WAF in front
-// of BigCommerce's API can return an HTML error page with a 200/success-ish
-// status in some failure modes — so response.json() throwing a raw
-// SyntaxError here would otherwise surface as an opaque, unrelated-looking
-// parse error rather than a clear "the API response was malformed" failure.
+// of BigCommerce's API can return an HTML error page with a 200-ish status
+// — so a parse failure here becomes a clear AppError, not a raw SyntaxError.
 async function parseJsonResponse<TResponse>(response: Response, path: string): Promise<TResponse> {
   const responseText = await response.text();
 
@@ -47,17 +45,10 @@ async function parseJsonResponse<TResponse>(response: Response, path: string): P
   }
 }
 
-// This is also the app's cache-observability signal: a fetch only happens on
-// a `use cache` miss (or a mutation, which never goes through `use cache` at
-// all), so a logged request means the calling *View's cache entry was
-// missing/expired, and no log on a repeat visit means it was served from
-// cache. Off by default since it's a developer diagnostic, not something a
-// deployed app should log unconditionally. REST-specific (rather than shared
-// with the GraphQL client): method + URL + status is a useful signal when
-// the URL varies by path and verb, but every GraphQL request is a POST to
-// the same "/graphql" URL, so the same log line would carry none of that
-// signal — GraphQL request/error insight instead comes from the query name
-// and any body-level `errors`, not from method/status.
+// Off by default (a developer diagnostic, gated by LOG_API_REQUESTS). Also
+// doubles as a cache-observability signal: a fetch only happens on a
+// `use cache` miss, so a logged request means that cache entry was missing
+// or expired.
 function isApiRequestLoggingEnabled(): boolean {
   return process.env.LOG_API_REQUESTS?.toLowerCase() === "true";
 }
@@ -95,24 +86,20 @@ export class RestApiClient implements BcRestApiClient {
     let response: Response;
 
     try {
-      response = await fetch(url, {
-        headers: {
-          "X-Auth-Token": apiToken,
-          Accept: "application/json",
-        },
-        signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS),
-      });
+      response = await retryOnRateLimit(() =>
+        fetch(url, {
+          headers: {
+            "X-Auth-Token": apiToken,
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS),
+        }),
+      );
     } catch (error) {
       throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });
     }
 
     logApiRequest("GET", url, response.status, performance.now() - startedAt);
-
-    // Runs before the error check below (and regardless of response.ok) —
-    // BigCommerce's rate-limit headers are present on every response, success
-    // or error alike, so this needs to see both. See rate-limit.ts's own
-    // comment on why a proactive wait (never a retry) is safe here.
-    await throttleOnLowRateLimit(response.headers);
 
     if (!response.ok) {
       throw new AppError("UPSTREAM_API", `A BigCommerce API request failed.`, {
@@ -121,11 +108,8 @@ export class RestApiClient implements BcRestApiClient {
       });
     }
 
-    // Some GET endpoints (e.g. v2 gift certificates, when nothing matches the
-    // query) respond 204 No Content rather than 200 with an empty array —
-    // parsing an empty body as JSON would throw, so only attempt it when
-    // there's actually a body. Callers that expect a list should treat a
-    // missing/undefined data as empty, the same way they'd treat [].
+    // Some GET endpoints (e.g. v2 gift certificates with no matches) respond
+    // 204 rather than 200 with an empty array.
     const data = response.status === 204 ? undefined : await parseJsonResponse<TResponse>(response, path);
 
     return { data: data as TResponse, headers: response.headers };
@@ -143,35 +127,28 @@ export class RestApiClient implements BcRestApiClient {
     let response: Response;
 
     try {
-      response = await fetch(url, {
-        method,
-        headers: {
-          "X-Auth-Token": apiToken,
-          Accept: "application/json",
-          ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
-        },
-        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-        // Deliberately no AbortSignal.timeout here, unlike get() — a client-
-        // side timeout on a mutation only stops us from *waiting* for the
-        // response; it does nothing to cancel the write on BigCommerce's
-        // side. If the request had already landed by the time we gave up,
-        // the mutation can still succeed after we've told the caller it
-        // failed — an ambiguous outcome that's worse than just waiting
-        // however long BigCommerce/the deployment platform actually takes.
-        // Reads have no such risk (aborting a GET has no side effect to
-        // leave dangling), which is why get() keeps its own timeout above.
-      });
+      response = await retryOnRateLimit(() =>
+        fetch(url, {
+          method,
+          headers: {
+            "X-Auth-Token": apiToken,
+            Accept: "application/json",
+            ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
+          },
+          body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+          // No timeout, unlike get() — aborting doesn't cancel the write on
+          // BigCommerce's side, so a timeout here risks reporting failure for
+          // a mutation that actually succeeded. Retrying on 429 is still
+          // safe here (see rate-limit.ts): BigCommerce rejects the request
+          // before doing any work, so there's no ambiguity about whether
+          // the mutation already took effect.
+        }),
+      );
     } catch (error) {
       throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });
     }
 
     logApiRequest(method, url, response.status, performance.now() - startedAt);
-
-    // See the identical call in get() above — same reasoning applies to
-    // mutations: this only ever delays returning the (already-final)
-    // response/thrown error, never resends the request, so it's safe here
-    // despite mutations otherwise getting no timeout/retry treatment.
-    await throttleOnLowRateLimit(response.headers);
 
     if (!response.ok) {
       throw new AppError("UPSTREAM_API", `A BigCommerce API request failed.`, {
@@ -180,8 +157,7 @@ export class RestApiClient implements BcRestApiClient {
       });
     }
 
-    // DELETE responses are typically 204 No Content — parsing an empty body
-    // as JSON would throw, so only attempt it when there's actually a body.
+    // DELETE responses are typically 204 No Content.
     const data = response.status === 204 ? undefined : await parseJsonResponse<TResponse>(response, path);
 
     return { data: data as TResponse, headers: response.headers };

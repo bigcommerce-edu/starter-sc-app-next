@@ -1,11 +1,10 @@
 "use client";
 
-// Last-resort boundary: only rendered if an error escapes the root layout
-// itself (so [storeHash]/error.tsx and everything else below it did NOT
-// catch it) — Next requires this to render its own <html>/<body> since it
-// replaces the root layout entirely when active. Deliberately minimal (no
-// BigDesign/styled-components) since the root layout — the thing that would
-// normally provide those — is exactly what may have failed to render.
+// Last-resort boundary, only rendered if an error escapes the root layout
+// itself. Next requires this to render its own <html>/<body>, since it
+// replaces the root layout entirely when active — deliberately minimal (no
+// BigDesign/styled-components), since the root layout is what may have
+// failed to render.
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <html lang="en">

@@ -73,12 +73,10 @@ export function GiftCertificateBalanceTab({
   const handleConfirm = () => {
     const action = pendingAction;
 
-    // Closed synchronously on click, not after the action resolves — see
-    // the identical fix/comment in gift-certificate-actions-menu.tsx for why:
-    // this component can get frozen mid-transition in Next.js's client
-    // Router Cache if the user navigates away before the transition
-    // finishes, which replays a stale pendingAction (and a re-opened modal)
-    // when navigating back to this cached page.
+    // Closed synchronously on click, not after the action resolves: this
+    // component can get frozen mid-transition in Next's client Router Cache,
+    // which would otherwise replay a stale pendingAction (and a re-opened
+    // modal) when navigating back to this cached page.
     closeConfirmModal();
 
     startTransition(async () => {

@@ -6,15 +6,10 @@ import { getAbsoluteAppUrl } from "@/lib/routing/app-url";
 import { logError } from "@/lib/errors/logger";
 
 // BigCommerce's launch callback. Business logic lives in
-// lib/bc-auth/load-store.ts — this route only reads the request, delegates,
-// and turns the result (or a thrown error) into a response. Unlike
-// /remove_user and /uninstall (server-to-server, called directly by
-// BigCommerce's backend, so a JSON response is correct there), BigCommerce
-// navigates the merchant's *iframe* to this route — a JSON error body would
-// just render as raw, unstyled text inside the control panel, with no
-// framing at all. Failures here redirect to /app-error instead, with a
-// reason this route already resolved server-side (never the raw error
-// message) — see app-error-reason.ts.
+// lib/bc-auth/load-store.ts. Unlike /remove_user and /uninstall
+// (server-to-server), BigCommerce navigates the merchant's iframe directly
+// to this route, so failures redirect to /app-error instead of returning
+// JSON.
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const signedPayloadJwt = request.nextUrl.searchParams.get("signed_payload_jwt");
 
@@ -40,8 +35,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Anything else (a credentials-store failure, a missing env var) is not
     // a bad JWT — reporting it as "Invalid signed payload" would send anyone
-    // debugging a DB outage looking at the wrong system. See
-    // isSignedPayloadVerificationError's own comment.
+    // debugging a DB outage looking at the wrong system.
     logError("GET /api/app/load", error);
 
     return NextResponse.redirect(getAbsoluteAppUrl(undefined, getAppErrorUrl("LOAD_FAILED")));

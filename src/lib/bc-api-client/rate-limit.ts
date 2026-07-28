@@ -1,55 +1,67 @@
-import { logRateLimitThrottle } from "@/lib/errors/logger";
+import { logRateLimitRetry } from "@/lib/errors/logger";
 
 // BigCommerce's documented rate-limit headers (REST Admin API) — see
 // https://developer.bigcommerce.com/docs/rest-authentication/rate-limits.
 // Present on every REST response, success or error alike. This module only
 // needs a Headers object (not a REST/GraphQL-specific response shape), so
-// it can be reused as-is if/when GraphQL is confirmed to support this too
-// (see graphql-client.ts's TODO).
+// it's shared as-is by both clients.
 const HEADER_REQUESTS_LEFT = "X-Rate-Limit-Requests-Left";
 const HEADER_REQUESTS_QUOTA = "X-Rate-Limit-Requests-Quota";
 const HEADER_TIME_WINDOW_MS = "X-Rate-Limit-Time-Window-Ms";
 const HEADER_TIME_RESET_MS = "X-Rate-Limit-Time-Reset-Ms";
 
-// Proportional (requestsLeft / requestsQuota), not a flat count — the same
-// absolute number means a different safety margin depending on BigCommerce's
-// plan-based quota tier. 20% is a reasonable default, not a
-// BigCommerce-documented figure; tune freely.
-const LOW_REQUESTS_REMAINING_RATIO = 0.2;
+const TOO_MANY_REQUESTS_STATUS = 429;
 
-// Proactive only — no retry, no resend. This only delays returning an
-// already-final response/error, so it's safe to apply uniformly to reads
-// and mutations alike (unlike a reactive retry, which risks resending a
-// mutation that already succeeded server-side despite an error response).
-export async function throttleOnLowRateLimit(headers: Headers): Promise<void> {
-  const requestsLeft = Number(headers.get(HEADER_REQUESTS_LEFT));
-  const requestsQuota = Number(headers.get(HEADER_REQUESTS_QUOTA));
-
-  if (!Number.isFinite(requestsLeft) || !Number.isFinite(requestsQuota) || requestsQuota <= 0) {
-    return;
+function parseOptionalNumber(value: string | null): number | undefined {
+  if (value === null) {
+    return undefined;
   }
 
-  if (requestsLeft / requestsQuota >= LOW_REQUESTS_REMAINING_RATIO) {
-    return;
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+// Reactive, single-retry rate-limit handling: only kicks in once BigCommerce
+// has actually responded 429, and only retries once — never a proactive
+// pre-emptive delay, and never a retry loop. A second 429 is returned to the
+// caller as-is rather than retried again, so a persistently exhausted quota
+// still fails fast instead of stacking up delayed retries.
+//
+// Time-Reset-Ms is the only header that drives the delay — Requests-Left,
+// Requests-Quota, and Time-Window-Ms have no role in deciding whether or how
+// long to wait (BigCommerce's 429 itself is the trigger), but are still read
+// and logged for diagnostic context alongside the retry.
+//
+// Safe to apply uniformly to reads and mutations: a 429 means BigCommerce's
+// rate limiter rejected the request before doing any work, so unlike a
+// timed-out/aborted request, there's no ambiguity about whether a mutation
+// already took effect — retrying it is a clean do-over, not a risk of
+// double-applying a write.
+export async function retryOnRateLimit(performRequest: () => Promise<Response>): Promise<Response> {
+  const response = await performRequest();
+
+  if (response.status !== TOO_MANY_REQUESTS_STATUS) {
+    return response;
   }
 
-  const timeResetMs = Number(headers.get(HEADER_TIME_RESET_MS));
+  const timeResetMs = parseOptionalNumber(response.headers.get(HEADER_TIME_RESET_MS));
 
-  if (!Number.isFinite(timeResetMs) || timeResetMs <= 0) {
-    return;
+  // No usable Time-Reset-Ms gives no basis for a safe delay — give up rather
+  // than guess, so the caller sees the 429 immediately instead of after a
+  // meaningless wait.
+  if (timeResetMs === undefined || timeResetMs <= 0) {
+    return response;
   }
 
-  // timeWindowMs is diagnostic-only (logged for context; not part of the
-  // trigger condition), so a missing header falls back to "unknown" rather
-  // than skipping the throttle.
-  const timeWindowMsHeader = headers.get(HEADER_TIME_WINDOW_MS);
-
-  logRateLimitThrottle({
-    requestsLeft,
-    requestsQuota,
-    timeWindowMs: timeWindowMsHeader !== null ? Number(timeWindowMsHeader) : undefined,
-    timeResetMs,
+  logRateLimitRetry({
+    requestsLeft: parseOptionalNumber(response.headers.get(HEADER_REQUESTS_LEFT)),
+    requestsQuota: parseOptionalNumber(response.headers.get(HEADER_REQUESTS_QUOTA)),
+    timeWindowMs: parseOptionalNumber(response.headers.get(HEADER_TIME_WINDOW_MS)),
+    delayMs: timeResetMs,
   });
 
   await new Promise((resolve) => setTimeout(resolve, timeResetMs));
+
+  return performRequest();
 }

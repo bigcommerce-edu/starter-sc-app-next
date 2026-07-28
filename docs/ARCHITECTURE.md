@@ -154,19 +154,20 @@ two run concurrently via `Promise.all` in `isAuthorizedForStore`.
   passing `isMutation: true`) deliberately get none — aborting a client-side
   request doesn't cancel the write on BigCommerce's side, so timing out a
   mutation risks reporting failure for a write that actually succeeded.
-- **Rate limiting**: `lib/bc-api-client/rate-limit.ts` reads BigCommerce's
-  four `X-Rate-Limit-*` REST response headers (`Requests-Left`,
-  `Requests-Quota`, `Time-Window-Ms`, `Time-Reset-Ms`) and proactively waits
-  `Time-Reset-Ms` (never retries — it only delays returning an
-  already-final response/error, so it's safe on mutations too) once
-  `Requests-Left / Requests-Quota` drops below 20%. Proportional rather
-  than a flat requests-left count, since the same absolute number means a
-  different safety margin depending on BigCommerce's plan-based quota tier
-  (Standard/Plus: 20,000/hr, Pro: 60,000/hr, Enterprise: custom). Not yet
-  wired into the GraphQL client: these headers aren't documented for the
-  GraphQL Admin API, though manual testing has shown they are in fact
-  present on GraphQL responses today — left as a TODO pending BigCommerce
-  engineering confirmation that this is guaranteed rather than incidental.
+- **Rate limiting**: `lib/bc-api-client/rate-limit.ts` wraps every request
+  (both clients) in a reactive, single-retry handler — reads BigCommerce's
+  `X-Rate-Limit-Time-Reset-Ms` REST response header only on an actual `429`,
+  waits that long, and retries exactly once; a second `429` (or a `429`
+  with no usable `Time-Reset-Ms`) is returned to the caller as-is rather
+  than retried again. `Requests-Left`/`Requests-Quota`/`Time-Window-Ms`
+  play no role in the retry decision but are still logged alongside it for
+  diagnostic context. Applied uniformly to reads and mutations, since a
+  `429` means BigCommerce rejected the request before doing any work —
+  unlike a timed-out/aborted request, there's no ambiguity about whether a
+  mutation already took effect, so retrying is a clean do-over rather than a
+  risk of double-applying a write. These headers aren't documented for the
+  GraphQL Admin API, but since the retry only reads them on a `429` (never
+  on an ordinary response), that's a safe bet either way.
 - **Errors**: both clients throw `AppError` (`lib/errors/app-error.ts`) with
   a safe, user-facing message; raw response detail goes into `cause` for
   logs only.
@@ -283,6 +284,5 @@ own comments for what it adds.
 
 ## Known follow-ups
 
-- The GraphQL client's rate-limit handling (see above).
 - Whether CI/deploy tooling for a non-Vercel target has
   `CREDENTIALS_STORE_DRIVER` set correctly before invoking its own build.

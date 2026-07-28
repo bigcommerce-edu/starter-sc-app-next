@@ -1,6 +1,7 @@
 import { BcGraphqlApiClient, GraphqlRequestOptions, GraphqlResponseBody } from "@/lib/bc-api-client/graphql-client/types";
 import { StoreApiCredentials } from "@/lib/bc-api-client/types";
 import { API_REQUEST_TIMEOUT_MS } from "@/lib/bc-api-client/request-timeout";
+import { retryOnRateLimit } from "@/lib/bc-api-client/rate-limit";
 import { AppError } from "@/lib/errors/app-error";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
@@ -30,27 +31,23 @@ export class GraphqlApiClient implements BcGraphqlApiClient {
     let response: Response;
 
     try {
-      response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "X-Auth-Token": apiToken,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query, variables }),
-        // No timeout for a mutation — an aborted client-side request
-        // doesn't cancel the write on BigCommerce's side (see rest-client.ts).
-        ...(options.isMutation ? {} : { signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS) }),
-      });
+      response = await retryOnRateLimit(() =>
+        fetch(url, {
+          method: "POST",
+          headers: {
+            "X-Auth-Token": apiToken,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query, variables }),
+          // No timeout for a mutation — an aborted client-side request
+          // doesn't cancel the write on BigCommerce's side (see rest-client.ts).
+          ...(options.isMutation ? {} : { signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS) }),
+        }),
+      );
     } catch (error) {
       throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });
     }
-
-    // TODO: manual testing shows BigCommerce's GraphQL Admin API also
-    // returns X-Rate-Limit-* headers, though this isn't documented for
-    // GraphQL. Once confirmed as guaranteed (not incidental) behavior, wire
-    // in the same throttle rest-client.ts applies:
-    // `await throttleOnLowRateLimit(response.headers);`
 
     // Validation errors arrive as a non-2xx with detail in the body's
     // `errors` array — but the body isn't guaranteed to be JSON (a

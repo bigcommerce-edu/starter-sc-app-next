@@ -19,24 +19,26 @@ export function logError(context: string, error: unknown): void {
   console.error(`[${context}]`, error);
 }
 
-// A rate-limit-driven wait isn't an error (the proactive throttle in
-// bc-api-client/rate-limit.ts doing its job), so it's logged distinctly from
+// A rate-limit-driven retry isn't an error (bc-api-client/rate-limit.ts
+// recovering from a 429 as designed), so it's logged distinctly from
 // logError, but still gated by the same ERROR_LOGGING_ENABLED flag.
-export function logRateLimitThrottle(details: {
-  requestsLeft: number;
-  requestsQuota: number;
+// requestsLeft/requestsQuota/timeWindowMs play no role in the retry decision
+// itself (only Time-Reset-Ms does) but are logged for diagnostic context.
+export function logRateLimitRetry(details: {
+  requestsLeft: number | undefined;
+  requestsQuota: number | undefined;
   timeWindowMs: number | undefined;
-  timeResetMs: number;
+  delayMs: number;
 }): void {
   if (!isErrorLoggingEnabled()) {
     return;
   }
 
-  const { requestsLeft, requestsQuota, timeWindowMs, timeResetMs } = details;
+  const { requestsLeft, requestsQuota, timeWindowMs, delayMs } = details;
 
   console.warn(
-    `[bc-api-client] Rate limit low (${requestsLeft}/${requestsQuota} requests left in a ${
+    `[bc-api-client] Received 429 (${requestsLeft ?? "unknown"}/${requestsQuota ?? "unknown"} requests left in a ${
       timeWindowMs ?? "unknown"
-    }ms window) — waiting ${timeResetMs}ms before continuing.`,
+    }ms window) — retrying once after ${delayMs}ms.`,
   );
 }

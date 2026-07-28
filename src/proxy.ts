@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDataMode } from "@/lib/bc-api-client/resolve-store-credentials";
 import { signSession, verifySession } from "@/lib/session/session-jwt";
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "@/lib/session/types";
+import { getAbsoluteAppUrl } from "./lib/routing/app-url";
 
-function redirectToUnauthorized(request: NextRequest): NextResponse {
-  return NextResponse.redirect(new URL("/unauthorized", request.url));
+function redirectToUnauthorized(): NextResponse {
+  console.log("redirecting", getAbsoluteAppUrl(undefined, "/unauthorized"));
+  return NextResponse.redirect(getAbsoluteAppUrl(undefined, "/unauthorized"));
 }
 
 // Primary, optimistic authorization gate — verifies the session cookie's
@@ -30,7 +32,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
   if (!storeHash || !sessionCookie) {
-    return redirectToUnauthorized(request);
+    return redirectToUnauthorized();
   }
 
   let session: Awaited<ReturnType<typeof verifySession>>;
@@ -38,11 +40,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   try {
     session = await verifySession(sessionCookie);
   } catch {
-    return redirectToUnauthorized(request);
+    return redirectToUnauthorized();
   }
 
   if (!session.authenticatedStores.includes(storeHash)) {
-    return redirectToUnauthorized(request);
+    return redirectToUnauthorized();
   }
 
   const response = NextResponse.next();

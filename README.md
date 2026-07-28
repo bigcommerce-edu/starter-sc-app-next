@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BigCommerce Single-Click App Starter
 
-## Getting Started
+A starter Next.js app for building a BigCommerce single-click installable
+app, with a gift certificates manager included as a worked example. See
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design (auth/session
+flow, data modes, credentials storage, API clients, caching).
 
-First, run the development server:
+## Getting started
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Copy `.env.example` to `.env.local` and fill in the required values.
+2. Install dependencies and start the dev server:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+   ```bash
+   pnpm install
+   pnpm dev
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Open [http://localhost:3000](http://localhost:3000).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+By default the app runs in `MOCK` mode (no BigCommerce account or store
+needed). See `.env.example` for `STATIC` (a single real store/token) and
+`MULTITENANT` (the real production install/session flow) modes.
 
-## Learn More
+## Deployment
 
-To learn more about Next.js, take a look at the following resources:
+Hosting-specific tooling is opt-in via `pnpm scaffold <profile>` (see
+`scripts/scaffold.mjs`) rather than baked into the base app, so this starter
+can target any provider. Run `pnpm scaffold vercel` to add Vercel + Postgres
+deployment scaffolding.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Removing the example feature
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`src/components/gift-certs-manager` and `src/lib/gift-certs-manager` (and
+their routes) are a worked example demonstrating patterns worth
+understanding — see docs/ARCHITECTURE.md — but are meant to be removed when
+building a real app on top of this starter. The auth/session/API-client/
+credentials layers are not part of the example and should stay.

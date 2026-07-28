@@ -17,26 +17,12 @@ const signedPayloadSchema = z.object({
     email: z.string(),
   }),
   // The deep link that triggered the /load callback — "/" for a standard
-  // Apps-menu click, or an App Extension's configured path (with template
-  // variables already resolved by BigCommerce) when opened from one. See
-  // https://docs.bigcommerce.com/developer/docs/integrations/apps/guide/handling-callbacks.
-  // Optional defensively — not currently relied on for anything other than
-  // /load's post-launch redirect, so a payload missing it shouldn't fail
-  // verification.
-  //
-  // Required to start with "/" but not "//": getAbsoluteAppUrl resolves this
-  // against APP_ORIGIN via new URL(), which treats a leading "//" as
-  // protocol-relative — i.e. "//evil.com" resolves to https://evil.com,
-  // ignoring the base entirely. That's not reachable today (every current
-  // caller of getAbsoluteAppUrl passes a real storeHash, whose "/{hash}"
-  // prefix breaks the leading "//" before this value ever reaches new URL()
-  // — see app-url.ts), but that safety is incidental to callers passing a
-  // storeHash, not something this value's own shape guarantees. Rejecting
-  // "//" here makes the payload itself safe to redirect to regardless of
-  // what a future caller does, rather than relying on every caller knowing
-  // about this. BigCommerce's own documented url claim is always a
-  // same-origin deep link ("/" or an App Extension path), so this rejects
-  // nothing legitimate.
+  // Apps-menu click, or an App Extension's configured path when opened from
+  // one. Optional since only /load's post-launch redirect uses it. Must
+  // start with "/" but not "//": a leading "//" is protocol-relative
+  // ("//evil.com" resolves to https://evil.com against new URL()), so
+  // rejecting it here keeps the payload safe to redirect to regardless of
+  // caller — see getAbsoluteAppUrl.
   url: z
     .string()
     .refine((url) => url.startsWith("/") && !url.startsWith("//"), {
@@ -55,15 +41,10 @@ export function parseStoreHash(storesSlashHash: string): string {
   return storeHash;
 }
 
-// Verifies a BigCommerce signed_payload_jwt (the query param BigCommerce
-// attaches to /load, /uninstall, and /remove_user calls) and returns its
-// claims. Throws on any failure — a bad signature or expired/not-yet-valid
-// token throws jose's own error types (JWSSignatureVerificationFailed,
-// JWTExpired, etc.), and a shape mismatch throws a ZodError. Deliberately
-// left uncaught here rather than normalized into one generic error, since
-// callers map different failure classes to different HTTP responses (e.g.
-// /load's "store not installed" check is a separate, later failure mode
-// from "the JWT itself didn't verify").
+// Verifies a BigCommerce signed_payload_jwt and returns its claims. Throws
+// jose's own error types on a bad/expired signature, or a ZodError on a
+// shape mismatch — left uncaught so callers can map different failure
+// classes to different responses (see isSignedPayloadVerificationError).
 export async function verifySignedPayload(signedPayloadJwt: string): Promise<SignedPayload> {
   const clientId = process.env.BIGCOMMERCE_CLIENT_ID;
   const clientSecret = process.env.BIGCOMMERCE_CLIENT_SECRET;

@@ -5,25 +5,15 @@ import { upsertSessionStore } from "@/lib/session/session-cookie";
 
 export interface LoadStoreResult {
   storeHash: string;
-  // The deep link to redirect to after a successful load — see
-  // verifySignedPayload's url claim comment. Defaults to "/" when the
-  // payload omits it, matching BigCommerce's own default for a standard
-  // Apps-menu launch.
+  // Deep link to redirect to after a successful load; defaults to "/".
   url: string;
 }
 
-// The full /load (launch) callback's business logic: verify the signed
-// request, confirm the store is actually installed (throws
-// StoreNotInstalledError otherwise — a stale launch for an uninstalled
-// store shouldn't proceed with no token), provision this user if they're
-// new to the store (a second admin who never went through /auth would
-// otherwise have no users/store_users row at all), then establish (or
-// extend) this user's session — the same admin launching a second store
-// gets that store appended to their existing session rather than a
-// separate one, which is what lets them operate in multiple stores
-// concurrently (e.g. separate browser tabs). Throws whatever
-// verifySignedPayload throws on a bad/expired JWT; the caller (the /load
-// route) decides what HTTP status each failure becomes.
+// The /load (launch) callback's business logic: verify the signed request,
+// confirm the store is still installed (throws StoreNotInstalledError
+// otherwise), provision this user if they're new to the store, then
+// establish/extend their session. Throws whatever verifySignedPayload
+// throws on a bad/expired JWT; the /load route decides what each becomes.
 export async function loadStore(signedPayloadJwt: string): Promise<LoadStoreResult> {
   const payload = await verifySignedPayload(signedPayloadJwt);
   const storeHash = parseStoreHash(payload.sub);

@@ -6,33 +6,24 @@ import { ActionResult } from "@/lib/actions/action-result";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 import { appExtensionStatusTag } from "@/lib/gift-certs-manager/app-extension-status";
 import { findOrCreateAppExtension } from "@/lib/gift-certs-manager/register-app-extension";
-import { isAuthorizedForStore } from "@/lib/session/is-authorized-for-store";
+import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/session/is-authorized-for-store";
+import { toSafeMessage } from "@/lib/errors/app-error";
+import { logError } from "@/lib/errors/logger";
 
-// User-triggered retry for a failed install-time registration — called only
-// from AppExtensionStatusBanner's "Retry" action, so this action is
-// colocated with that component rather than in lib/. Unlike
-// registerAppExtension (called only from the /auth route, which swallows
-// failures so a bad registration never blocks install), this surfaces
-// success/failure as an ActionResult so the banner can show what happened.
-// Shares findOrCreateAppExtension with registerAppExtension so a retry after
-// a partial failure (createAppExtension succeeded on BigCommerce but the
-// setStoreExtension write below failed or the process died in between)
-// adopts the already-created extension's id instead of creating a duplicate
-// — see that function's own doc comment. Calls getGraphqlApiClient without
-// an apiToken override — by the time a user can click "Retry," install has
-// already completed and persisted the store's token, so the normal
-// storage-backed lookup (see resolveApiToken) is exactly what's needed;
-// there's no handshake token to thread through here the way
-// registerAppExtension needs at install time.
+// User-triggered retry for a failed install-time registration, colocated
+// with AppExtensionStatusBanner rather than in lib/. Shares
+// findOrCreateAppExtension with registerAppExtension so a retry after a
+// partial failure adopts the already-created extension's id instead of
+// creating a duplicate. Calls getGraphqlApiClient without an apiToken
+// override, since install has already persisted the store's token by the
+// time a user can click "Retry."
 export async function retryAppExtensionRegistration(storeHash: string | undefined): Promise<ActionResult> {
   if (!(await isAuthorizedForStore(storeHash))) {
-    throw new Error("Not authorized for this store.");
+    return { success: false, message: NOT_AUTHORIZED_FOR_STORE_MESSAGE };
   }
 
-  // isAuthorizedForStore only passes with storeHash undefined in MOCK/STATIC
-  // mode (see its own doc comment) — this action has no reason to ever be
-  // called in those modes (the banner never renders there), but satisfy the
-  // type either way rather than assuming a caller won't misuse it.
+  // The banner never renders in MOCK/STATIC mode, but satisfy the type
+  // either way rather than assuming a caller won't misuse it.
   if (!storeHash) {
     return { success: false, message: "No store to register the App Extension for." };
   }
@@ -43,9 +34,11 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
 
     await getCredentialsStore().setStoreExtension({ storeHash, extensionId });
   } catch (error) {
+    logError(`retryAppExtensionRegistration: store "${storeHash}"`, error);
+
     return {
       success: false,
-      message: error instanceof Error ? error.message : "Failed to register the App Extension.",
+      message: toSafeMessage(error, "Failed to register the App Extension."),
     };
   }
 

@@ -20,7 +20,12 @@ function redirectToUnauthorized(): NextResponse {
 // with a fresh TTL on every matched request, so the effective session
 // lifetime is "since last request" rather than "since login" — BigCommerce
 // can only mint a fresh session via /load, which this app has no way to
-// trigger from inside its own iframe.
+// trigger from inside its own iframe. That sliding refresh preserves
+// payload.issuedAt unchanged (signSession is passed the same session
+// object it just verified), so verifySession's SESSION_MAX_AGE_SECONDS
+// check still bounds the session's total lifetime regardless of how much
+// activity keeps refreshing it — continuous use extends the per-request
+// TTL indefinitely but never the absolute ceiling from original login.
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (getDataMode() !== "MULTITENANT") {
     return NextResponse.next();

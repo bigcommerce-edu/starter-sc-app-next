@@ -2,9 +2,16 @@
 // payload — carries identity only, never the store access token. A list of
 // stores rather than a single one is what lets one admin be launched into
 // multiple stores concurrently under one cookie.
+//
+// issuedAt is the original login time, set once by upsertSessionStore and
+// carried forward unchanged by every later re-sign (proxy.ts's sliding
+// refresh, removeSessionStore) — see SESSION_MAX_AGE_SECONDS in
+// session-jwt.ts for why this is tracked separately from the JWT's own
+// per-refresh iat/exp.
 export interface SessionPayload {
   userId: number;
   authenticatedStores: string[];
+  issuedAt: number;
 }
 
 export const SESSION_COOKIE_NAME = "bc_app_session";

@@ -51,12 +51,18 @@ The app mints its own session: a short-lived (`SESSION_TTL_SECONDS`,
 `lib/session/session-jwt.ts`), stateless JWT stored in an `httpOnly`,
 `SameSite=None; Secure; Partitioned` cookie (required for the BigCommerce
 control panel's cross-origin iframe). The payload is `{ userId,
-authenticatedStores: string[] }` — a list, not a single store, so one admin
-can be launched into multiple stores concurrently.
+authenticatedStores: string[], issuedAt }` — a list, not a single store, so
+one admin can be launched into multiple stores concurrently.
 
 A stateless JWT can't be revoked before it expires, which is why the TTL is
 kept short and why authorization is checked in two places (below) rather
-than trusted from the cookie alone.
+than trusted from the cookie alone. `proxy.ts` slides that short TTL forward
+on every request (see below), which would otherwise let a continuously
+active session extend itself indefinitely — `issuedAt` (the original login
+time, unchanged by any later refresh) lets `verifySession` enforce a hard
+`SESSION_MAX_AGE_SECONDS` ceiling independent of activity, so a session
+still forces re-authentication through `/load` at least once per that
+window no matter how continuously it's used.
 
 ### Two-tier authorization
 
@@ -69,6 +75,8 @@ than trusted from the cookie alone.
    makes the session's effective lifetime "since last request" rather than
    "since login," since BigCommerce can only mint a fresh session via
    `/load`, which this app has no way to trigger from inside its own iframe.
+   That refresh preserves the original `issuedAt`, so `SESSION_MAX_AGE_SECONDS`
+   (see above) still bounds the total session lifetime regardless of activity.
 2. **`lib/session/is-authorized-for-store.ts`** (secondary, authoritative)
    — called by every page (via `AuthorizedPage`) and every Server Action.
    Confirms the store-user link still actually exists in the credentials

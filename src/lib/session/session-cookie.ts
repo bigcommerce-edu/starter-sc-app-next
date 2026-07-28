@@ -43,14 +43,20 @@ export async function readSession(): Promise<SessionPayload | undefined> {
 // existing same-user session's authenticatedStores list. This is the
 // entire "create-or-append" logic both callbacks need — neither route
 // needs to know which case applied.
+//
+// issuedAt is preserved from the existing session (not reset to now) when
+// appending a store, so re-launching into an additional store mid-session
+// doesn't push back the absolute SESSION_MAX_AGE_SECONDS ceiling — only a
+// genuinely new login (no existing same-user session) starts a fresh clock.
 export async function upsertSessionStore(userId: number, storeHash: string): Promise<void> {
   const existing = await readSession();
-  const authenticatedStores =
-    existing && existing.userId === userId
-      ? Array.from(new Set([...existing.authenticatedStores, storeHash]))
-      : [storeHash];
+  const isSameUser = existing && existing.userId === userId;
+  const authenticatedStores = isSameUser
+    ? Array.from(new Set([...existing.authenticatedStores, storeHash]))
+    : [storeHash];
+  const issuedAt = isSameUser ? existing.issuedAt : Math.floor(Date.now() / 1000);
 
-  const jwt = await signSession({ userId, authenticatedStores });
+  const jwt = await signSession({ userId, authenticatedStores, issuedAt });
   const cookieStore = await cookies();
 
   cookieStore.set(SESSION_COOKIE_NAME, jwt, SESSION_COOKIE_OPTIONS);
@@ -71,7 +77,7 @@ export async function removeSessionStore(storeHash: string): Promise<void> {
   }
 
   const authenticatedStores = existing.authenticatedStores.filter((existingStoreHash) => existingStoreHash !== storeHash);
-  const jwt = await signSession({ userId: existing.userId, authenticatedStores });
+  const jwt = await signSession({ userId: existing.userId, authenticatedStores, issuedAt: existing.issuedAt });
   const cookieStore = await cookies();
 
   cookieStore.set(SESSION_COOKIE_NAME, jwt, SESSION_COOKIE_OPTIONS);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDataMode } from "@/lib/bc-api-client/resolve-store-credentials";
+import { getDataMode } from "@/lib/bc-api-client/data-mode";
 import { signSession, verifySession } from "@/lib/session/session-jwt";
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "@/lib/session/types";
 import { getAbsoluteAppUrl } from "./lib/routing/app-url";

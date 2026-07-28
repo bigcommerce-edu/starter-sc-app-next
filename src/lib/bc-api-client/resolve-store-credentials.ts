@@ -1,15 +1,12 @@
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 import { cache } from "react";
+import { getDataMode } from "@/lib/bc-api-client/data-mode";
 
-export type DataMode = "MOCK" | "STATIC" | "MULTITENANT";
-
-const VALID_DATA_MODES: DataMode[] = ["MOCK", "STATIC", "MULTITENANT"];
-
-export function getDataMode(): DataMode {
-  const configuredMode = process.env.DATA_MODE?.toUpperCase();
-
-  return VALID_DATA_MODES.includes(configuredMode as DataMode) ? (configuredMode as DataMode) : "MOCK";
-}
+// Re-exported so existing callers that need both DataMode and the
+// credential-resolution helpers below don't need a second import — see
+// data-mode.ts for why getDataMode itself lives in its own module.
+export { getDataMode } from "@/lib/bc-api-client/data-mode";
+export type { DataMode } from "@/lib/bc-api-client/data-mode";
 
 // Resolves which store API calls should actually target — not always the
 // raw storeHash route param: STATIC mode always talks to the one store

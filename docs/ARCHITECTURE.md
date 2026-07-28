@@ -20,9 +20,16 @@ layers described below.
   store via the `app/store/[storeHash]` route segment, authenticated through
   the full install/session flow described below.
 
-`getDataMode()`/`resolveStoreHash()`/`resolveApiToken()`
-(`lib/bc-api-client/resolve-store-credentials.ts`) are the single place this
-branches; most other code doesn't need to know which mode is active.
+`getDataMode()` (`lib/bc-api-client/data-mode.ts`) and
+`resolveStoreHash()`/`resolveApiToken()`
+(`lib/bc-api-client/resolve-store-credentials.ts`, which re-exports
+`getDataMode`) are the single place this branches; most other code doesn't
+need to know which mode is active. `getDataMode` lives in its own
+dependency-free module (just an env var read) rather than alongside the
+other two, since those transitively import the credentials store — a
+caller that only needs `getDataMode` (e.g. `proxy.ts`) would otherwise pull
+in `pg`/`node:sqlite` for no reason, a coupling that breaks on a runtime
+those drivers can't build for.
 
 ## Install and session flow
 

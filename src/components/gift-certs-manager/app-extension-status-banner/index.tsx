@@ -11,15 +11,11 @@ import { retryAppExtensionRegistration } from "@/components/gift-certs-manager/a
 // (render the banner).
 type RegistrationStatus = boolean | null;
 
-// Whether this app's App Extension is registered is not something any page
-// render should ever block on — it's a cosmetic diagnostic, not something
-// that affects whether the app actually works — so this fetches its own
-// status client-side via an internal API route (see
-// app/api/internal/app-extension-status/route.ts) rather than being a
-// Server Component that awaits the lookup itself. storeHash is read via
-// useParams() rather than taken as a prop, for the same reason MainNav
-// does: so AppShell (a Server Component) never needs to await route params
-// just to pass a value only this client component uses.
+// Whether the App Extension is registered is a cosmetic diagnostic, not
+// something any page render should block on, so this fetches its own status
+// client-side via an internal API route rather than awaiting it server-side.
+// storeHash is read via useParams() rather than a prop, so AppShell never
+// needs to await route params just to pass a value only this component uses.
 export function AppExtensionStatusBanner() {
   const params = useParams<{ storeHash?: string }>();
   const storeHash = params.storeHash;
@@ -34,14 +30,9 @@ export function AppExtensionStatusBanner() {
         const url = storeHash
           ? `/api/internal/app-extension-status?storeHash=${encodeURIComponent(storeHash)}`
           : "/api/internal/app-extension-status";
-        // no-store: this status can change server-side (a successful retry,
-        // or install-time registration finally succeeding) without this
-        // URL ever changing, so the browser's default HTTP caching for a GET
-        // request would otherwise keep serving whatever response it first
-        // saw — completely invisible to (and not invalidated by) the
-        // server-side cacheTag/updateTag machinery in app-extension-status.ts,
-        // which only affects the server's own render cache, not what a
-        // browser does with the response it already has.
+        // no-store: this URL never changes even though its result can, so
+        // the browser's default HTTP caching would otherwise keep serving a
+        // stale response invisibly to server-side cacheTag/updateTag.
         const response = await fetch(url, { cache: "no-store" });
 
         if (!response.ok) {
@@ -54,8 +45,7 @@ export function AppExtensionStatusBanner() {
           setStatus(isRegistered);
         }
       } catch {
-        // No further handling: if the status check itself fails, the
-        // banner just doesn't render — same as "registered," which is the
+        // If the status check fails, the banner just doesn't render — the
         // safer default for a purely cosmetic diagnostic.
       }
     }

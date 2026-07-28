@@ -1,4 +1,4 @@
-import GiftCertsPage from "@/app/[storeHash]/gift-certs/page";
+import GiftCertsPage from "@/app/store/[storeHash]/gift-certs/page";
 
 // This route exists only for MOCK/STATIC development, when there's no store hash
 // context in the page request. 

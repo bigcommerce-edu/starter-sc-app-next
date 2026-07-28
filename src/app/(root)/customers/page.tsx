@@ -1,4 +1,4 @@
-import CustomersPage from "@/app/[storeHash]/customers/page";
+import CustomersPage from "@/app/store/[storeHash]/customers/page";
 
 // This route exists only for MOCK/STATIC development, when there's no store hash
 // context in the page request.

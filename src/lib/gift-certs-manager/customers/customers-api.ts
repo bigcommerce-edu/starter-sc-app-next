@@ -1,6 +1,7 @@
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
 import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
 import { CUSTOMERS_PATH, Customer, CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
+import { AppError } from "@/lib/errors/app-error";
 
 export interface CustomersResult {
   items: Customer[];
@@ -25,15 +26,9 @@ function parseCustomer(record: CustomerWireRecord): Customer {
   return { ...record, channel_ids: record.channel_ids ?? [], store_credit_amounts: record.store_credit_amounts ?? [] };
 }
 
-// Looks up registered customer accounts by email. Gift certificates (and any
-// other feature that only knows an email address) use this to find out
-// whether that email belongs to a registered customer, and if so, their
-// account details — this data intentionally does not come back from the
-// gift certificates endpoint itself. Caching lives in the calling *View
-// component, not here, so the whole rendered view is cached together. Takes
-// storeHash (rather than a BcRestApiClient) and resolves the client itself —
-// this function is never itself a `use cache` boundary, so that's just a
-// normal function call, not a cache-serialization concern.
+// Looks up registered customer accounts by email — this data isn't returned
+// by the gift certificates endpoint itself. Caching lives in the calling
+// *View component, not here.
 export async function fetchCustomersByEmail(
   emails: string[],
   storeHash: string | undefined,
@@ -62,9 +57,20 @@ const SORT_FIELD: Record<CustomersQuery["sortColumn"], string> = {
   date_created: "date_created",
 };
 
-// BigCommerce v3 customers endpoint uses suffix-operator filters (:like/:in)
-// and a single sort value with the direction embedded (e.g. "last_name:asc").
-// See fetchCustomersByEmail — caching lives in the calling *View component.
+// query.date_created_max is a bare yyyy-MM-dd date (see customer-filters.tsx),
+// but BigCommerce's v3 endpoint compares date_created:max against a full
+// timestamp — sent as-is, it'd be read as that day's midnight and exclude
+// every customer created later that same day. Appending the end of day
+// keeps it inclusive of the whole selected day, matching the mock's
+// date-only comparison (see customers-list-handler.ts) so MOCK and
+// MULTITENANT agree on what "before this day" means. date_created:min needs
+// no such adjustment — midnight is already the inclusive start of that day.
+function toEndOfDayTimestamp(date: string): string {
+  return `${date}T23:59:59Z`;
+}
+
+// BigCommerce's v3 endpoint uses suffix-operator filters (:like/:in) and a
+// single sort value with direction embedded (e.g. "last_name:asc").
 export async function fetchCustomers(
   query: CustomersQuery,
   storeHash: string | undefined,
@@ -75,7 +81,7 @@ export async function fetchCustomers(
       ... (query.name && { "name:like": query.name }),
       ... (query.email && { "email:in": query.email }),
       ... (query.date_created_min && { "date_created:min": query.date_created_min }),
-      ... (query.date_created_max && { "date_created:max": query.date_created_max }),
+      ... (query.date_created_max && { "date_created:max": toEndOfDayTimestamp(query.date_created_max) }),
       sort: `${SORT_FIELD[query.sortColumn]}:${query.direction.toLowerCase()}`,
       page: query.page,
       limit: query.limit,
@@ -86,11 +92,12 @@ export async function fetchCustomers(
   return { items: body.data.map(parseCustomer), totalItems: body.meta.pagination.total };
 }
 
-// BigCommerce's v3 customers endpoint has no single-resource path (unlike
-// gift certificates/channels) — GET /v3/customers?id:in={id} is the
-// documented way to fetch one customer by id. See fetchCustomersByEmail —
-// caching lives in the calling *View component (CustomerView).
-export async function fetchCustomer(id: number | string, storeHash: string | undefined): Promise<Customer> {
+// No single-resource path in BigCommerce's v3 API — GET
+// /v3/customers?id:in={id} is the documented way to fetch one by id. A
+// missing id is a list filtered to zero rows, not a 404, so this returns
+// undefined rather than deciding what "not found" means — see CustomerView
+// for the notFound() translation.
+export async function fetchCustomer(id: number | string, storeHash: string | undefined): Promise<Customer | undefined> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
     params: { "id:in": id, include: "storecredit" },
@@ -98,21 +105,22 @@ export async function fetchCustomer(id: number | string, storeHash: string | und
 
   const record = body.data[0];
 
-  if (!record) {
-    throw new Error(`No customer found with id "${id}".`);
-  }
-
-  return parseCustomer(record);
+  return record ? parseCustomer(record) : undefined;
 }
 
-// BigCommerce's v3 customers PUT is a bulk endpoint (an array of updates,
-// keyed by id) even though this app only ever updates one customer at a
-// time, and only id is actually required per item — unlike gift
-// certificates' v2 PUT, there's no need to resend every other field.
-// store_credit_amounts is append-only from the caller's perspective: BigCommerce
-// collapses the store's existing per-currency entries plus this new one into
-// a single summed amount on the next fetch, so the request just adds one
-// more entry to the array rather than replacing it.
+// BigCommerce's v3 customers PUT is a bulk endpoint (array of updates keyed
+// by id), but only id is required per item — no need to resend other
+// fields. store_credit_amounts is append-only: BigCommerce sums the
+// store's existing entries plus this new one on the next fetch.
+//
+// customer.store_credit_amounts is read from an earlier fetch (the caller's,
+// not one taken here), so this has the same lost-update shape as the gift
+// certificate transfer race documented in docs/ARCHITECTURE.md: if another
+// grant to this same customer completes in between, this PUT's array is
+// built from a stale snapshot and silently drops that other entry.
+// BigCommerce's v3 customers PUT has no optimistic-concurrency precondition
+// either, so this is flagged rather than fixed for the same reason — closing
+// it needs either an app-level lock or accepting the residual risk.
 export async function addToCustomerStoreCredit(
   customer: Customer,
   amount: number,
@@ -131,7 +139,9 @@ export async function addToCustomerStoreCredit(
   const record = body.data[0];
 
   if (!record) {
-    throw new Error(`No customer found with id "${customer.id}".`);
+    throw new AppError("NOT_FOUND", "The customer could not be found.", {
+      cause: `No customer found with id "${customer.id}" after a store credit PUT.`,
+    });
   }
 
   return parseCustomer(record);

@@ -1,4 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
+import { notFound } from "next/navigation";
 import { Box, Flex } from "@/components/ui/big-design";
 import { ArrowBackIcon } from "@/components/ui/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
@@ -7,17 +8,11 @@ import { decorateGiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gi
 import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { fetchGiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { getAppUrl } from "@/lib/routing/app-url";
+import { AppError } from "@/lib/errors/app-error";
 
-// Tagged per-id (rather than the shared list tag) so the detail page's
-// action layer can invalidate exactly the certificate it just mutated and
-// have the change show up immediately, without waiting out the cacheLife or
-// invalidating every other certificate's cached detail view. `use cache`
-// wraps the whole rendered view, so a cache hit skips re-rendering
-// GiftCertificateTabs (and everything under it) too. storeHash is the raw
-// [storeHash] route param (or undefined on a root-level dev route) — a
-// plain, serializable string, so it's safe to cross this cache boundary.
-// It's used both for data-access calls (getRestApiClient resolves which store to
-// actually target internally) and for building URLs further down.
+// Tagged per-id (rather than the shared list tag) so a mutation to this
+// certificate updates the detail view immediately without invalidating
+// every other certificate's cached detail view.
 export async function GiftCertificateView({
   id,
   storeHash,
@@ -29,10 +24,23 @@ export async function GiftCertificateView({
   cacheLife("standard");
   cacheTag(giftCertificateTag(id));
 
-  const giftCertificate = await decorateGiftCertificateWithAccounts(
-    await fetchGiftCertificate(id, storeHash),
-    storeHash,
-  );
+  // A missing id is a real 404 from BigCommerce's v2 single-resource
+  // endpoint; the translation to notFound() happens here rather than in
+  // fetchGiftCertificate, which is also called from Server Actions where a
+  // 404 navigation would be wrong.
+  let rawGiftCertificate;
+
+  try {
+    rawGiftCertificate = await fetchGiftCertificate(id, storeHash);
+  } catch (error) {
+    if (error instanceof AppError && error.status === 404) {
+      notFound();
+    }
+
+    throw error;
+  }
+
+  const giftCertificate = await decorateGiftCertificateWithAccounts(rawGiftCertificate, storeHash);
 
   return (
     <Box>

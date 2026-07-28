@@ -1,5 +1,9 @@
-import { Box, Button, Flex, H1, Panel, Text } from "@/components/ui/big-design";
-import { ErrorIcon } from "@/components/ui/big-design-icons";
+import { Box } from "@/components/ui/box";
+import { Button } from "@/components/ui/button";
+import { Flex } from "@/components/ui/flex";
+import { Panel } from "@/components/ui/panel";
+import { H1, Text } from "@/components/ui/text";
+import { ErrorIcon } from "@/components/ui/icons";
 
 // Shared rendering for every error.tsx in the app. Shows only a fixed,
 // generic message — the real Error's message is already stripped to a

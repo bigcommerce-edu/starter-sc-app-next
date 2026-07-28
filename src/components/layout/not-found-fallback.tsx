@@ -1,8 +1,11 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Box, Flex, H1, Panel, Text } from "@/components/ui/big-design";
-import { BaselineHelpIcon } from "@/components/ui/big-design-icons";
+import { Box } from "@/components/ui/box";
+import { Flex } from "@/components/ui/flex";
+import { Panel } from "@/components/ui/panel";
+import { H1, Text } from "@/components/ui/text";
+import { BaselineHelpIcon } from "@/components/ui/icons";
 import { AppLink } from "@/components/ui/app-link";
 import { getAppUrl } from "@/lib/routing/app-url";
 
@@ -18,7 +21,7 @@ export function NotFoundFallback() {
       <Box style={{ maxWidth: "560px", width: "100%" }}>
         <Panel>
           <Flex flexDirection="column" alignItems="center" marginBottom="medium">
-            <BaselineHelpIcon color="secondary50" size="xLarge" />
+            <BaselineHelpIcon color="secondary60" size="xLarge" />
             <H1 marginTop="small" marginBottom="none">
               Not found
             </H1>

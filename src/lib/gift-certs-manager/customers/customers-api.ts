@@ -56,6 +56,18 @@ const SORT_FIELD: Record<CustomersQuery["sortColumn"], string> = {
   date_created: "date_created",
 };
 
+// query.date_created_max is a bare yyyy-MM-dd date (see customer-filters.tsx),
+// but BigCommerce's v3 endpoint compares date_created:max against a full
+// timestamp — sent as-is, it'd be read as that day's midnight and exclude
+// every customer created later that same day. Appending the end of day
+// keeps it inclusive of the whole selected day, matching the mock's
+// date-only comparison (see customers-list-handler.ts) so MOCK and
+// MULTITENANT agree on what "before this day" means. date_created:min needs
+// no such adjustment — midnight is already the inclusive start of that day.
+function toEndOfDayTimestamp(date: string): string {
+  return `${date}T23:59:59Z`;
+}
+
 // BigCommerce's v3 endpoint uses suffix-operator filters (:like/:in) and a
 // single sort value with direction embedded (e.g. "last_name:asc").
 export async function fetchCustomers(
@@ -68,7 +80,7 @@ export async function fetchCustomers(
       ... (query.name && { "name:like": query.name }),
       ... (query.email && { "email:in": query.email }),
       ... (query.date_created_min && { "date_created:min": query.date_created_min }),
-      ... (query.date_created_max && { "date_created:max": query.date_created_max }),
+      ... (query.date_created_max && { "date_created:max": toEndOfDayTimestamp(query.date_created_max) }),
       sort: `${SORT_FIELD[query.sortColumn]}:${query.direction.toLowerCase()}`,
       page: query.page,
       limit: query.limit,

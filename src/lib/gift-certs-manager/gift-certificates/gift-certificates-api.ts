@@ -23,14 +23,14 @@ function parseGiftCertificate(record: GiftCertificateWireRecord): GiftCertificat
 // A plain (uncached) fetch for now — the caching enhancement introduces
 // "use cache"/cacheTag/cacheLife here, plus resolveHasNextPage's own peek
 // reusing this function's cache entry.
-//
-// Only MOCK mode is implemented so far — it calls the mock handler
-// directly, the same data the real endpoint would return. STATIC/
-// MULTITENANT are added once the REST API lab builds the real client.
 async function fetchGiftCertificatesPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
 ): Promise<GiftCertificateWireRecord[]> {
+  // TODO: Call through getRestApiClient instead of the mock handler
+  //  directly, now that the real REST client exists
+  //  - GET GIFT_CERTIFICATES_PATH with the same params object built below
+  //  - The mock handler call stays, gated to MOCK mode only
   if (getDataMode() !== "MOCK") {
     throw new Error("Not implemented yet.");
   }

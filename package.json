@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/pg": "8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/styled-components": "5.1.36",

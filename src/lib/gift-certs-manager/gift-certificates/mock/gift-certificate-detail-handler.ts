@@ -3,9 +3,7 @@ import { GiftCertificateWireRecord } from "@/lib/gift-certs-manager/gift-certifi
 import { mockGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/mock/mock-gift-certificates";
 import { GIFT_CERTIFICATES_PATH } from "@/lib/gift-certs-manager/gift-certificates/types";
 
-// Exported so gift-certificates-api.ts can call it directly in MOCK mode,
-// the same way it calls a real REST endpoint in every other mode.
-export function handleGiftCertificateDetailRequest(id: string): GiftCertificateWireRecord {
+function handleGiftCertificateDetailRequest(id: string): GiftCertificateWireRecord {
   const certificate = mockGiftCertificates.find((item) => String(item.id) === id);
 
   if (!certificate) {

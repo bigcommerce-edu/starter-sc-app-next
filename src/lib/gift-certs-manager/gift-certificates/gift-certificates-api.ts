@@ -1,7 +1,8 @@
 import { getDataMode } from "@/lib/bc-api-client/data-mode";
+import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
 import { handleGiftCertificateDetailRequest } from "@/lib/gift-certs-manager/gift-certificates/mock/gift-certificate-detail-handler";
-import { handleGiftCertificatesListRequest } from "@/lib/gift-certs-manager/gift-certificates/mock/gift-certificates-list-handler";
 import {
+  GIFT_CERTIFICATES_PATH,
   GiftCertificate,
   GiftCertificatesQuery,
   GiftCertificatesResult,
@@ -27,20 +28,19 @@ async function fetchGiftCertificatesPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
 ): Promise<GiftCertificateWireRecord[]> {
-  // TODO: Call through getRestApiClient instead of the mock handler
-  //  directly, now that the real REST client exists
-  //  - GET GIFT_CERTIFICATES_PATH with the same params object built below
-  //  - The mock handler call stays, gated to MOCK mode only
-  if (getDataMode() !== "MOCK") {
-    throw new Error("Not implemented yet.");
-  }
-
-  return handleGiftCertificatesListRequest({
-    sort: "id",
-    direction: query.direction.toLowerCase(),
-    page: query.page,
-    limit: query.limit,
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
+    params: {
+      sort: "id",
+      direction: query.direction.toLowerCase(),
+      page: query.page,
+      limit: query.limit,
+    },
   });
+
+  // BigCommerce's v2 endpoint responds 204 (not 200 + []) when nothing
+  // matches.
+  return items ?? [];
 }
 
 // BigCommerce's v2 endpoint reports no total count anywhere, so the only

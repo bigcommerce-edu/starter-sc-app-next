@@ -17,10 +17,8 @@ function getNumberParam(params: ApiRequestParams, key: string, fallback: number)
 }
 
 // Mirrors the real endpoint's response shape: a bare array of records for
-// the requested page, with no total count. Exported so gift-certificates-api.ts
-// can call it directly in MOCK mode, the same way it calls a real REST
-// endpoint in every other mode.
-export function handleGiftCertificatesListRequest(params: ApiRequestParams): GiftCertificateWireRecord[] {
+// the requested page, with no total count.
+function handleGiftCertificatesListRequest(params: ApiRequestParams): GiftCertificateWireRecord[] {
   const code = getStringParam(params, "code").trim().toLowerCase();
   const toName = getStringParam(params, "to_name").trim().toLowerCase();
   const toEmail = getStringParam(params, "to_email").trim().toLowerCase();

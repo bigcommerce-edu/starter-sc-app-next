@@ -1,12 +1,11 @@
-import { getDataMode } from "@/lib/bc-api-client/data-mode";
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
-import { handleGiftCertificateDetailRequest } from "@/lib/gift-certs-manager/gift-certificates/mock/gift-certificate-detail-handler";
 import {
   GIFT_CERTIFICATES_PATH,
   GiftCertificate,
   GiftCertificatesQuery,
   GiftCertificatesResult,
   GiftCertificateStatus,
+  getGiftCertificatePath,
 } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 // BigCommerce returns amount/balance as decimal strings on the wire; every
@@ -80,15 +79,10 @@ export async function fetchGiftCertificate(
   id: number | string,
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
-  // TODO: Call through getRestApiClient instead of the mock handler
-  //  directly, now that the real REST client exists
-  //  - GET getGiftCertificatePath(id)
-  //  - The mock handler call stays, gated to MOCK mode only
-  if (getDataMode() !== "MOCK") {
-    throw new Error("Not implemented yet.");
-  }
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id));
 
-  return parseGiftCertificate(handleGiftCertificateDetailRequest(String(id)));
+  return parseGiftCertificate(record);
 }
 
 // BigCommerce's v2 PUT is a full-object replacement, but only these fields
@@ -107,19 +101,21 @@ function getRequiredFields(giftCertificate: GiftCertificate): Pick<
   };
 }
 
-// Shared by every gift certificate update. No mock mode support — there's
-// no mock store to mutate. Callers pass only the field(s) they're actually
-// changing (e.g. { status } or { balance }), and this fills in the required
-// fields from the certificate's current state.
+// Shared by every gift certificate update — callers pass only the field(s)
+// they're actually changing (e.g. { status } or { balance }), and this fills
+// in the required fields from the certificate's current state. No mock mode
+// support — there's no mock store to mutate.
 async function updateGiftCertificate(
   giftCertificate: GiftCertificate,
   fields: Partial<Omit<GiftCertificateWireRecord, "id">>,
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
-  // TODO: Implement via getRestApiClient
-  //  - PUT getGiftCertificatePath(giftCertificate.id) with a body combining
-  //    getRequiredFields(giftCertificate) and the caller's fields
-  throw new Error("Not implemented yet.");
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: record } = await apiClient.put<GiftCertificateWireRecord>(getGiftCertificatePath(giftCertificate.id), {
+    body: { ...getRequiredFields(giftCertificate), ...fields },
+  });
+
+  return parseGiftCertificate(record);
 }
 
 export async function updateGiftCertificateStatus(

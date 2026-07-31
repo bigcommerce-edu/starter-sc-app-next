@@ -1,6 +1,8 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { ActionResult } from "@/lib/actions/action-result";
+import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   fetchGiftCertificate,
   refillGiftCertificateBalance as refillGiftCertificateBalanceRequest,
@@ -35,8 +37,7 @@ export async function updateGiftCertificateStatus(
     return { success: false, message: toSafeMessage(error, "Failed to update the gift certificate status.") };
   }
 
-  // TODO: revalidate this certificate's cache tag once the update succeeds
-  //  - updateTag(giftCertificateTag(id)) right before returning success
+  updateTag(giftCertificateTag(id));
 
   return { success: true, message: "Gift certificate status updated." };
 }
@@ -77,8 +78,7 @@ export async function refillGiftCertificateBalance(
     return { success: false, message: toSafeMessage(error, "Failed to refill the gift certificate balance.") };
   }
 
-  // TODO: revalidate this certificate's cache tag once the refill succeeds
-  //  - updateTag(giftCertificateTag(id)) right before returning success
+  updateTag(giftCertificateTag(id));
 
   return { success: true, message: "Gift certificate balance refilled." };
 }

@@ -1,4 +1,5 @@
-import { Panel } from "@bigcommerce/big-design";
+import { Box, Panel } from "@bigcommerce/big-design";
+import { ControlPanelLink } from "@/components/ui/control-panel-link";
 import { CustomerTable } from "@/components/gift-certs-manager/customers/list/customer-table";
 import { fetchChannels } from "@/lib/gift-certs-manager/channels/channels-api";
 import { decorateCustomersWithChannels } from "@/lib/gift-certs-manager/customers/decorate-with-channels";
@@ -44,6 +45,12 @@ export async function CustomerListView({
 
   return (
     <Panel header="Customers">
+      <Box marginBottom="medium">
+        <ControlPanelLink path="/manage/customers" storeHash={storeHash}>
+          BigCommerce Customers View
+        </ControlPanelLink>
+      </Box>
+
       <CustomerTable customers={decoratedItems} totalItems={totalItems} query={query} storeHash={storeHash} />
     </Panel>
   );

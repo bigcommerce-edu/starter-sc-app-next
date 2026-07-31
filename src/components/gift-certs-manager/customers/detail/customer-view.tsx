@@ -71,7 +71,7 @@ export async function CustomerView({
       </Box>
 
       <Box marginBottom="medium">
-        <CustomerInfoPanel customer={customer} />
+        <CustomerInfoPanel customer={customer} storeHash={storeHash} />
       </Box>
 
       <Panel header="Gift Certificates">

@@ -1,5 +1,26 @@
-// TODO: Implement handleChannelsListRequest
-//  - Import mockChannels and return properly shaped response (data and meta.pagination) based on the mock data
+import { MockRouteHandler, MockRouteResponse } from "@/lib/bc-api-client/rest-client/mock-rest-client/types";
+import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
+import { CHANNELS_PATH, Channel } from "@/lib/gift-certs-manager/channels/types";
+import { mockChannels } from "@/lib/gift-certs-manager/channels/mock/mock-channels";
 
-// TODO: Implement channelsListMockHandler
-//  - Export the handler with a pattern matching CHANNELS_PATH
+// Exported so channels-api.ts can call it directly in MOCK mode, the same
+// way it calls a real REST endpoint in every other mode.
+export function handleChannelsListRequest(): V3ListResponse<Channel> {
+  return {
+    data: mockChannels,
+    meta: {
+      pagination: {
+        total: mockChannels.length,
+        count: mockChannels.length,
+        per_page: mockChannels.length,
+        current_page: 1,
+        total_pages: 1,
+      },
+    },
+  };
+}
+
+export const channelsListMockHandler: MockRouteHandler = {
+  pattern: new RegExp(`^${CHANNELS_PATH}$`),
+  handle: (): MockRouteResponse => ({ data: handleChannelsListRequest() }),
+};

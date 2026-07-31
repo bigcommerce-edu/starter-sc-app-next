@@ -14,18 +14,29 @@ if (process.env.APP_ORIGIN) {
   allowedOrigins.push(new URL(process.env.APP_ORIGIN).host);
 }
 
+// Caching is opt-in, and off unless CACHE_COMPONENTS_ENABLED is explicitly
+// "true". An admin-privileged app showing stale data is usually the worse
+// trade-off (see the caching section of docs/ARCHITECTURE.md), so the safe
+// behavior is the default and enabling it is a deliberate choice.
+function isCachingEnabled(): boolean {
+  return process.env.CACHE_COMPONENTS_ENABLED?.toLowerCase() === "true";
+}
+
+// Cache Components stays enabled either way — the `use cache` directives and
+// cacheTag/updateTag calls throughout the app are compile-time constructs
+// that can't be conditionally applied (a directive nested in an `if` is
+// silently ignored, not honored), and turning cacheComponents off entirely
+// would stop the app compiling. The lever that does work is cacheLife: a
+// profile with revalidate: 0 makes every entry already-expired by the time
+// the next request reads it, so nothing is ever reused and each request
+// re-fetches. Next requires expire > revalidate, hence 1 rather than 0.
+//
+// Both configured profiles are overridden, since every `use cache` boundary
+// in the app selects one of them.
+const CACHE_DISABLED_PROFILE = { stale: 0, revalidate: 0, expire: 1 };
+
 const nextConfig: NextConfig = {
-  // TODO: Enable Cache Components
-  //  - cacheComponents: true
-  //  - cacheLife profiles: "standard" (5 min, most data) and "extended" (10
-  //    min, slower-changing data like channels)
-  //  - Gate both profiles on a CACHE_COMPONENTS_ENABLED env var, defaulting
-  //    to off. cacheComponents itself has to stay true either way - the
-  //    `use cache` directives are compile-time constructs and can't be
-  //    conditionally applied - so swap in a zero-second profile
-  //    ({ stale: 0, revalidate: 0, expire: 1 }) when it isn't enabled, which
-  //    leaves every entry already expired and nothing ever reused
-  //  - Add CACHE_COMPONENTS_ENABLED to .env.example
+  cacheComponents: true,
   // Swaps the Postgres credentials-store driver for a `pg`-free stub
   // whenever CREDENTIALS_STORE_DRIVER isn't "POSTGRES" — see
   // lib/credentials-store/postgres-driver-loader.ts and
@@ -60,6 +71,17 @@ const nextConfig: NextConfig = {
     serverActions: {
       allowedOrigins,
     },
+  },
+  cacheLife: {
+    // This is an admin-privileged app, so most fetches use a short lifetime —
+    // changes made directly in the BigCommerce control panel, or by another
+    // admin, shouldn't stay stale for long even where no cache tag invalidates
+    // them.
+    standard: isCachingEnabled() ? { stale: 300, revalidate: 300, expire: 300 } : CACHE_DISABLED_PROFILE,
+    // Channels change far less often than gift certificates or customers
+    // (they're a store configuration concern, not day-to-day transactional
+    // data), so this can tolerate a much longer lifetime.
+    extended: isCachingEnabled() ? { stale: 600, revalidate: 600, expire: 600 } : CACHE_DISABLED_PROFILE,
   },
 };
 

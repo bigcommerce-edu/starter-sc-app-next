@@ -1,0 +1,4 @@
+-- TODO: Write the initial credentials-store schema
+--  - users, stores, store_users tables, mirroring sqlite-driver/schema.ts
+--  - no store_extensions table yet - the graphql-ext enhancement adds a
+--    second migration for that

@@ -1,15 +1,15 @@
+import { cache } from "react";
 import { MockRestApiClient } from "@/lib/bc-api-client/rest-client/mock-rest-client/mock-rest-client";
 import { getDataMode, resolveApiToken, resolveStoreHash } from "@/lib/bc-api-client/resolve-store-credentials";
 import { RestApiClient } from "@/lib/bc-api-client/rest-client/rest-client";
 import { BcRestApiClient } from "@/lib/bc-api-client/rest-client/types";
 
-// TODO: memoize this per request with cache()
-//  - keyed on the resolved store hash (not the raw route param) — e.g. in
-//    STATIC mode every call resolves to the same store regardless of route
-//    param, and should share one instance per request
-async function getConfiguredRestApiClient(resolvedStoreHash: string | undefined): Promise<BcRestApiClient> {
+// Memoized per request, keyed on the resolved store hash (not the raw route
+// param) — e.g. in STATIC mode every call resolves to the same store
+// regardless of route param, and should share one instance per request.
+const getCachedRestApiClient = cache(async (resolvedStoreHash: string | undefined): Promise<BcRestApiClient> => {
   return new RestApiClient({ storeHash: resolvedStoreHash, apiToken: await resolveApiToken(resolvedStoreHash) });
-}
+});
 
 // Selects and configures the BigCommerce REST API client for the given
 // store. Takes the [storeHash] route param (or undefined on a root-level
@@ -21,5 +21,5 @@ export async function getRestApiClient(storeHash: string | undefined): Promise<B
     return new MockRestApiClient();
   }
 
-  return getConfiguredRestApiClient(resolveStoreHash(storeHash));
+  return getCachedRestApiClient(resolveStoreHash(storeHash));
 }

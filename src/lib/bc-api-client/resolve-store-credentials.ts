@@ -1,4 +1,5 @@
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
+import { cache } from "react";
 import { getDataMode } from "@/lib/bc-api-client/data-mode";
 
 // Re-exported so existing callers that need both DataMode and the
@@ -30,12 +31,10 @@ export function resolveStoreHash(storeHash: string | undefined): string | undefi
 // Resolves the API token for an already-resolved storeHash (never per-user
 // — one token per store). Returns undefined rather than throwing when
 // missing, so each API client decides for itself that a missing token is an
-// error.
-// TODO: memoize this per request with cache()
-//  - keyed on storeHash alone, so isAuthorizedForStore can call this same
-//    cache() entry as part of its own check, reusing the result rather
-//    than triggering a second DB round-trip
-export async function resolveApiToken(storeHash: string | undefined): Promise<string | undefined> {
+// error. Memoized per request, keyed on storeHash alone — exported so
+// isAuthorizedForStore can call this same cache() entry as part of its own
+// check, reusing the result rather than triggering a second DB round-trip.
+export const resolveApiToken = cache(async (storeHash: string | undefined): Promise<string | undefined> => {
   if (getDataMode() === "STATIC") {
     return process.env.STATIC_STORE_TOKEN;
   }
@@ -45,4 +44,4 @@ export async function resolveApiToken(storeHash: string | undefined): Promise<st
   }
 
   return getCredentialsStore().getStoreToken(storeHash);
-}
+});

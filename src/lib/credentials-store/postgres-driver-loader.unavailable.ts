@@ -1,5 +1,6 @@
 import {
   CredentialsStore,
+  StoreExtensionRecord,
   StoreRecord,
   StoreUserRecord,
   UserRecord,
@@ -25,6 +26,14 @@ export class PostgresCredentialsStore implements CredentialsStore {
   }
 
   async getStoreToken(_storeHash: string): Promise<string | undefined> {
+    throw unavailableError();
+  }
+
+  async setStoreExtension(_storeExtension: StoreExtensionRecord): Promise<void> {
+    throw unavailableError();
+  }
+
+  async getStoreExtension(_storeHash: string): Promise<string | undefined> {
     throw unavailableError();
   }
 

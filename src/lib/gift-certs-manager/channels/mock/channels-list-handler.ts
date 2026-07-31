@@ -3,9 +3,7 @@ import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
 import { CHANNELS_PATH, Channel } from "@/lib/gift-certs-manager/channels/types";
 import { mockChannels } from "@/lib/gift-certs-manager/channels/mock/mock-channels";
 
-// Exported so channels-api.ts can call it directly in MOCK mode, the same
-// way it calls a real REST endpoint in every other mode.
-export function handleChannelsListRequest(): V3ListResponse<Channel> {
+function handleChannelsListRequest(): V3ListResponse<Channel> {
   return {
     data: mockChannels,
     meta: {

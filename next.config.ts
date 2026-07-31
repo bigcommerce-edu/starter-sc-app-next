@@ -15,9 +15,12 @@ if (process.env.APP_ORIGIN) {
 }
 
 const nextConfig: NextConfig = {
-  // TODO: Enable Cache Components
-  //  - cacheComponents: true
-  //  - Add CACHE_ENABLED to .env.example
+  // Cache Components (PPR). The lifetime profiles each `use cache` boundary
+  // selects, and the CACHE_ENABLED switch that turns caching on and off, live
+  // in lib/cache/cache-profiles.ts rather than in a `cacheLife` block
+  // here — cacheLife accepts an inline profile object, so keeping them in one
+  // module avoids splitting the caching configuration across two places.
+  cacheComponents: true,
   // Swaps the Postgres credentials-store driver for a `pg`-free stub
   // whenever CREDENTIALS_STORE_DRIVER isn't "POSTGRES" — see
   // lib/credentials-store/postgres-driver-loader.ts and

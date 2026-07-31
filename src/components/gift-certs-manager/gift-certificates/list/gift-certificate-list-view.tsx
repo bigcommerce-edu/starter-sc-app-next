@@ -1,4 +1,5 @@
-import { Panel } from "@bigcommerce/big-design";
+import { Box, Panel } from "@bigcommerce/big-design";
+import { ControlPanelLink } from "@/components/ui/control-panel-link";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
 import { decorateGiftCertificatesWithRecipientAccounts } from "@/lib/gift-certs-manager/gift-certificates/decorate-with-accounts";
 import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
@@ -40,6 +41,12 @@ export async function GiftCertificateListView({
 
   return (
     <Panel header="Gift Certificates">
+      <Box marginBottom="medium">
+        <ControlPanelLink path="/manage/orders/gift-certificates" storeHash={storeHash}>
+          BigCommerce Gift Certificates View
+        </ControlPanelLink>
+      </Box>
+
       <GiftCertificateTable
         giftCertificates={decoratedItems}
         hasNextPage={hasNextPage}

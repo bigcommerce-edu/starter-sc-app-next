@@ -7,16 +7,23 @@ import {
   updateGiftCertificateStatus as updateGiftCertificateStatusRequest,
 } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
+import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/session/is-authorized-for-store";
 import { toSafeMessage } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
 
-// No isAuthorizedForStore check yet - that lands once session/auth exists.
-// No cache tag revalidation yet either - that's the caching enhancement.
+// No cache tag revalidation yet - that's the caching enhancement.
 export async function updateGiftCertificateStatus(
   id: number | string,
   status: GiftCertificateStatus,
   storeHash: string | undefined,
 ): Promise<ActionResult> {
+  // A page/layout-level auth check does not extend to Server Actions, since
+  // they're directly POST-able independent of any page render — see
+  // isAuthorizedForStore.
+  if (!(await isAuthorizedForStore(storeHash))) {
+    return { success: false, message: NOT_AUTHORIZED_FOR_STORE_MESSAGE };
+  }
+
   try {
     // The caller only supplies id/status — every other field comes from this
     // fresh fetch, never from client-supplied data.
@@ -42,6 +49,10 @@ export async function refillGiftCertificateBalance(
   newBalance: number,
   storeHash: string | undefined,
 ): Promise<ActionResult> {
+  if (!(await isAuthorizedForStore(storeHash))) {
+    return { success: false, message: NOT_AUTHORIZED_FOR_STORE_MESSAGE };
+  }
+
   try {
     const giftCertificate = await fetchGiftCertificate(id, storeHash);
 

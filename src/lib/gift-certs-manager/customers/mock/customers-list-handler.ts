@@ -42,9 +42,7 @@ function paginate(
   };
 }
 
-// Exported so customers-api.ts can call it directly in MOCK mode, the same
-// way it calls a real REST endpoint in every other mode.
-export function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<CustomerWireRecord> {
+function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<CustomerWireRecord> {
   const idIn = getStringParam(params, "id:in")
     .split(",")
     .filter((value) => value !== "")

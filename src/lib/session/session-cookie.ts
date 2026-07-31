@@ -1,21 +1,13 @@
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { signSession, verifySession } from "@/lib/session/session-jwt";
 import { SessionPayload, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "@/lib/session/types";
 
-// TODO: memoize this per request with cache()
-//  - isAuthorizedForStore calls this on every MULTITENANT request, and a
-//    single page render can call it more than once (e.g. a page's own auth
-//    check plus something else reading the session) — memoizing avoids
-//    re-verifying the same JWT repeatedly within that request
-//  - split the body below into its own readUncachedSession function, then
-//    wrap it: const getCachedSession = cache(readUncachedSession)
-//  - readSession itself just becomes `return getCachedSession();`
-//
 // Reads and verifies the current session cookie, if any. A missing cookie
 // and a failed verification (expired, bad signature, wrong shape) are
 // treated identically — both just mean "not authenticated" to callers,
 // which don't need to distinguish why.
-export async function readSession(): Promise<SessionPayload | undefined> {
+async function readUncachedSession(): Promise<SessionPayload | undefined> {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
@@ -28,6 +20,21 @@ export async function readSession(): Promise<SessionPayload | undefined> {
   } catch {
     return undefined;
   }
+}
+
+// Memoized per request (same rationale as getCachedRestApiClient/
+// getCachedCredentialsStore): isAuthorizedForStore calls this on every
+// MULTITENANT request, and a single page render can call it more than once
+// (e.g. a page's own auth check plus something else reading the session) —
+// so this avoids re-verifying the same JWT repeatedly within that request.
+const getCachedSession = cache(readUncachedSession);
+
+// Reads and verifies the current session cookie, if any — see
+// readUncachedSession for what "reads and verifies" means. Callers should
+// always go through this rather than readUncachedSession directly, so
+// repeated reads in one request share a single verification.
+export async function readSession(): Promise<SessionPayload | undefined> {
+  return getCachedSession();
 }
 
 // Called from /auth and /load: mints a new session cookie for this user if

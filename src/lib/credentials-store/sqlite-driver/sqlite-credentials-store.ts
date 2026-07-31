@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { CREATE_CREDENTIALS_STORE_SCHEMA } from "@/lib/credentials-store/sqlite-driver/schema";
 import { decrypt, encrypt } from "@/lib/credentials-store/encryption";
-import { CredentialsStore, StoreRecord, StoreUserRecord, UserRecord } from "@/lib/credentials-store/types";
+import { CredentialsStore, StoreExtensionRecord, StoreRecord, StoreUserRecord, UserRecord } from "@/lib/credentials-store/types";
 import { AppError } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
 
@@ -40,6 +40,10 @@ function openDatabase(path: string): DatabaseSync {
 
 interface StoreTokenRow {
   access_token: string;
+}
+
+interface ExtensionIdRow {
+  extension_id: string;
 }
 
 interface UserIdRow {
@@ -116,15 +120,32 @@ export class SqliteCredentialsStore implements CredentialsStore {
     });
   }
 
-  // TODO: add setStoreExtension/getStoreExtension
-  //  - setStoreExtension: INSERT INTO store_extensions (store_hash,
-  //    extension_id) VALUES (?, ?) ON CONFLICT(store_hash) DO UPDATE SET
-  //    extension_id = excluded.extension_id - only called after a
-  //    successful createAppExtension mutation, so this doesn't need ON
-  //    CONFLICT DO NOTHING semantics beyond replacing a stale extension_id
-  //    from a prior install
-  //  - getStoreExtension: SELECT extension_id FROM store_extensions WHERE
-  //    store_hash = ?
+  // Only called after a successful createAppExtension mutation (see
+  // register-app-extension.ts) — a failed registration should never reach
+  // here, so this doesn't need ON CONFLICT DO NOTHING semantics beyond
+  // replacing a stale extension_id from a prior install.
+  async setStoreExtension(storeExtension: StoreExtensionRecord): Promise<void> {
+    withDatabaseErrorHandling("setStoreExtension", () => {
+      this.db
+        .prepare(
+          `INSERT INTO store_extensions (store_hash, extension_id)
+           VALUES (?, ?)
+           ON CONFLICT(store_hash) DO UPDATE SET
+             extension_id = excluded.extension_id`,
+        )
+        .run(storeExtension.storeHash, storeExtension.extensionId);
+    });
+  }
+
+  async getStoreExtension(storeHash: string): Promise<string | undefined> {
+    return withDatabaseErrorHandling("getStoreExtension", () => {
+      const row = this.db.prepare("SELECT extension_id FROM store_extensions WHERE store_hash = ?").get(storeHash) as unknown as
+        | ExtensionIdRow
+        | undefined;
+
+      return row?.extension_id;
+    });
+  }
 
   async isStoreUserLinked(storeHash: string, userId: number): Promise<boolean> {
     return withDatabaseErrorHandling("isStoreUserLinked", () => {
@@ -136,12 +157,10 @@ export class SqliteCredentialsStore implements CredentialsStore {
     });
   }
 
-  // TODO: also DELETE FROM store_extensions WHERE store_hash = ? in this
-  // same transaction, once store_extensions exists
-  //
-  // Deletes a store's row and its store-user links, and any of those users
-  // left with no other store association. Run as a transaction so a crash
-  // mid-cascade can't leave orphaned store_users/users rows behind.
+  // Deletes a store's row, its store-user links, its extension link, and any
+  // of those users left with no other store association. Run as a
+  // transaction so a crash mid-cascade can't leave orphaned
+  // store_users/users rows behind.
   async deleteStore(storeHash: string): Promise<void> {
     withDatabaseErrorHandling("deleteStore", () => {
       this.db.exec("BEGIN TRANSACTION");
@@ -152,6 +171,7 @@ export class SqliteCredentialsStore implements CredentialsStore {
         ).map((row) => row.user_id);
 
         this.db.prepare("DELETE FROM store_users WHERE store_hash = ?").run(storeHash);
+        this.db.prepare("DELETE FROM store_extensions WHERE store_hash = ?").run(storeHash);
         this.db.prepare("DELETE FROM stores WHERE store_hash = ?").run(storeHash);
 
         const countRemainingStoreUsersStmt = this.db.prepare("SELECT COUNT(*) as c FROM store_users WHERE user_id = ?");

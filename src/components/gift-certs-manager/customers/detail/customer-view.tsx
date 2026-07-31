@@ -18,9 +18,6 @@ import { getAppUrl } from "@/lib/routing/app-url";
 // mutation invalidates it instantly) and the shared gift-certificates list
 // tag, since this view also renders a filtered listing of this customer's
 // certificates.
-//
-// No ControlPanelLink on CustomerInfoPanel yet either — that stays a stub
-// until the cp-links enhancement.
 export async function CustomerView({
   id,
   searchParams,
@@ -75,7 +72,7 @@ export async function CustomerView({
       </Box>
 
       <Box marginBottom="medium">
-        <CustomerInfoPanel customer={customer} />
+        <CustomerInfoPanel customer={customer} storeHash={storeHash} />
       </Box>
 
       <Panel header="Gift Certificates">

@@ -1,14 +1,14 @@
+import { cache } from "react";
 import { connection } from "next/server";
 import { getDataMode, resolveApiToken } from "@/lib/bc-api-client/resolve-store-credentials";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 import { readSession, removeSessionStore } from "@/lib/session/session-cookie";
 
-// TODO: memoize this per request with cache()
-//  - keyed on (storeHash, userId) since this check is inherently
-//    session-specific
-function isStoreUserLinked(storeHash: string, userId: number): Promise<boolean> {
+// Memoized per request, keyed on (storeHash, userId) since this check is
+// inherently session-specific.
+const isStoreUserLinked = cache((storeHash: string, userId: number): Promise<boolean> => {
   return getCredentialsStore().isStoreUserLinked(storeHash, userId);
-}
+});
 
 // Shared across every caller (AuthorizedPage, Server Actions, the
 // app-extension-status route) so the wording only needs to change in one
@@ -27,7 +27,7 @@ export const NOT_AUTHORIZED_FOR_STORE_MESSAGE = "Not authorized for this store."
 // The session cookie's authenticatedStores claim is checked first and
 // cheaply; a pass there is provisional until isStoreUserLinked confirms the
 // link still exists. That link check and resolveApiToken's token lookup run
-// concurrently via Promise.all.
+// concurrently via Promise.all — both are request-memoized via cache().
 //
 // A confirmed-stale cookie claim is corrected via removeSessionStore, so a
 // revoked store stops passing the fast cookie check on the next request.

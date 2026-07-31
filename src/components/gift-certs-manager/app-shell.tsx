@@ -1,4 +1,5 @@
 import { Box, Flex, FlexItem } from "@/components/ui/big-design";
+import { AppExtensionStatusBanner } from "@/components/gift-certs-manager/app-extension-status-banner";
 import { DataModeBanner } from "@/components/layout/data-mode-banner";
 import { DeveloperInfoPanel } from "@/components/layout/developer-info-panel";
 import { MainNav } from "@/components/gift-certs-manager/main-nav";
@@ -10,15 +11,16 @@ const SIDEBAR_WIDTH = "280px";
 // sync Server Component that renders immediately regardless of how long
 // `children` takes to resolve.
 //
-// MainNav reads useParams() client-side — under cacheComponents, route
-// params are "blocks navigation" data even from a Client Component, so it
-// needs its own Suspense boundary or Next throws.
-//
-// No AppExtensionStatusBanner yet - that's the graphql-ext enhancement.
+// MainNav and AppExtensionStatusBanner both read useParams() client-side —
+// under cacheComponents, route params are "blocks navigation" data even from
+// a Client Component, so each needs its own Suspense boundary or Next throws.
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <Box>
       <DataModeBanner />
+      <Suspense>
+        <AppExtensionStatusBanner />
+      </Suspense>
       {/*
         Below the "wide" breakpoint, a table-heavy page is wider than a
         narrowed control-panel iframe can show alongside a fixed-width

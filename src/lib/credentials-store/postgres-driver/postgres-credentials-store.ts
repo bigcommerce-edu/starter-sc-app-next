@@ -1,7 +1,7 @@
 import { PoolClient } from "pg";
 import { getPool } from "@/lib/credentials-store/postgres-driver/get-pool";
 import { decrypt, encrypt } from "@/lib/credentials-store/encryption";
-import { CredentialsStore, StoreRecord, StoreUserRecord, UserRecord } from "@/lib/credentials-store/types";
+import { CredentialsStore, StoreExtensionRecord, StoreRecord, StoreUserRecord, UserRecord } from "@/lib/credentials-store/types";
 import { AppError } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
 
@@ -20,6 +20,10 @@ async function withDatabaseErrorHandling<T>(context: string, run: () => Promise<
 
 interface StoreTokenRow {
   access_token: string;
+}
+
+interface ExtensionIdRow {
+  extension_id: string;
 }
 
 interface UserIdRow {
@@ -85,9 +89,34 @@ export class PostgresCredentialsStore implements CredentialsStore {
     });
   }
 
-  // TODO: add setStoreExtension/getStoreExtension, same pattern as
-  // SqliteCredentialsStore but against the store_extensions table added by
-  // migration 0002_add_store_extensions.sql
+  // Only called after a successful createAppExtension mutation (see
+  // register-app-extension.ts) — a failed registration should never reach
+  // here, so this doesn't need ON CONFLICT DO NOTHING semantics beyond
+  // replacing a stale extension_id from a prior install.
+  async setStoreExtension(storeExtension: StoreExtensionRecord): Promise<void> {
+    await withDatabaseErrorHandling("setStoreExtension", async () => {
+      const pool = getPool();
+
+      await pool.query(
+        `INSERT INTO store_extensions (store_hash, extension_id)
+         VALUES ($1, $2)
+         ON CONFLICT (store_hash) DO UPDATE SET
+           extension_id = excluded.extension_id`,
+        [storeExtension.storeHash, storeExtension.extensionId],
+      );
+    });
+  }
+
+  async getStoreExtension(storeHash: string): Promise<string | undefined> {
+    return withDatabaseErrorHandling("getStoreExtension", async () => {
+      const pool = getPool();
+      const result = await pool.query<ExtensionIdRow>("SELECT extension_id FROM store_extensions WHERE store_hash = $1", [
+        storeHash,
+      ]);
+
+      return result.rows[0]?.extension_id;
+    });
+  }
 
   async isStoreUserLinked(storeHash: string, userId: number): Promise<boolean> {
     return withDatabaseErrorHandling("isStoreUserLinked", async () => {
@@ -101,15 +130,10 @@ export class PostgresCredentialsStore implements CredentialsStore {
     });
   }
 
-  // TODO: also DELETE FROM store_extensions WHERE store_hash = $1 in this
-  // same transaction, once store_extensions exists (or rely on the
-  // migration's ON DELETE CASCADE foreign key instead, since it achieves
-  // the same result without an explicit statement here)
-  //
-  // Deletes a store's row and its store-user links, and any of those users
-  // left with no other store association. Run as a transaction (via one
-  // checked-out client) so a crash mid-cascade can't leave orphaned
-  // store_users/users rows behind.
+  // Deletes a store's row, its store-user links, its extension link, and any
+  // of those users left with no other store association. Run as a
+  // transaction (via one checked-out client) so a crash mid-cascade can't
+  // leave orphaned store_users/users rows behind.
   async deleteStore(storeHash: string): Promise<void> {
     await withDatabaseErrorHandling("deleteStore", async () => {
       const pool = getPool();
@@ -123,6 +147,7 @@ export class PostgresCredentialsStore implements CredentialsStore {
         ).rows.map((row) => row.user_id);
 
         await client.query("DELETE FROM store_users WHERE store_hash = $1", [storeHash]);
+        await client.query("DELETE FROM store_extensions WHERE store_hash = $1", [storeHash]);
         await client.query("DELETE FROM stores WHERE store_hash = $1", [storeHash]);
 
         await deleteUsersWithNoRemainingStores(client, affectedUserIds);

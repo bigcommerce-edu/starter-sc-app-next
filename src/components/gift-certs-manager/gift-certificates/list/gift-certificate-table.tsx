@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Badge, Table, TableColumn } from "@bigcommerce/big-design";
 import { AppLink } from "@/components/ui/app-link";
+import { GiftCertificateActionsMenu } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-actions-menu";
 import { GiftCertificateFilters } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-filters";
 import { PendingOverlay } from "@/components/ui/pending-overlay";
 import { buildGiftCertificatesSearchParams } from "@/lib/gift-certs-manager/gift-certificates/query";
@@ -80,8 +81,20 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertif
       render: ({ purchase_date }: GiftCertificate) =>
         dateFormatter.format(new Date(Number(purchase_date) * 1000)),
     },
-    // TODO: add an Actions column rendering GiftCertificateActionsMenu,
-    // hideHeader, align "right", width 64
+    {
+      header: "Actions",
+      hash: "actions",
+      hideHeader: true,
+      align: "right",
+      render: (certificate: GiftCertificate) => (
+        <GiftCertificateActionsMenu
+          certificate={certificate}
+          detailUrl={getAppUrl(storeHash, `/gift-certs/${certificate.id}`)}
+          storeHash={storeHash}
+        />
+      ),
+      width: 64,
+    },
   ];
 }
 

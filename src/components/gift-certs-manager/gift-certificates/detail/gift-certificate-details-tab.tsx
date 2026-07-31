@@ -56,17 +56,23 @@ export function GiftCertificateDetailsTab({
       <FlexItem>
         <GiftCertificateStatusPanel giftCertificate={giftCertificate} onStatusChange={setStatus} status={status} />
       </FlexItem>
-      {/*
-        TODO: pass account={giftCertificate.senderAccount} below, and
-        account={giftCertificate.recipientAccount} isRecipient
-        storeHash={storeHash} on the recipient panel, once
-        GiftCertificatePartyPanel accepts those props
-      */}
       <FlexItem>
-        <GiftCertificatePartyPanel header="Sender" name={giftCertificate.from_name} email={giftCertificate.from_email} />
+        <GiftCertificatePartyPanel
+          header="Sender"
+          name={giftCertificate.from_name}
+          email={giftCertificate.from_email}
+          account={giftCertificate.senderAccount}
+        />
       </FlexItem>
       <FlexItem>
-        <GiftCertificatePartyPanel header="Recipient" name={giftCertificate.to_name} email={giftCertificate.to_email} />
+        <GiftCertificatePartyPanel
+          header="Recipient"
+          name={giftCertificate.to_name}
+          email={giftCertificate.to_email}
+          account={giftCertificate.recipientAccount}
+          isRecipient
+          storeHash={storeHash}
+        />
       </FlexItem>
 
       <FlexItem>

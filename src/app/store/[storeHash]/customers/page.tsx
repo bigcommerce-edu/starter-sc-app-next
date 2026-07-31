@@ -1,2 +1,19 @@
-// TODO: Implement customers page
-//  - Use a Suspense fallback around an AuthorizedPage, which will un-pack session and lookup DB token
+import { Suspense } from "react";
+import { CustomersPage } from "@/components/gift-certs-manager/customers/list/customers-page";
+import { AuthorizedPage } from "@/components/layout/authorized-page";
+import { ContentFallback } from "@/components/layout/content-fallback";
+
+export default function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return (
+    <Suspense fallback={<ContentFallback />}>
+      {/* Content fallback because AuthorizedPage must perform auth check based on session cookie */}
+      <AuthorizedPage params={params} searchParams={searchParams} pageComponent={CustomersPage} />
+    </Suspense>
+  );
+}

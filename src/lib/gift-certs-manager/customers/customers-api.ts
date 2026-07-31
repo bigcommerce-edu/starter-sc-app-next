@@ -1,5 +1,5 @@
-import { getDataMode } from "@/lib/bc-api-client/data-mode";
-import { handleCustomersListRequest } from "@/lib/gift-certs-manager/customers/mock/customers-list-handler";
+import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
 import { CUSTOMERS_PATH, Customer, CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
 
 export interface CustomersResult {
@@ -27,9 +27,7 @@ function parseCustomer(record: CustomerWireRecord): Customer {
 
 // Looks up registered customer accounts by email — this data isn't returned
 // by the gift certificates endpoint itself. Caching lives in the calling
-// *View component, not here. Only MOCK mode is implemented so far — it
-// calls the mock handler directly, the same data a real endpoint would
-// return.
+// *View component, not here.
 export async function fetchCustomersByEmail(
   emails: string[],
   storeHash: string | undefined,
@@ -40,16 +38,15 @@ export async function fetchCustomersByEmail(
     return { items: [] };
   }
 
-  if (getDataMode() !== "MOCK") {
-    throw new Error("Not implemented yet.");
-  }
-
-  const { data } = handleCustomersListRequest({
-    "email:in": uniqueEmails.join(","),
-    include: "storecredit",
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    params: {
+      "email:in": uniqueEmails.join(","),
+      include: "storecredit",
+    },
   });
 
-  return { items: data.map(parseCustomer) };
+  return { items: body.data.map(parseCustomer) };
 }
 
 // BigCommerce's v3 customers endpoint sorts by last_name, not "name" — this
@@ -72,42 +69,40 @@ function toEndOfDayTimestamp(date: string): string {
 }
 
 // BigCommerce's v3 endpoint uses suffix-operator filters (:like/:in) and a
-// single sort value with direction embedded (e.g. "last_name:asc"). Only
-// MOCK mode is implemented so far.
+// single sort value with direction embedded (e.g. "last_name:asc").
 export async function fetchCustomers(
   query: CustomersQuery,
   storeHash: string | undefined,
 ): Promise<CustomersListResult> {
-  if (getDataMode() !== "MOCK") {
-    throw new Error("Not implemented yet.");
-  }
-
-  const { data, meta } = handleCustomersListRequest({
-    ... (query.name && { "name:like": query.name }),
-    ... (query.email && { "email:in": query.email }),
-    ... (query.date_created_min && { "date_created:min": query.date_created_min }),
-    ... (query.date_created_max && { "date_created:max": toEndOfDayTimestamp(query.date_created_max) }),
-    sort: `${SORT_FIELD[query.sortColumn]}:${query.direction.toLowerCase()}`,
-    page: query.page,
-    limit: query.limit,
-    include: "storecredit",
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    params: {
+      ... (query.name && { "name:like": query.name }),
+      ... (query.email && { "email:in": query.email }),
+      ... (query.date_created_min && { "date_created:min": query.date_created_min }),
+      ... (query.date_created_max && { "date_created:max": toEndOfDayTimestamp(query.date_created_max) }),
+      sort: `${SORT_FIELD[query.sortColumn]}:${query.direction.toLowerCase()}`,
+      page: query.page,
+      limit: query.limit,
+      include: "storecredit",
+    },
   });
 
-  return { items: data.map(parseCustomer), totalItems: meta.pagination.total };
+  return { items: body.data.map(parseCustomer), totalItems: body.meta.pagination.total };
 }
 
 // No single-resource path in BigCommerce's v3 API — GET
 // /v3/customers?id:in={id} is the documented way to fetch one by id. A
 // missing id is a list filtered to zero rows, not a 404, so this returns
 // undefined rather than deciding what "not found" means — see CustomerView
-// for the notFound() translation. Only MOCK mode is implemented so far.
+// for the notFound() translation.
 export async function fetchCustomer(id: number | string, storeHash: string | undefined): Promise<Customer | undefined> {
-  if (getDataMode() !== "MOCK") {
-    throw new Error("Not implemented yet.");
-  }
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    params: { "id:in": id, include: "storecredit" },
+  });
 
-  const { data } = handleCustomersListRequest({ "id:in": id, include: "storecredit" });
-  const record = data[0];
+  const record = body.data[0];
 
   return record ? parseCustomer(record) : undefined;
 }

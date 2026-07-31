@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { Panel } from "@bigcommerce/big-design";
+import { Box, Panel } from "@bigcommerce/big-design";
+import { ControlPanelLink } from "@/components/ui/control-panel-link";
 import { CustomerTable } from "@/components/gift-certs-manager/customers/list/customer-table";
 import { fetchChannels } from "@/lib/gift-certs-manager/channels/channels-api";
 import { customerTag, CUSTOMERS_LIST_TAG } from "@/lib/gift-certs-manager/customers/cache-tags";
@@ -13,9 +14,6 @@ import { parseCustomersQuery } from "@/lib/gift-certs-manager/customers/query";
 // immediately without invalidating every other cached listing. fetchChannels
 // keeps its own nested `use cache` boundary with a longer lifetime, so it
 // isn't governed by this component's own cacheLife/cacheTag.
-//
-// No ControlPanelLink yet either — that stays a stub until the cp-links
-// enhancement.
 export async function CustomerListView({
   searchParams,
   storeHash,
@@ -41,6 +39,12 @@ export async function CustomerListView({
 
   return (
     <Panel header="Customers">
+      <Box marginBottom="medium">
+        <ControlPanelLink path="/manage/customers" storeHash={storeHash}>
+          BigCommerce Customers View
+        </ControlPanelLink>
+      </Box>
+
       <CustomerTable customers={decoratedItems} totalItems={totalItems} query={query} storeHash={storeHash} />
     </Panel>
   );

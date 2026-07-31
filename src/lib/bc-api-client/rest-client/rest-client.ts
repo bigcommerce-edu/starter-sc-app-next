@@ -1,5 +1,7 @@
 import { ApiMutationOptions, ApiRequestOptions, ApiResponse, BcRestApiClient } from "@/lib/bc-api-client/rest-client/types";
 import { StoreApiCredentials } from "@/lib/bc-api-client/types";
+import { API_REQUEST_TIMEOUT_MS } from "@/lib/bc-api-client/request-timeout";
+import { retryOnRateLimit } from "@/lib/bc-api-client/rate-limit";
 import { AppError } from "@/lib/errors/app-error";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
@@ -84,15 +86,15 @@ export class RestApiClient implements BcRestApiClient {
     let response: Response;
 
     try {
-      // TODO: wrap this fetch in retryOnRateLimit and pass
-      // signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS) - a hung GET should
-      // fail fast rather than hang the Server Component/Action that awaited it
-      response = await fetch(url, {
-        headers: {
-          "X-Auth-Token": apiToken,
-          Accept: "application/json",
-        },
-      });
+      response = await retryOnRateLimit(() =>
+        fetch(url, {
+          headers: {
+            "X-Auth-Token": apiToken,
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS),
+        }),
+      );
     } catch (error) {
       throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });
     }
@@ -125,21 +127,23 @@ export class RestApiClient implements BcRestApiClient {
     let response: Response;
 
     try {
-      // TODO: wrap this fetch in retryOnRateLimit - no timeout here, unlike
-      // get(): aborting doesn't cancel the write on BigCommerce's side, so a
-      // timeout risks reporting failure for a mutation that actually succeeded.
-      // Retrying on 429 is still safe: BigCommerce rejects the request before
-      // doing any work, so there's no ambiguity about whether it already took
-      // effect
-      response = await fetch(url, {
-        method,
-        headers: {
-          "X-Auth-Token": apiToken,
-          Accept: "application/json",
-          ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
-        },
-        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-      });
+      response = await retryOnRateLimit(() =>
+        fetch(url, {
+          method,
+          headers: {
+            "X-Auth-Token": apiToken,
+            Accept: "application/json",
+            ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
+          },
+          body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+          // No timeout, unlike get() — aborting doesn't cancel the write on
+          // BigCommerce's side, so a timeout here risks reporting failure for
+          // a mutation that actually succeeded. Retrying on 429 is still
+          // safe here (see rate-limit.ts): BigCommerce rejects the request
+          // before doing any work, so there's no ambiguity about whether
+          // the mutation already took effect.
+        }),
+      );
     } catch (error) {
       throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });
     }

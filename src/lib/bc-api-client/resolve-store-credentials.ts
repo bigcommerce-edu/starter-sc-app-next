@@ -1,3 +1,4 @@
+import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 import { getDataMode } from "@/lib/bc-api-client/data-mode";
 
 // Re-exported so existing callers that need both DataMode and the
@@ -38,9 +39,9 @@ export async function resolveApiToken(storeHash: string | undefined): Promise<st
     return process.env.STATIC_STORE_TOKEN;
   }
 
-  // TODO: Complete the MULTITENANT branch
-  //  - Return undefined if storeHash is missing
-  //  - Otherwise look up the token via getCredentialsStore().getStoreToken()
-  //
-  throw new Error("Not implemented yet.");
+  if (!storeHash) {
+    return undefined;
+  }
+
+  return getCredentialsStore().getStoreToken(storeHash);
 }

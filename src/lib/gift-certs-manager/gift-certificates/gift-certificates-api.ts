@@ -80,6 +80,10 @@ export async function fetchGiftCertificate(
   id: number | string,
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
+  // TODO: Call through getRestApiClient instead of the mock handler
+  //  directly, now that the real REST client exists
+  //  - GET getGiftCertificatePath(id)
+  //  - The mock handler call stays, gated to MOCK mode only
   if (getDataMode() !== "MOCK") {
     throw new Error("Not implemented yet.");
   }
@@ -104,8 +108,7 @@ function getRequiredFields(giftCertificate: GiftCertificate): Pick<
 }
 
 // Shared by every gift certificate update. No mock mode support — there's
-// no mock store to mutate, so this only works once the REST API lab wires
-// up real requests. Callers pass only the field(s) they're actually
+// no mock store to mutate. Callers pass only the field(s) they're actually
 // changing (e.g. { status } or { balance }), and this fills in the required
 // fields from the certificate's current state.
 async function updateGiftCertificate(
@@ -113,6 +116,9 @@ async function updateGiftCertificate(
   fields: Partial<Omit<GiftCertificateWireRecord, "id">>,
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
+  // TODO: Implement via getRestApiClient
+  //  - PUT getGiftCertificatePath(giftCertificate.id) with a body combining
+  //    getRequiredFields(giftCertificate) and the caller's fields
   throw new Error("Not implemented yet.");
 }
 

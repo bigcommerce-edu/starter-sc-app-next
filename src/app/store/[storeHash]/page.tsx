@@ -1,6 +1,3 @@
-// Placeholder home page. params/searchParams aren't used yet, but are
-// already part of the signature so (root)/page.tsx (which spreads them
-// straight through) doesn't need to change later.
 export default function HomePage({
   params,
   searchParams,
@@ -8,5 +5,7 @@ export default function HomePage({
   params: Promise<Record<string, string | string[] | undefined>>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  // TODO: Replace this placeholder with a pass-through to the real Gift
+  // Certificates list, now that page exists.
   return <p>Welcome to the Gift Certificates Manager.</p>;
 }

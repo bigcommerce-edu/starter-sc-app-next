@@ -32,12 +32,15 @@ export function resolveStoreHash(storeHash: string | undefined): string | undefi
 // error.
 //
 // Not memoized per request yet — the caching enhancement wraps this in
-// cache(). MULTITENANT still throws: no credentials store exists until
-// Lab 3.
+// cache().
 export async function resolveApiToken(storeHash: string | undefined): Promise<string | undefined> {
   if (getDataMode() === "STATIC") {
     return process.env.STATIC_STORE_TOKEN;
   }
 
+  // TODO: Complete the MULTITENANT branch
+  //  - Return undefined if storeHash is missing
+  //  - Otherwise look up the token via getCredentialsStore().getStoreToken()
+  //
   throw new Error("Not implemented yet.");
 }

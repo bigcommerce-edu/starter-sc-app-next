@@ -2,6 +2,9 @@ import Image from "next/image";
 import { Box, Flex, H4, Link, Panel, Small, Text } from "@/components/ui/big-design";
 import { BaselineHelpIcon } from "@/components/ui/big-design-icons";
 
+// TODO: convert this file's imports to the BigDesign barrels
+// (@/components/ui/big-design, @/components/ui/big-design-icons) - no
+// other change needed, including BaselineHelpIcon's color value
 const DEVELOPER_LOGO_FILENAME = process.env.DEVELOPER_LOGO_FILENAME || "developer-logo.svg";
 const DEVELOPER_NAME = process.env.DEVELOPER_NAME || "Developer Name";
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "support@developer.dev";

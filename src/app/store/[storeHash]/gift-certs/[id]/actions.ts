@@ -82,3 +82,28 @@ export async function refillGiftCertificateBalance(
 
   return { success: true, message: "Gift certificate balance refilled." };
 }
+
+// TODO: Implement addToGiftCertificateBalance - add an arbitrary amount to a gift certificate balance
+//  - Requires the certificate to be active or expired, and the amount to be a positive number
+//  - Update the cache tag for the affected gift certificate
+
+// TODO: Implement transferGiftCertificateBalanceToStoreCredit - transfer a gift certificate's balance to the recipient's customer
+// store credit
+//  - requires the certificate to be active, the amount to be no more than
+//    the current balance, and a registered customer account found by
+//    recipient email (fetchCustomersByEmail, never trusted from the client)
+//  - two independent API calls with no shared transaction: debit the
+//    certificate first (debitGiftCertificateForTransfer), then credit the
+//    customer (addToCustomerStoreCredit) - a failure on the second call
+//    leaves the certificate already debited with nothing credited yet,
+//    worse for the customer, but it avoids ever creating store credit
+//    unbacked by an actual debit, the more dangerous failure mode (see
+//    docs/ARCHITECTURE.md)
+//  - if the credit call fails, one compensating call
+//    (restoreGiftCertificateBalance) attempts to restore the certificate's
+//    prior balance/status; if that also fails, the error message says
+//    exactly what state was left to reconcile by hand
+//  - updateTag(giftCertificateTag(id)) on every exit path that mutated the
+//    certificate; updateTag(customerTag(customer.id)) added only on the
+//    full-success path, since that's the only path where the customer was
+//    actually mutated too

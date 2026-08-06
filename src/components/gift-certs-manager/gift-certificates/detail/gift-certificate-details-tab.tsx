@@ -6,7 +6,6 @@ import { GiftCertificatePartyPanel } from "@/components/gift-certs-manager/gift-
 import { GiftCertificateStatusPanel } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-status-panel";
 import { GiftCertificate, GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
 
-// No Cancel/Update Status buttons yet - that's a later step.
 export function GiftCertificateDetailsTab({
   giftCertificate,
   storeHash,
@@ -14,6 +13,14 @@ export function GiftCertificateDetailsTab({
   giftCertificate: GiftCertificate;
   storeHash: string | undefined;
 }) {
+  // TODO: Track dirty state (status !== giftCertificate.status) and add
+  // Cancel/Update Status buttons below the panels, with a confirmation
+  // modal before calling updateGiftCertificateStatus (the Server Action in
+  // this route's actions.ts)
+  //  - Dismissing the confirmation (Cancel, Esc, the close button) should
+  //    abandon the edit entirely: reset the Select back to the saved
+  //    status, which re-disables the in-page buttons via the dirty check.
+  //    The success path deliberately does not reset
   const [status, setStatus] = useState<GiftCertificateStatus>(giftCertificate.status);
 
   return (
@@ -27,6 +34,8 @@ export function GiftCertificateDetailsTab({
       <FlexItem>
         <GiftCertificatePartyPanel header="Recipient" name={giftCertificate.to_name} email={giftCertificate.to_email} />
       </FlexItem>
+
+      {/* TODO: Add Update Status panel/confirmation */}
     </Flex>
   );
 }

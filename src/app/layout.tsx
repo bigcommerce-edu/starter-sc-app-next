@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+// TODO: Wire BigDesign and styled-components into the root layout
+//  - Replace the Geist fonts with Source Sans 3 (next/font/google)
+//  - Wrap children in StyledComponentsRegistry and BigDesignProvider
+//  - Render ActionAlertsManager alongside children
+//  - Update the page title/description for this app
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

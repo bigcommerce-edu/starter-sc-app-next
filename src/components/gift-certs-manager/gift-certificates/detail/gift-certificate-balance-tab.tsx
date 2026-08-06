@@ -5,16 +5,17 @@ import { Box, Button, Flex, Input, Modal, Panel, Small, Text } from "@/component
 import {
   addToGiftCertificateBalance,
   refillGiftCertificateBalance,
+  transferGiftCertificateBalanceToStoreCredit,
 } from "@/app/store/[storeHash]/gift-certs/[id]/actions";
 import { runServerAction } from "@/components/ui/action-alerts";
 import { GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 
-// TODO: Add "transfer" action
-type BalanceAction = "refill" | "add";
+type BalanceAction = "refill" | "add" | "transfer";
 
 const ACTION_LABEL: Record<BalanceAction, string> = {
   refill: "Refill",
   add: "Add to Balance",
+  transfer: "Transfer to Store Credit",
 };
 
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -28,21 +29,27 @@ function DetailField({ label, children }: { label: string; children: React.React
   );
 }
 
-function getConfirmationMessage(action: BalanceAction, amount: number): string {
+function getConfirmationMessage(action: BalanceAction, giftCertificate: GiftCertificateWithAccounts, amount: number): string {
   switch (action) {
     case "refill":
       return `Refill balance to ${currencyFormatter.format(amount)}?`;
     case "add":
       return `Add ${currencyFormatter.format(amount)} to the current balance?`;
-    // TODO: Add "transfer" case - Label depends on whether recipient has a customer account
+    case "transfer": {
+      const recipientDisplayName = giftCertificate.recipientAccount
+        ? `${giftCertificate.recipientAccount.first_name} ${giftCertificate.recipientAccount.last_name}`
+        : giftCertificate.to_name;
+
+      return `Transfer ${currencyFormatter.format(amount)} to ${recipientDisplayName}'s customer store credit balance?`;
+    }
   }
 }
 
-// Seeding refillAmount from props only works because the caller re-keys
-// this component on giftCertificate.balance, forcing a remount (and fresh
-// useState initializers) whenever a balance action revalidates the
-// certificate — otherwise this would go stale after a successful
-// refill/add.
+// Seeding refillAmount/transferAmount from props only works because the
+// caller re-keys this component on giftCertificate.balance, forcing a
+// remount (and fresh useState initializers) whenever a balance action
+// revalidates the certificate — otherwise these would go stale after a
+// successful refill/add/transfer.
 export function GiftCertificateBalanceTab({
   giftCertificate,
   storeHash,
@@ -54,7 +61,7 @@ export function GiftCertificateBalanceTab({
   const [pendingAction, setPendingAction] = useState<BalanceAction | null>(null);
   const [refillAmount, setRefillAmount] = useState(String(giftCertificate.amount));
   const [addAmount, setAddAmount] = useState("");
-  // TODO: Add transferAmount state
+  const [transferAmount, setTransferAmount] = useState(String(giftCertificate.balance));
   const [isPending, startTransition] = useTransition();
 
   const toggleAction = (action: BalanceAction) => {
@@ -83,13 +90,17 @@ export function GiftCertificateBalanceTab({
           await runServerAction(() =>
             addToGiftCertificateBalance(giftCertificate.id, Number(addAmount), storeHash),
           );
-          break;  
-        // TODO: Add "transfer" case - Run the appropriate server action
+          break;
+        case "transfer":
+          await runServerAction(() =>
+            transferGiftCertificateBalanceToStoreCredit(giftCertificate.id, Number(transferAmount), storeHash),
+          );
+          break;
       }
     });
   };
 
-  const pendingAmount = pendingAction === "refill" ? refillAmount : addAmount;
+  const pendingAmount = pendingAction === "refill" ? refillAmount : pendingAction === "add" ? addAmount : transferAmount;
 
   return (
     <Panel header={giftCertificate.code}>
@@ -111,7 +122,17 @@ export function GiftCertificateBalanceTab({
         >
           Add to Balance
         </Button>
-        {/* TODO: Add "transfer" button - Disabled when there's no recipientAccount, balance <= 0, or status !== "active" */}
+        <Button
+          disabled={
+            !giftCertificate.recipientAccount ||
+            giftCertificate.balance <= 0 ||
+            giftCertificate.status !== "active"
+          }
+          onClick={() => toggleAction("transfer")}
+          variant={selectedAction === "transfer" ? "primary" : "secondary"}
+        >
+          Transfer to Store Credit
+        </Button>
       </Flex>
 
       {selectedAction === "refill" && (
@@ -142,7 +163,23 @@ export function GiftCertificateBalanceTab({
         </Box>
       )}
 
-      {/* TODO: Add "transfer" case - Input + confirm button, shown when selectedAction is "transfer" */}
+      {selectedAction === "transfer" && (
+        <Box>
+          <Input
+            label="Amount to Transfer"
+            onChange={(event) => setTransferAmount(event.target.value)}
+            type="number"
+            value={transferAmount}
+          />
+          <Text>
+            The gift certificate balance will be reduced by this amount, and the customer&apos;s store credit
+            balance will be increased accordingly.
+          </Text>
+          <Button onClick={() => setPendingAction("transfer")} variant="primary">
+            Transfer to Store Credit
+          </Button>
+        </Box>
+      )}
 
       {pendingAction && (
         <Modal
@@ -160,7 +197,9 @@ export function GiftCertificateBalanceTab({
           isOpen
           onClose={closeConfirmModal}
         >
-          <Text marginBottom="none">{getConfirmationMessage(pendingAction, Number(pendingAmount))}</Text>
+          <Text marginBottom="none">
+            {getConfirmationMessage(pendingAction, giftCertificate, Number(pendingAmount))}
+          </Text>
         </Modal>
       )}
     </Panel>

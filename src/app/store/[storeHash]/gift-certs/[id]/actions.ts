@@ -1,18 +1,68 @@
 "use server";
 
-export function updateGiftCertificateStatus(): void {
-  // TODO: Implement updateGiftCertificateStatus
-  //  - Fetch the certificate fresh by id, then call
-  //    updateGiftCertificateStatus from gift-certificates-api.ts
-  //  - Return an ActionResult
-  //  - No isAuthorizedForStore check yet - that lands once session/auth
-  //    exists. No cache tag revalidation yet either - that's the caching
-  //    enhancement.
+import { ActionResult } from "@/lib/actions/action-result";
+import {
+  fetchGiftCertificate,
+  refillGiftCertificateBalance as refillGiftCertificateBalanceRequest,
+  updateGiftCertificateStatus as updateGiftCertificateStatusRequest,
+} from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
+import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
+import { toSafeMessage } from "@/lib/errors/app-error";
+import { logError } from "@/lib/errors/logger";
+
+// No isAuthorizedForStore check yet - that lands once session/auth exists.
+// No cache tag revalidation yet either - that's the caching enhancement.
+export async function updateGiftCertificateStatus(
+  id: number | string,
+  status: GiftCertificateStatus,
+  storeHash: string | undefined,
+): Promise<ActionResult> {
+  try {
+    // The caller only supplies id/status — every other field comes from this
+    // fresh fetch, never from client-supplied data.
+    const giftCertificate = await fetchGiftCertificate(id, storeHash);
+
+    await updateGiftCertificateStatusRequest(giftCertificate, status, storeHash);
+  } catch (error) {
+    logError(`updateGiftCertificateStatus: certificate ${id}`, error);
+
+    return { success: false, message: toSafeMessage(error, "Failed to update the gift certificate status.") };
+  }
+
+  return { success: true, message: "Gift certificate status updated." };
 }
 
-export function refillGiftCertificateBalance(): void {
-  // TODO: Implement refillGiftCertificateBalance
-  //  - Fetch the certificate fresh, validate it's active/expired and the new
-  //    balance doesn't exceed the original amount, then call
-  //    refillGiftCertificateBalance from gift-certificates-api.ts
+// Refilling only makes sense for a certificate that's still usable (active
+// or expired, not pending or disabled) and can't set a balance above the
+// original value. Validated against a fresh fetch of the certificate (by
+// id, the only value trusted from the client), not client-supplied
+// status/amount.
+export async function refillGiftCertificateBalance(
+  id: number | string,
+  newBalance: number,
+  storeHash: string | undefined,
+): Promise<ActionResult> {
+  try {
+    const giftCertificate = await fetchGiftCertificate(id, storeHash);
+
+    if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
+      return { success: false, message: "Only active or expired gift certificates can be refilled." };
+    }
+
+    if (!Number.isFinite(newBalance) || newBalance < 0) {
+      return { success: false, message: "Refill balance must be a non-negative number." };
+    }
+
+    if (newBalance > giftCertificate.amount) {
+      return { success: false, message: "Refill balance cannot exceed the original gift certificate amount." };
+    }
+
+    await refillGiftCertificateBalanceRequest(giftCertificate, newBalance, storeHash);
+  } catch (error) {
+    logError(`refillGiftCertificateBalance: certificate ${id}`, error);
+
+    return { success: false, message: toSafeMessage(error, "Failed to refill the gift certificate balance.") };
+  }
+
+  return { success: true, message: "Gift certificate balance refilled." };
 }

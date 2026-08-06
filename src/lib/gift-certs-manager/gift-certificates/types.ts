@@ -28,19 +28,6 @@ export interface GiftCertificate {
   to_email: string;
 }
 
-// A GiftCertificate decorated with whichever registered customer account
-// matches its recipient email. "Has an account" is just recipientAccount
-// being defined, rather than a separate boolean to keep in sync.
-export interface GiftCertificateWithRecipientAccount extends GiftCertificate {
-  recipientAccount: Customer | undefined;
-}
-
-// The detail page additionally renders sender account info, so it decorates
-// both sides.
-export interface GiftCertificateWithAccounts extends GiftCertificateWithRecipientAccount {
-  senderAccount: Customer | undefined;
-}
-
 // This app only exposes code/to_name/to_email as filters, even though
 // BigCommerce also supports from_name/from_email — sender info isn't shown
 // as a grid column, so filtering on it would be confusing. Field names match
@@ -61,4 +48,17 @@ export interface GiftCertificatesResult {
   // No total count is available (see resolveHasNextPage in
   // gift-certificates-api.ts), so pagination is stateless next/previous only.
   hasNextPage: boolean;
+}
+
+// A GiftCertificate decorated with whichever registered customer account
+// matches its recipient email. "Has an account" is just recipientAccount
+// being defined, rather than a separate boolean to keep in sync.
+export interface GiftCertificateWithRecipientAccount extends GiftCertificate {
+  recipientAccount: Customer | undefined;
+}
+
+// The detail page additionally renders sender account info, so it decorates
+// both sides.
+export interface GiftCertificateWithAccounts extends GiftCertificateWithRecipientAccount {
+  senderAccount: Customer | undefined;
 }

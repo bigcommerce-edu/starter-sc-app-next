@@ -1,8 +1,8 @@
-import { cache } from "react";
 // Imported from postgres-driver-loader.ts, not directly from
 // postgres-driver/postgres-credentials-store.ts — see that file's own
 // comment for why (a build-time alias keeps `pg` out of builds that don't
 // use it).
+import { cache } from "react";
 import { PostgresCredentialsStore } from "@/lib/credentials-store/postgres-driver-loader";
 import { SqliteCredentialsStore } from "@/lib/credentials-store/sqlite-driver/sqlite-credentials-store";
 import { CredentialsStore, CredentialsStoreDriver } from "@/lib/credentials-store/types";

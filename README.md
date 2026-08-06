@@ -35,3 +35,8 @@ their routes) are a worked example demonstrating patterns worth
 understanding — see docs/ARCHITECTURE.md — but are meant to be removed when
 building a real app on top of this starter. The auth/session/API-client/
 credentials layers are not part of the example and should stay.
+
+## Lab Exercises
+
+See [docs/TUTORIAL.md](docs/TUTORIAL.md) for a step-by-step breakdown of how
+this app was built, with diffs for each step.

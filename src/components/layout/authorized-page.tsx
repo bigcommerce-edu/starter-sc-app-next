@@ -17,6 +17,7 @@ type PageProps = {
 // />}> so its shell can paint before this check and the page's data fetching
 // resolve.
 //
+//
 // Lives per-page rather than in a shared layout since a layout's render is
 // skippable by Next's client Router Cache on a same-layout navigation — see
 // is-authorized-for-store.ts.

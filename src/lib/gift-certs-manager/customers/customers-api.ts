@@ -1,6 +1,7 @@
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
 import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
 import { CUSTOMERS_PATH, Customer, CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
+import { AppError } from "@/lib/errors/app-error";
 
 export interface CustomersResult {
   items: Customer[];
@@ -107,19 +108,41 @@ export async function fetchCustomer(id: number | string, storeHash: string | und
   return record ? parseCustomer(record) : undefined;
 }
 
-export function addToCustomerStoreCredit(): void {
-  // TODO: grant store credit to a customer
-  //  - BigCommerce's v3 customers PUT is a bulk endpoint (array of updates
-  //    keyed by id), but only id is required per item; store_credit_amounts
-  //    is append-only, BigCommerce sums the store's existing entries plus
-  //    this new one on the next fetch
-  //  - customer.store_credit_amounts is read from an earlier fetch, not one
-  //    taken here - this has the same lost-update shape as the gift
-  //    certificate transfer race documented in docs/ARCHITECTURE.md: if
-  //    another grant to this same customer completes in between, this PUT's
-  //    array is built from a stale snapshot and silently drops that other
-  //    entry. Flagged rather than fixed, since BigCommerce's v3 customers PUT
-  //    has no optimistic-concurrency precondition either
-  //  - throw AppError("NOT_FOUND", ...) if the PUT response has no matching
-  //    record
+// BigCommerce's v3 customers PUT is a bulk endpoint (array of updates keyed
+// by id), but only id is required per item — no need to resend other
+// fields. store_credit_amounts is append-only: BigCommerce sums the
+// store's existing entries plus this new one on the next fetch.
+//
+// customer.store_credit_amounts is read from an earlier fetch (the caller's,
+// not one taken here), so this has the same lost-update shape as the gift
+// certificate transfer race documented in docs/ARCHITECTURE.md: if another
+// grant to this same customer completes in between, this PUT's array is
+// built from a stale snapshot and silently drops that other entry.
+// BigCommerce's v3 customers PUT has no optimistic-concurrency precondition
+// either, so this is flagged rather than fixed for the same reason — closing
+// it needs either an app-level lock or accepting the residual risk.
+export async function addToCustomerStoreCredit(
+  customer: Customer,
+  amount: number,
+  storeHash: string | undefined,
+): Promise<Customer> {
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: body } = await apiClient.put<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    body: [
+      {
+        id: customer.id,
+        store_credit_amounts: [...customer.store_credit_amounts, { amount: String(amount) }],
+      },
+    ],
+  });
+
+  const record = body.data[0];
+
+  if (!record) {
+    throw new AppError("NOT_FOUND", "The customer could not be found.", {
+      cause: `No customer found with id "${customer.id}" after a store credit PUT.`,
+    });
+  }
+
+  return parseCustomer(record);
 }

@@ -10,7 +10,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:postgres:migrate": "node scripts/postgres/migrate.mjs",
+    "vercel-build": "pnpm db:postgres:migrate && next build"
   },
   "dependencies": {
     "@bigcommerce/big-design": "5.0.0",

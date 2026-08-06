@@ -15,6 +15,9 @@ if (process.env.APP_ORIGIN) {
 }
 
 const nextConfig: NextConfig = {
+  // TODO: Add compiler.styledComponents: true
+  //  - Needed so styled-components' displayName/id transform runs, avoiding a
+  //    hydration mismatch between server and client class names
   experimental: {
     serverActions: {
       allowedOrigins,

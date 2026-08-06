@@ -15,9 +15,16 @@ if (process.env.APP_ORIGIN) {
 }
 
 const nextConfig: NextConfig = {
-  // TODO: Add compiler.styledComponents: true
-  //  - Needed so styled-components' displayName/id transform runs, avoiding a
-  //    hydration mismatch between server and client class names
+  // Without this, Next's SWC compiler doesn't apply styled-components'
+  // displayNameAndId transform, so every styled(...) component (AppLink,
+  // ControlPanelLink, etc.) gets its class name generated purely at
+  // runtime — which can come out in a different order on the server's
+  // render pass than on the client's first hydration pass, causing a
+  // "className didn't match" hydration error. This gives every
+  // styled-component a stable, deterministic class name/id instead.
+  compiler: {
+    styledComponents: true,
+  },
   experimental: {
     serverActions: {
       allowedOrigins,

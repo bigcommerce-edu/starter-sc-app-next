@@ -1,1 +1,3 @@
-// Not implemented yet
+"use client";
+
+export * from "@bigcommerce/big-design-icons";

@@ -1,4 +1,8 @@
-import { GiftCertificate, GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
+import {
+  GiftCertificate,
+  GiftCertificateStatus,
+  GiftCertificateWithRecipientAccount,
+} from "@/lib/gift-certs-manager/gift-certificates/types";
 
 // Matches BigCommerce's real v2 gift certificate status enum exactly —
 // there is no "redeemed" value on the wire. A fully-used certificate stays
@@ -51,14 +55,11 @@ export function canAddToBalance(giftCertificate: Pick<GiftCertificate, "status">
   return isUsableStatus(giftCertificate.status);
 }
 
-// TODO: Widen canTransferToStoreCredit to also require a registered
-// customer account, once the certificate type carries one - the recipient
-// needs somewhere for the credit to land.
-//
 // Transferring moves existing balance out to store credit, so it needs a
-// strictly active certificate (not expired) and a balance to move.
+// strictly active certificate (not expired), a balance to move, and a
+// registered customer account to receive it.
 export function canTransferToStoreCredit(
-  giftCertificate: Pick<GiftCertificate, "status" | "balance">,
+  giftCertificate: Pick<GiftCertificateWithRecipientAccount, "status" | "balance" | "recipientAccount">,
 ): boolean {
-  return giftCertificate.balance > 0 && giftCertificate.status === "active";
+  return Boolean(giftCertificate.recipientAccount) && giftCertificate.balance > 0 && giftCertificate.status === "active";
 }

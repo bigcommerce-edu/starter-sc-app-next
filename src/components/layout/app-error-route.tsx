@@ -1,13 +1,7 @@
-import { Box } from "@/components/ui/box";
-import { Flex } from "@/components/ui/flex";
-import { Panel } from "@/components/ui/panel";
-import { H1, Text } from "@/components/ui/text";
-import { ErrorIcon } from "@/components/ui/icons";
+import { Box, Flex, H1, Panel, Text } from "@/components/ui/big-design";
+import { ErrorIcon } from "@/components/ui/big-design-icons";
 import { AppErrorReason } from "@/lib/bc-auth/app-error-reason";
 
-// TODO: convert this file's imports to the BigDesign barrels, same pattern
-// as error-fallback.tsx
-//
 // Fixed, human-written copy per reason — never the underlying error's own
 // message. /auth's reasons (TOKEN_EXCHANGE_FAILED, INSTALL_SAVE_FAILED,
 // INSTALL_FAILED) never say "reopen the app," since the install never

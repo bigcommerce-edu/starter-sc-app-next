@@ -3,6 +3,8 @@
 import { Box, Panel, Small, Text } from "@/components/ui/big-design";
 import { GiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/types";
 
+// TODO: Action type and label constants
+
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
 function DetailField({ label, children }: { label: string; children: React.ReactNode }) {
@@ -13,6 +15,8 @@ function DetailField({ label, children }: { label: string; children: React.React
     </Box>
   );
 }
+
+// TODO: Add getConfirmationMessage function
 
 // No Transfer to Store Credit yet — that needs a registered customer
 // account, added by a later enhancement.
@@ -29,10 +33,26 @@ export function GiftCertificateBalanceTab({
   giftCertificate: GiftCertificate;
   storeHash: string | undefined;
 }) {
+  // TODO: Add state values for selected and pending action, refill amount, and transition
+
+  // TODO: toggleAction function
+
+  // TODO: Handle action confirmation
+  //  - Dismissing the confirmation (Cancel, Esc, the close button) should
+  //    abandon the whole action: collapse the open amount panel and reseed
+  //    its amount from the certificate. Confirming must not do that - the
+  //    amount is read inside the transition, so resetting first would
+  //    submit the wrong value
+
   return (
     <Panel header={giftCertificate.code}>
       <DetailField label="Original Value">{currencyFormatter.format(giftCertificate.amount)}</DetailField>
       <DetailField label="Current Balance">{currencyFormatter.format(giftCertificate.balance)}</DetailField>
+
+      {/* TODO: Add action buttons and panels - the panel's submit button
+          should stay disabled until its amount is filled in and, for Refill,
+          is above the current balance, so the action can't be sent in a state
+          the server will just reject */}
     </Panel>
   );
 }

@@ -15,6 +15,10 @@ if (process.env.APP_ORIGIN) {
 }
 
 const nextConfig: NextConfig = {
+  // TODO: Enable Cache Components
+  //  - cacheComponents: true
+  //  - cacheLife profiles: "standard" (5 min, most data) and "extended" (10
+  //    min, slower-changing data like channels)
   // Swaps the Postgres credentials-store driver for a `pg`-free stub
   // whenever CREDENTIALS_STORE_DRIVER isn't "POSTGRES" — see
   // lib/credentials-store/postgres-driver-loader.ts and

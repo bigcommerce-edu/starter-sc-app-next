@@ -116,6 +116,16 @@ export class SqliteCredentialsStore implements CredentialsStore {
     });
   }
 
+  // TODO: add setStoreExtension/getStoreExtension
+  //  - setStoreExtension: INSERT INTO store_extensions (store_hash,
+  //    extension_id) VALUES (?, ?) ON CONFLICT(store_hash) DO UPDATE SET
+  //    extension_id = excluded.extension_id - only called after a
+  //    successful createAppExtension mutation, so this doesn't need ON
+  //    CONFLICT DO NOTHING semantics beyond replacing a stale extension_id
+  //    from a prior install
+  //  - getStoreExtension: SELECT extension_id FROM store_extensions WHERE
+  //    store_hash = ?
+
   async isStoreUserLinked(storeHash: string, userId: number): Promise<boolean> {
     return withDatabaseErrorHandling("isStoreUserLinked", () => {
       const row = this.db
@@ -126,6 +136,9 @@ export class SqliteCredentialsStore implements CredentialsStore {
     });
   }
 
+  // TODO: also DELETE FROM store_extensions WHERE store_hash = ? in this
+  // same transaction, once store_extensions exists
+  //
   // Deletes a store's row and its store-user links, and any of those users
   // left with no other store association. Run as a transaction so a crash
   // mid-cascade can't leave orphaned store_users/users rows behind.

@@ -1,4 +1,6 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   GIFT_CERTIFICATES_PATH,
   GiftCertificate,
@@ -20,14 +22,17 @@ function parseGiftCertificate(record: GiftCertificateWireRecord): GiftCertificat
   return { ...record, amount: Number(record.amount), balance: Number(record.balance) };
 }
 
+// Cached on its own (not just at the calling *View's render boundary)
+// because resolveHasNextPage below peeks ahead at the next page using this
+// same function — tagging/caching it here means a real "next" click reuses
+// that peek's cache entry instead of re-fetching. See docs/ARCHITECTURE.md.
 async function fetchGiftCertificatesPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
 ): Promise<GiftCertificateWireRecord[]> {
-  // TODO: cache this fetch with Cache Components
-  //  - "use cache: remote" directive
-  //  - cacheLife("standard")
-  //  - cacheTag(GIFT_CERTIFICATES_LIST_TAG) up front
+  "use cache: remote";
+  cacheLife("standard");
+  cacheTag(GIFT_CERTIFICATES_LIST_TAG);
 
   const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
@@ -41,11 +46,16 @@ async function fetchGiftCertificatesPage(
 
   // BigCommerce's v2 endpoint responds 204 (not 200 + []) when nothing
   // matches.
-  // TODO: add cache tags for each item
-  //  - cacheTag(giftCertificateTag(record.id)) for every record once the
-  //    fetch resolves, so a single certificate's mutation can invalidate
-  //    this page/peek immediately rather than waiting out the cacheLife
-  return items ?? [];
+  const records = items ?? [];
+
+  // Tag with every certificate id in the result (known only after the
+  // fetch resolves), so a mutation to one invalidates this page/peek
+  // immediately rather than waiting out the cacheLife.
+  for (const record of records) {
+    cacheTag(giftCertificateTag(record.id));
+  }
+
+  return records;
 }
 
 // BigCommerce's v2 endpoint reports no total count anywhere, so the only

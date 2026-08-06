@@ -1,11 +1,6 @@
-export default function Page({
-  params,
-  searchParams,
-}: {
-  params: Promise<Record<string, string | string[] | undefined>>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}): null {
-  // TODO: Implement the gift certificate detail route
-  //  - Render GiftCertificateDetailPage
-  return null;
+import { GiftCertificateDetailPage } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-detail-page";
+
+// No AuthorizedPage wrapping yet - that lands once session/auth exists.
+export default function Page(props: React.ComponentProps<typeof GiftCertificateDetailPage>) {
+  return <GiftCertificateDetailPage {...props} />;
 }

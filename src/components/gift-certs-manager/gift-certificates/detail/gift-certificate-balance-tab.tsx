@@ -8,6 +8,7 @@ import {
 import { runServerAction } from "@/components/ui/action-alerts";
 import { GiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/types";
 
+// TODO: Add "transfer" action
 type BalanceAction = "refill" | "add";
 
 const ACTION_LABEL: Record<BalanceAction, string> = {
@@ -30,12 +31,11 @@ function getConfirmationMessage(action: BalanceAction, amount: number): string {
   switch (action) {
     case "refill":
       return `Refill balance to ${currencyFormatter.format(amount)}?`;
+    // TODO: Add "add" case
+    // TODO: Add "transfer" case - Label depends on whether recipient has a customer account
   }
 }
 
-// No Transfer to Store Credit yet — that needs a registered customer
-// account, added by a later enhancement.
-//
 // Seeding refillAmount from props only works because the caller re-keys
 // this component on giftCertificate.balance, forcing a remount (and fresh
 // useState initializers) whenever a balance action revalidates the
@@ -51,6 +51,8 @@ export function GiftCertificateBalanceTab({
   const [selectedAction, setSelectedAction] = useState<BalanceAction | null>(null);
   const [pendingAction, setPendingAction] = useState<BalanceAction | null>(null);
   const [refillAmount, setRefillAmount] = useState(String(giftCertificate.amount));
+  // TODO: Add addAmount state
+  // TODO: Add transferAmount state
   const [isPending, startTransition] = useTransition();
 
   const toggleAction = (action: BalanceAction) => {
@@ -75,10 +77,13 @@ export function GiftCertificateBalanceTab({
             refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount), storeHash),
           );
           break;
+        // TODO: Add "add" case - Run the appropriate server action
+        // TODO: Add "transfer" case - Run the appropriate server action
       }
     });
   };
 
+  // TODO: Conditionally set pendingAmount based on pending action
   const pendingAmount = refillAmount;
 
   return (
@@ -94,6 +99,8 @@ export function GiftCertificateBalanceTab({
         >
           Refill
         </Button>
+        {/* TODO: Add "add" button - Disabled when status !== "active" || "expired" */}
+        {/* TODO: Add "transfer" button - Disabled when there's no recipientAccount, balance <= 0, or status !== "active" */}
       </Flex>
 
       {selectedAction === "refill" && (
@@ -113,6 +120,9 @@ export function GiftCertificateBalanceTab({
           </Button>
         </Box>
       )}
+
+      {/* TODO: Add "add" case - Input + confirm button, shown when selectedAction is "add" */}
+      {/* TODO: Add "transfer" case - Input + confirm button, shown when selectedAction is "transfer" */}
 
       {pendingAction && (
         <Modal

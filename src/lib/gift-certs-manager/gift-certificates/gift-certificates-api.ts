@@ -169,8 +169,35 @@ export async function addToGiftCertificateBalance(
   );
 }
 
-// TODO: Implement debitGiftCertificateForTransfer
-//  - Calls update with gift certificate and new balance
+// Debits the certificate and expires it once nothing is left to redeem —
+// never (re-)activates it, unlike refill/add-to-balance. Only the
+// certificate half of a transfer; see transferGiftCertificateBalanceToStoreCredit
+// in actions.ts for the store-credit grant.
+export async function debitGiftCertificateForTransfer(
+  giftCertificate: GiftCertificate,
+  amount: number,
+  storeHash: string | undefined,
+): Promise<GiftCertificate> {
+  const newBalance = giftCertificate.balance - amount;
 
-// TODO: Implement restoreGiftCertificateBalance
-//  - Calls update with gift certificate and original balance and status
+  return updateGiftCertificate(
+    giftCertificate,
+    { balance: String(newBalance), status: newBalance <= 0 ? "expired" : giftCertificate.status },
+    storeHash,
+  );
+}
+
+// Compensates a failed store-credit grant by restoring the certificate's
+// pre-transfer balance/status, passed explicitly rather than re-derived.
+export async function restoreGiftCertificateBalance(
+  giftCertificate: GiftCertificate,
+  previousBalance: number,
+  previousStatus: GiftCertificateStatus,
+  storeHash: string | undefined,
+): Promise<GiftCertificate> {
+  return updateGiftCertificate(
+    giftCertificate,
+    { balance: String(previousBalance), status: previousStatus },
+    storeHash,
+  );
+}

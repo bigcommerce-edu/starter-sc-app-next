@@ -1,6 +1,7 @@
 import { SqliteCredentialsStore } from "@/lib/credentials-store/sqlite-driver/sqlite-credentials-store";
 import { CredentialsStore, CredentialsStoreDriver } from "@/lib/credentials-store/types";
 
+// TODO: Add POSTGRES to valid drivers
 const VALID_DRIVERS: CredentialsStoreDriver[] = ["SQLITE"];
 const DEFAULT_DRIVER: CredentialsStoreDriver = "SQLITE";
 
@@ -12,12 +13,14 @@ function getConfiguredDriver(): CredentialsStoreDriver {
     : DEFAULT_DRIVER;
 }
 
-// No POSTGRES case yet — that's Lab 5.
 function getConfiguredCredentialsStore(): CredentialsStore {
   switch (getConfiguredDriver()) {
     case "SQLITE":
     default:
       return new SqliteCredentialsStore();
+    // TODO: Add the POSTGRES case
+    //  - Return a PostgresCredentialsStore (imported from
+    //    postgres-driver-loader.ts, never the real driver directly)
   }
 }
 

@@ -1,7 +1,4 @@
-// TODO: Import Box/Flex/ProgressCircle from @bigcommerce/big-design instead
-import { Box } from "@/components/ui/box";
-import { Flex } from "@/components/ui/flex";
-import { ProgressCircle } from "@/components/ui/progress-circle";
+import { Box, Flex, ProgressCircle } from "@bigcommerce/big-design";
 
 // Dims already-rendered content and overlays a spinner while isPending is
 // true — shows a "refreshing" state for content re-fetched via router.push,
@@ -15,7 +12,6 @@ import { ProgressCircle } from "@/components/ui/progress-circle";
 // its own portal-rendered Modal) is nested inside this wrapper rather than
 // rendered as a sibling — it needs to stay inside the one subtree
 // guaranteed to remain mounted throughout the transition.
-// TODO: Convert this to BigDesign layout
 export function PendingOverlay({ isPending, children }: { isPending: boolean; children: React.ReactNode }) {
   return (
     <Box style={{ position: "relative" }}>

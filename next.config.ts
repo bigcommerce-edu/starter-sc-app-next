@@ -15,6 +15,17 @@ if (process.env.APP_ORIGIN) {
 }
 
 const nextConfig: NextConfig = {
+  // TODO: Enable Cache Components
+  //  - cacheComponents: true
+  //  - cacheLife profiles: "standard" (5 min, most data) and "extended" (10
+  //    min, slower-changing data like channels)
+  //  - Gate both profiles on a CACHE_COMPONENTS_ENABLED env var, defaulting
+  //    to off. cacheComponents itself has to stay true either way - the
+  //    `use cache` directives are compile-time constructs and can't be
+  //    conditionally applied - so swap in a zero-second profile
+  //    ({ stale: 0, revalidate: 0, expire: 1 }) when it isn't enabled, which
+  //    leaves every entry already expired and nothing ever reused
+  //  - Add CACHE_COMPONENTS_ENABLED to .env.example
   // Swaps the Postgres credentials-store driver for a `pg`-free stub
   // whenever CREDENTIALS_STORE_DRIVER isn't "POSTGRES" — see
   // lib/credentials-store/postgres-driver-loader.ts and

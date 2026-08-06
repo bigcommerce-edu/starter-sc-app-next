@@ -35,6 +35,10 @@ export async function GiftCertificateListView({
   }
   // @cache-components-only:end
 
+  // TODO: decorate items with their recipient's registered customer account
+  // via decorateGiftCertificatesWithRecipientAccounts(items, storeHash),
+  // before rendering GiftCertificateTable
+
   return (
     <Panel header="Gift Certificates">
       <GiftCertificateTable

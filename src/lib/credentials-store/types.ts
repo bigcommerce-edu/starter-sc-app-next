@@ -36,6 +36,10 @@ export interface StoreExtensionRecord {
 // docs/ARCHITECTURE.md for the full design (upsert semantics, the
 // deleteStore/deleteUser cascades, and isStoreUserLinked's role in
 // isAuthorizedForStore).
+// TODO: add setStoreExtension(storeExtension: StoreExtensionRecord):
+// Promise<void> and getStoreExtension(storeHash: string):
+// Promise<string | undefined> to this interface, then implement both in
+// SqliteCredentialsStore and PostgresCredentialsStore
 export interface CredentialsStore {
   setStore(store: StoreRecord): Promise<void>;
   setUser(user: UserRecord): Promise<void>;

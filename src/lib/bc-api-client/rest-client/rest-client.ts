@@ -63,8 +63,6 @@ function logApiRequest(method: string, url: string, status: number, durationMs: 
 // (eventually) MULTITENANT modes — they differ only in how storeHash/apiToken
 // are resolved (see get-rest-api-client.ts), not in how requests are made, so
 // this class is agnostic to which mode constructed it.
-//
-// No retry/timeout logic yet — that's the rate-limit enhancement.
 export class RestApiClient implements BcRestApiClient {
   constructor(private readonly credentials: StoreApiCredentials) {}
 
@@ -86,6 +84,9 @@ export class RestApiClient implements BcRestApiClient {
     let response: Response;
 
     try {
+      // TODO: wrap this fetch in retryOnRateLimit and pass
+      // signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS) - a hung GET should
+      // fail fast rather than hang the Server Component/Action that awaited it
       response = await fetch(url, {
         headers: {
           "X-Auth-Token": apiToken,
@@ -124,6 +125,12 @@ export class RestApiClient implements BcRestApiClient {
     let response: Response;
 
     try {
+      // TODO: wrap this fetch in retryOnRateLimit - no timeout here, unlike
+      // get(): aborting doesn't cancel the write on BigCommerce's side, so a
+      // timeout risks reporting failure for a mutation that actually succeeded.
+      // Retrying on 429 is still safe: BigCommerce rejects the request before
+      // doing any work, so there's no ambiguity about whether it already took
+      // effect
       response = await fetch(url, {
         method,
         headers: {

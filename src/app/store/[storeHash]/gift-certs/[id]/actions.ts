@@ -11,7 +11,6 @@ import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/se
 import { toSafeMessage } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
 
-// No cache tag revalidation yet - that's the caching enhancement.
 export async function updateGiftCertificateStatus(
   id: number | string,
   status: GiftCertificateStatus,
@@ -35,6 +34,9 @@ export async function updateGiftCertificateStatus(
 
     return { success: false, message: toSafeMessage(error, "Failed to update the gift certificate status.") };
   }
+
+  // TODO: revalidate this certificate's cache tag once the update succeeds
+  //  - updateTag(giftCertificateTag(id)) right before returning success
 
   return { success: true, message: "Gift certificate status updated." };
 }
@@ -74,6 +76,9 @@ export async function refillGiftCertificateBalance(
 
     return { success: false, message: toSafeMessage(error, "Failed to refill the gift certificate balance.") };
   }
+
+  // TODO: revalidate this certificate's cache tag once the refill succeeds
+  //  - updateTag(giftCertificateTag(id)) right before returning success
 
   return { success: true, message: "Gift certificate balance refilled." };
 }

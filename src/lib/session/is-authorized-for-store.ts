@@ -3,8 +3,9 @@ import { getDataMode, resolveApiToken } from "@/lib/bc-api-client/resolve-store-
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 import { readSession, removeSessionStore } from "@/lib/session/session-cookie";
 
-// Not memoized per request yet — the caching enhancement wraps this in
-// cache().
+// TODO: memoize this per request with cache()
+//  - keyed on (storeHash, userId) since this check is inherently
+//    session-specific
 function isStoreUserLinked(storeHash: string, userId: number): Promise<boolean> {
   return getCredentialsStore().isStoreUserLinked(storeHash, userId);
 }

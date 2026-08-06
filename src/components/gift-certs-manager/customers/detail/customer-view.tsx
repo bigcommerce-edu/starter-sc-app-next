@@ -12,10 +12,7 @@ import { getAppUrl } from "@/lib/routing/app-url";
 
 // Tagged with this customer's own detail tag, so a store credit mutation
 // invalidates it instantly.
-//
-// No embedded gift-certificates table yet - that's added by the
-// gift-certs-enh enhancement, once GiftCertificateTable supports being
-// scoped to one recipient.
+// TODO: Implement searchParams in props
 export async function CustomerView({
   id,
   storeHash,
@@ -26,6 +23,7 @@ export async function CustomerView({
   "use cache: remote";
   cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(customerTag(id));
+  // TODO: Add the gift certificates list cache tag  
 
   const rawCustomer = await fetchCustomer(id, storeHash);
 
@@ -37,6 +35,15 @@ export async function CustomerView({
   if (!rawCustomer) {
     notFound();
   }
+
+  // TODO: embed this customer's own gift certificates below CustomerInfoPanel
+  //  - fetchGiftCertificates scoped to { to_email: rawCustomer.email } (an
+  //    empty searchParams query, since this filter is implied by the route,
+  //    not user-chosen) - cacheTag(giftCertificateTag(item.id)) for each
+  //    result once known
+  //  - every row's recipient is this customer, so decorate each item with
+  //    recipientAccount: customer directly, instead of a real
+  //    decorateGiftCertificatesWithRecipientAccounts lookup
 
   const customer = await decorateCustomerWithChannels(rawCustomer, storeHash);
 
@@ -52,6 +59,8 @@ export async function CustomerView({
       </Box>
 
       <CustomerInfoPanel customer={customer} />
+
+      {/* TODO: Render a panel with GiftCertificateTable */}
     </Box>
   );
 }

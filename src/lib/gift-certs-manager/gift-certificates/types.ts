@@ -1,4 +1,4 @@
-import { SortDirection } from "@/lib/gift-certs-manager/customers/types";
+import { Customer, SortDirection } from "@/lib/gift-certs-manager/customers/types";
 
 export const GIFT_CERTIFICATES_PATH = "/v2/gift_certificates";
 
@@ -50,12 +50,15 @@ export interface GiftCertificatesResult {
   hasNextPage: boolean;
 }
 
-// TODO: define GiftCertificateWithRecipientAccount
-//  - extends GiftCertificate with recipientAccount: Customer | undefined -
-//    "has an account" is just recipientAccount being defined, rather than a
-//    separate boolean to keep in sync
+// A GiftCertificate decorated with whichever registered customer account
+// matches its recipient email. "Has an account" is just recipientAccount
+// being defined, rather than a separate boolean to keep in sync.
+export interface GiftCertificateWithRecipientAccount extends GiftCertificate {
+  recipientAccount: Customer | undefined;
+}
 
-// TODO: define GiftCertificateWithAccounts
-//  - extends GiftCertificateWithRecipientAccount with senderAccount:
-//    Customer | undefined - the detail page additionally renders sender
-//    account info, so it decorates both sides
+// The detail page additionally renders sender account info, so it decorates
+// both sides.
+export interface GiftCertificateWithAccounts extends GiftCertificateWithRecipientAccount {
+  senderAccount: Customer | undefined;
+}

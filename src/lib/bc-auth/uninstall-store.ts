@@ -1,3 +1,5 @@
 export function uninstallStore(): void {
-  // Not implemented yet
+  // TODO: Implement uninstallStore
+  //  - Verify the signed request, then delete everything stored for that
+  //    store via getCredentialsStore().deleteStore()
 }

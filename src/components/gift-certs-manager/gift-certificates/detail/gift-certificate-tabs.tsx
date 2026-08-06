@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Box, Tabs } from "@bigcommerce/big-design";
 import { GiftCertificateBalanceTab } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-balance-tab";
 import { GiftCertificateDetailsTab } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-details-tab";
-import { GiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/types";
+import { GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 // ariaControls must match the id on the panel each tab renders below —
 // without it, BigDesign falls back to looking for an element with id
@@ -14,13 +14,11 @@ const TAB_ITEMS = [
   { id: "balance", title: "Balance", ariaControls: "balance-content" },
 ];
 
-// TODO: import GiftCertificateWithAccounts instead of GiftCertificate, now
-// that GiftCertificateView decorates the certificate with account info
 export function GiftCertificateTabs({
   giftCertificate,
   storeHash,
 }: {
-  giftCertificate: GiftCertificate;
+  giftCertificate: GiftCertificateWithAccounts;
   storeHash: string | undefined;
 }) {
   const [activeTab, setActiveTab] = useState("details");

@@ -34,6 +34,24 @@
     },
     {
       "file": "src/lib/gift-certs-manager/customers/customers-api.ts",
+      "function": "fetchCustomersByEmail",
+      "profile": "CACHE_PROFILE_STANDARD",
+      "tags": [
+        "CUSTOMERS_LIST_TAG"
+      ],
+      "addImportSpecifiers": [
+        {
+          "from": "@/lib/gift-certs-manager/customers/cache-tags",
+          "specifier": "customerTag"
+        },
+        {
+          "from": "@/lib/gift-certs-manager/customers/cache-tags",
+          "specifier": "CUSTOMERS_LIST_TAG"
+        }
+      ]
+    },
+    {
+      "file": "src/lib/gift-certs-manager/customers/customers-api.ts",
       "function": "fetchCustomers",
       "profile": "CACHE_PROFILE_STANDARD",
       "tags": [
@@ -70,7 +88,7 @@
       "file": "src/app/store/[storeHash]/gift-certs/[id]/actions.ts",
       "//": [
         "Both implementations invalidate with updateTag, so rewriteCalls is a",
-        "no-op kept only because applyInvalidations reads it unconditionally \u2014",
+        "no-op kept only because applyInvalidations reads it unconditionally —",
         "the real work here is companionTags below. The list tags have no Cache",
         "Components counterpart: a `use cache` boundary can tag itself with",
         "per-record ids after its fetch resolves, but a fetch tag has to be known",

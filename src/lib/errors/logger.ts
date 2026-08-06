@@ -18,3 +18,27 @@ export function logError(context: string, error: unknown): void {
 
   console.error(`[${context}]`, error);
 }
+
+// A rate-limit-driven retry isn't an error (bc-api-client/rate-limit.ts
+// recovering from a 429 as designed), so it's logged distinctly from
+// logError, but still gated by the same ERROR_LOGGING_ENABLED flag.
+// requestsLeft/requestsQuota/timeWindowMs play no role in the retry decision
+// itself (only Time-Reset-Ms does) but are logged for diagnostic context.
+export function logRateLimitRetry(details: {
+  requestsLeft: number | undefined;
+  requestsQuota: number | undefined;
+  timeWindowMs: number | undefined;
+  delayMs: number;
+}): void {
+  if (!isErrorLoggingEnabled()) {
+    return;
+  }
+
+  const { requestsLeft, requestsQuota, timeWindowMs, delayMs } = details;
+
+  console.warn(
+    `[bc-api-client] Received 429 (${requestsLeft ?? "unknown"}/${requestsQuota ?? "unknown"} requests left in a ${
+      timeWindowMs ?? "unknown"
+    }ms window) — retrying once after ${delayMs}ms.`,
+  );
+}

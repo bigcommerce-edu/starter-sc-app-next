@@ -9,8 +9,8 @@ function DetailField({ label, children }: { label: string; children: React.React
   );
 }
 
-// No registered-customer-account info yet - that needs the customers
-// enhancement.
+// TODO: Move props interface into GiftCertificatePartyPanelProps type
+
 export function GiftCertificatePartyPanel({
   header,
   name,
@@ -23,6 +23,7 @@ export function GiftCertificatePartyPanel({
   return (
     <Panel header={header}>
       <DetailField label="Name on Certificate">{name}</DetailField>
+      {/* TODO: Replace simple email with full customer info */}
       <DetailField label="Email">{email}</DetailField>
     </Panel>
   );

@@ -3,6 +3,7 @@ import { Box, Flex } from "@bigcommerce/big-design";
 import { ArrowBackIcon } from "@bigcommerce/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
 import { GiftCertificateTabs } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-tabs";
+import { decorateGiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/decorate-with-accounts";
 import { fetchGiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { getAppUrl } from "@/lib/routing/app-url";
 import { AppError } from "@/lib/errors/app-error";
@@ -33,10 +34,10 @@ export async function GiftCertificateView({
   // endpoint; the translation to notFound() happens here rather than in
   // fetchGiftCertificate, whose uncached counterpart is called from Server
   // Actions where a 404 navigation would be wrong.
-  let giftCertificate;
+  let rawGiftCertificate;
 
   try {
-    giftCertificate = await fetchGiftCertificate(id, storeHash);
+    rawGiftCertificate = await fetchGiftCertificate(id, storeHash);
   } catch (error) {
     if (error instanceof AppError && error.status === 404) {
       notFound();
@@ -45,9 +46,7 @@ export async function GiftCertificateView({
     throw error;
   }
 
-  // TODO: decorate the fetched certificate with its sender/recipient
-  // accounts via decorateGiftCertificateWithAccounts(giftCertificate,
-  // storeHash), before rendering GiftCertificateTabs
+  const giftCertificate = await decorateGiftCertificateWithAccounts(rawGiftCertificate, storeHash);
 
   return (
     <Box>

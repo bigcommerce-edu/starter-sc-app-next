@@ -7,18 +7,17 @@ import { GiftCertificatePartyPanel } from "@/components/gift-certs-manager/gift-
 import { GiftCertificateStatusPanel } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-status-panel";
 import { runServerAction } from "@/components/ui/action-alerts";
 import { GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certs-manager/gift-certificates/status";
-import { GiftCertificate, GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
+import { GiftCertificateStatus, GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 
-// TODO: import GiftCertificateWithAccounts instead of GiftCertificate, and
-// pass giftCertificate.senderAccount/recipientAccount into the two
-// GiftCertificatePartyPanel calls below (isRecipient/storeHash on the
-// recipient one), now that GiftCertificateView decorates the certificate
-// with account info
+// Seeding status from props only works because the caller re-keys this
+// component on giftCertificate.status, forcing a remount whenever a status
+// update revalidates the certificate — otherwise this would go stale (see
+// gift-certificate-balance-tab.tsx for the same pattern).
 export function GiftCertificateDetailsTab({
   giftCertificate,
   storeHash,
 }: {
-  giftCertificate: GiftCertificate;
+  giftCertificate: GiftCertificateWithAccounts;
   storeHash: string | undefined;
 }) {
   const [status, setStatus] = useState<GiftCertificateStatus>(giftCertificate.status);
@@ -57,6 +56,12 @@ export function GiftCertificateDetailsTab({
       <FlexItem>
         <GiftCertificateStatusPanel giftCertificate={giftCertificate} onStatusChange={setStatus} status={status} />
       </FlexItem>
+      {/*
+        TODO: pass account={giftCertificate.senderAccount} below, and
+        account={giftCertificate.recipientAccount} isRecipient
+        storeHash={storeHash} on the recipient panel, once
+        GiftCertificatePartyPanel accepts those props
+      */}
       <FlexItem>
         <GiftCertificatePartyPanel header="Sender" name={giftCertificate.from_name} email={giftCertificate.from_email} />
       </FlexItem>

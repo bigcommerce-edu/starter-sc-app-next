@@ -38,6 +38,7 @@ async function fetchGiftCertificatesPage(
   const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
     params: {
+      // TODO: Add code, to_name, to_email filters
       sort: "id",
       direction: query.direction.toLowerCase(),
       page: query.page,
@@ -152,3 +153,12 @@ export async function refillGiftCertificateBalance(
 ): Promise<GiftCertificate> {
   return updateGiftCertificate(giftCertificate, { balance: String(newBalance), status: "active" }, storeHash);
 }
+
+// TODO: Implement addToGiftCertificateBalance
+//  - Calls update with gift certificate and new balance
+
+// TODO: Implement debitGiftCertificateForTransfer
+//  - Calls update with gift certificate and new balance
+
+// TODO: Implement restoreGiftCertificateBalance
+//  - Calls update with gift certificate and original balance and status

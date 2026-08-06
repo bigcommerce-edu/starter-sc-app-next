@@ -9,6 +9,7 @@ import { runServerAction } from "@/components/ui/action-alerts";
 import { canRefill } from "@/lib/gift-certs-manager/gift-certificates/status";
 import { GiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/types";
 
+// TODO: Add "add" and "transfer" actions
 type BalanceAction = "refill";
 
 const ACTION_LABEL: Record<BalanceAction, string> = {
@@ -30,12 +31,11 @@ function getConfirmationMessage(action: BalanceAction, amount: number): string {
   switch (action) {
     case "refill":
       return `Refill balance to ${currencyFormatter.format(amount)}?`;
+    // TODO: Add "add" case
+    // TODO: Add "transfer" case - Label depends on whether recipient has a customer account
   }
 }
 
-// No Transfer to Store Credit yet — that needs a registered customer
-// account, added by a later enhancement.
-//
 // Seeding refillAmount from props only works because the caller re-keys
 // this component on giftCertificate.balance, forcing a remount (and fresh
 // useState initializers) whenever a balance action revalidates the
@@ -51,6 +51,8 @@ export function GiftCertificateBalanceTab({
   const [selectedAction, setSelectedAction] = useState<BalanceAction | null>(null);
   const [pendingAction, setPendingAction] = useState<BalanceAction | null>(null);
   const [refillAmount, setRefillAmount] = useState(String(giftCertificate.amount));
+  // TODO: Add addAmount state - reset it too when the confirmation is dismissed
+  // TODO: Add transferAmount state - reset it too when the confirmation is dismissed
   const [isPending, startTransition] = useTransition();
 
   const toggleAction = (action: BalanceAction) => {
@@ -94,10 +96,13 @@ export function GiftCertificateBalanceTab({
             refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount), storeHash),
           );
           break;
+        // TODO: Add "add" case - Run the appropriate server action
+        // TODO: Add "transfer" case - Run the appropriate server action
       }
     });
   };
 
+  // TODO: Conditionally set pendingAmount based on pending action
   const pendingAmount = refillAmount;
 
   const canSubmitRefill = refillAmount !== "" && Number(refillAmount) > giftCertificate.balance;
@@ -115,6 +120,8 @@ export function GiftCertificateBalanceTab({
         >
           Refill
         </Button>
+        {/* TODO: Add "add" button - Gate it with canAddToBalance from gift-certificates/status.ts */}
+        {/* TODO: Add "transfer" button - Gate it with canTransferToStoreCredit from gift-certificates/status.ts */}
       </Flex>
 
       {selectedAction === "refill" && (
@@ -135,6 +142,9 @@ export function GiftCertificateBalanceTab({
           </Button>
         </Box>
       )}
+
+      {/* TODO: Add "add" case - Input + confirm button, shown when selectedAction is "add"; keep the button disabled until an amount is entered, like Refill */}
+      {/* TODO: Add "transfer" case - Input + confirm button, shown when selectedAction is "transfer"; keep the button disabled until an amount is entered, like Refill */}
 
       {pendingAction && (
         <Modal

@@ -40,6 +40,10 @@ export async function GiftCertificateView({
     throw error;
   }
 
+  // TODO: decorate the fetched certificate with its sender/recipient
+  // accounts via decorateGiftCertificateWithAccounts(giftCertificate,
+  // storeHash), before rendering GiftCertificateTabs
+
   return (
     <Box>
       <Box marginBottom="medium">

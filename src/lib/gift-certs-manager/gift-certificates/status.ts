@@ -51,6 +51,10 @@ export function canAddToBalance(giftCertificate: Pick<GiftCertificate, "status">
   return isUsableStatus(giftCertificate.status);
 }
 
+// TODO: Widen canTransferToStoreCredit to also require a registered
+// customer account, once the certificate type carries one - the recipient
+// needs somewhere for the credit to land.
+//
 // Transferring moves existing balance out to store credit, so it needs a
 // strictly active certificate (not expired) and a balance to move.
 export function canTransferToStoreCredit(

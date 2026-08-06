@@ -35,6 +35,7 @@ export interface GiftCertificate {
 // uppercase (matching BigDesign's TableSortDirection) and lowercased by
 // fetchGiftCertificates for the actual request.
 export interface GiftCertificatesQuery {
+  // TODO: Add code, to_name, to_email filters
   direction: SortDirection;
   page: number;
   limit: number;
@@ -46,3 +47,13 @@ export interface GiftCertificatesResult {
   // gift-certificates-api.ts), so pagination is stateless next/previous only.
   hasNextPage: boolean;
 }
+
+// TODO: define GiftCertificateWithRecipientAccount
+//  - extends GiftCertificate with recipientAccount: Customer | undefined -
+//    "has an account" is just recipientAccount being defined, rather than a
+//    separate boolean to keep in sync
+
+// TODO: define GiftCertificateWithAccounts
+//  - extends GiftCertificateWithRecipientAccount with senderAccount:
+//    Customer | undefined - the detail page additionally renders sender
+//    account info, so it decorates both sides

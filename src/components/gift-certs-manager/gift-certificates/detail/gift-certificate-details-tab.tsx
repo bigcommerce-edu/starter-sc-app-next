@@ -9,6 +9,11 @@ import { runServerAction } from "@/components/ui/action-alerts";
 import { GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certs-manager/gift-certificates/status";
 import { GiftCertificate, GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
 
+// TODO: import GiftCertificateWithAccounts instead of GiftCertificate, and
+// pass giftCertificate.senderAccount/recipientAccount into the two
+// GiftCertificatePartyPanel calls below (isRecipient/storeHash on the
+// recipient one), now that GiftCertificateView decorates the certificate
+// with account info
 export function GiftCertificateDetailsTab({
   giftCertificate,
   storeHash,

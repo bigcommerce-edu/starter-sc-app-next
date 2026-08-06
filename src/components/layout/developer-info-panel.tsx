@@ -1,14 +1,7 @@
 import Image from "next/image";
-import { Box } from "@/components/ui/box";
-import { Flex } from "@/components/ui/flex";
-import { Link } from "@/components/ui/link";
-import { Panel } from "@/components/ui/panel";
-import { H4, Small, Text } from "@/components/ui/text";
-import { BaselineHelpIcon } from "@/components/ui/icons";
+import { Box, Flex, H4, Link, Panel, Small, Text } from "@bigcommerce/big-design";
+import { BaselineHelpIcon } from "@bigcommerce/big-design-icons";
 
-// TODO: convert this file's imports to BigDesign
-// (@bigcommerce/big-design, @bigcommerce/big-design-icons) - no
-// other change needed, including BaselineHelpIcon's color value
 const DEVELOPER_LOGO_FILENAME = process.env.DEVELOPER_LOGO_FILENAME || "developer-logo.svg";
 const DEVELOPER_NAME = process.env.DEVELOPER_NAME || "Developer Name";
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "support@developer.dev";

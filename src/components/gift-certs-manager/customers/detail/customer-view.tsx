@@ -1,31 +1,34 @@
 import { notFound } from "next/navigation";
-import { Box, Flex } from "@bigcommerce/big-design";
+import { Box, Flex, Panel } from "@bigcommerce/big-design";
 import { ArrowBackIcon } from "@bigcommerce/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
 import { CustomerInfoPanel } from "@/components/gift-certs-manager/customers/detail/customer-info-panel";
+import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
 import { decorateCustomerWithChannels } from "@/lib/gift-certs-manager/customers/decorate-with-channels";
 import { fetchCustomer } from "@/lib/gift-certs-manager/customers/customers-api";
+import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
+import { parseGiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/query";
 import { getAppUrl } from "@/lib/routing/app-url";
 
 import { cacheLife, cacheTag } from "next/cache";
 import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
+import { GIFT_CERTIFICATES_LIST_TAG, giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 
-// Tagged with this customer's own detail tag, so a store credit mutation
-// invalidates it instantly.
-// TODO: Implement searchParams in props
 export async function CustomerView({
   id,
+  searchParams,
   storeHash,
 }: {
   id: string;
+  searchParams: Record<string, string | string[] | undefined>;
   storeHash: string | undefined;
 }) {
   // @cache-components-only:start
   "use cache: remote";
   cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(customerTag(id));
-  // TODO: Add the gift certificates list cache tag  
+  cacheTag(GIFT_CERTIFICATES_LIST_TAG);
   // @cache-components-only:end
 
   const rawCustomer = await fetchCustomer(id, storeHash);
@@ -37,16 +40,24 @@ export async function CustomerView({
     notFound();
   }
 
-  // TODO: embed this customer's own gift certificates below CustomerInfoPanel
-  //  - fetchGiftCertificates scoped to { to_email: rawCustomer.email } (an
-  //    empty searchParams query, since this filter is implied by the route,
-  //    not user-chosen) - cacheTag(giftCertificateTag(item.id)) for each
-  //    result once known
-  //  - every row's recipient is this customer, so decorate each item with
-  //    recipientAccount: customer directly, instead of a real
-  //    decorateGiftCertificatesWithRecipientAccounts lookup
+  // to_email scopes the fetch to this customer's certificates, but it's
+  // implied by the route (not a user-chosen filter), so it's kept out of the
+  // query passed down to the table.
+  const query = parseGiftCertificatesQuery(searchParams);
 
-  const customer = await decorateCustomerWithChannels(rawCustomer, storeHash);
+  const [customer, { items, hasNextPage }] = await Promise.all([
+    decorateCustomerWithChannels(rawCustomer, storeHash),
+    fetchGiftCertificates({ ...query, to_email: rawCustomer.email }, storeHash),
+  ]);
+
+  // @cache-components-only:start
+  for (const item of items) {
+    cacheTag(giftCertificateTag(item.id));
+  }
+  // @cache-components-only:end
+
+  // Every row's recipient is this customer, so the account is already known.
+  const decoratedItems = items.map((certificate) => ({ ...certificate, recipientAccount: customer }));
 
   return (
     <Box>
@@ -59,9 +70,20 @@ export async function CustomerView({
         </AppLink>
       </Box>
 
-      <CustomerInfoPanel customer={customer} />
+      <Box marginBottom="medium">
+        <CustomerInfoPanel customer={customer} />
+      </Box>
 
-      {/* TODO: Render a panel with GiftCertificateTable */}
+      <Panel header="Gift Certificates">
+        <GiftCertificateTable
+          giftCertificates={decoratedItems}
+          hasNextPage={hasNextPage}
+          query={query}
+          showFilters={false}
+          showRecipientColumns={false}
+          storeHash={storeHash}
+        />
+      </Panel>
     </Box>
   );
 }

@@ -1,4 +1,24 @@
--- TODO: Write the initial credentials-store schema
---  - users, stores, store_users tables, mirroring sqlite-driver/schema.ts
---  - no store_extensions table yet - the graphql-ext enhancement adds a
---    second migration for that
+-- Initial credentials-store schema for the POSTGRES driver. Mirrors
+-- sqlite-driver/schema.ts's table shapes; tables are ordered parent-before-
+-- child so this file runs top-to-bottom without forward references. The
+-- ON DELETE CASCADE foreign keys are a safety net for anything that deletes
+-- a stores/users row directly — the app's own deleteStore already cascades
+-- manually in the same order.
+CREATE TABLE users (
+  user_id INTEGER PRIMARY KEY,
+  email TEXT NOT NULL
+);
+
+CREATE TABLE stores (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  store_hash TEXT NOT NULL UNIQUE,
+  access_token TEXT NOT NULL,
+  scope TEXT NOT NULL,
+  admin_user_id INTEGER NOT NULL REFERENCES users (user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE store_users (
+  store_hash TEXT NOT NULL REFERENCES stores (store_hash) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
+  PRIMARY KEY (store_hash, user_id)
+);

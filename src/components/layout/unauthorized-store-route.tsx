@@ -1,12 +1,6 @@
-import { Box } from "@/components/ui/box";
-import { Flex } from "@/components/ui/flex";
-import { Panel } from "@/components/ui/panel";
-import { H1, Text } from "@/components/ui/text";
-import { ErrorIcon } from "@/components/ui/icons";
+import { Box, Flex, H1, Panel, Text } from "@/components/ui/big-design";
+import { ErrorIcon } from "@/components/ui/big-design-icons";
 
-// TODO: convert this file's imports to the BigDesign barrels, same pattern
-// as error-fallback.tsx
-//
 // Rendered by app/unauthorized/page.tsx, which AuthorizedPage redirects to
 // when isAuthorizedForStore fails. A dedicated top-level route (outside both
 // (root) and [storeHash]) since [storeHash]/layout.tsx renders AppShell

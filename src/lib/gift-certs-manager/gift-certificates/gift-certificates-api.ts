@@ -1,4 +1,5 @@
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   GIFT_CERTIFICATES_PATH,
   GiftCertificate,
@@ -7,6 +8,10 @@ import {
   GiftCertificateStatus,
   getGiftCertificatePath,
 } from "@/lib/gift-certs-manager/gift-certificates/types";
+
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+
+import { cacheLife, cacheTag } from "next/cache";
 
 // BigCommerce returns amount/balance as decimal strings on the wire; every
 // other numeric-looking field is already a number. This is the only
@@ -20,15 +25,15 @@ function parseGiftCertificate(record: GiftCertificateWireRecord): GiftCertificat
   return { ...record, amount: Number(record.amount), balance: Number(record.balance) };
 }
 
+// Factored out as its own function because resolveHasNextPage below peeks
+// ahead at the next page using it. See docs/ARCHITECTURE.md.
 async function fetchGiftCertificatesPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
 ): Promise<GiftCertificateWireRecord[]> {
-  // TODO: cache this fetch with Cache Components
-  //  - "use cache: remote" directive
-  //  - cacheLife() with a lifetime profile with cacheProfile()
-  //  - Use CACHE_PROFILE_STANDARD
-  //  - cacheTag(GIFT_CERTIFICATES_LIST_TAG) up front
+  "use cache: remote";
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
+  cacheTag(GIFT_CERTIFICATES_LIST_TAG);
 
   const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
@@ -42,11 +47,16 @@ async function fetchGiftCertificatesPage(
 
   // BigCommerce's v2 endpoint responds 204 (not 200 + []) when nothing
   // matches.
-  // TODO: add cache tags for each item
-  //  - cacheTag(giftCertificateTag(record.id)) for every record once the
-  //    fetch resolves, so a single certificate's mutation can invalidate
-  //    this page/peek immediately rather than waiting out the cacheLife
-  return items ?? [];
+  const records = items ?? [];
+
+  // Tag with every certificate id in the result (known only after the
+  // fetch resolves), so a mutation to one invalidates this page/peek
+  // immediately rather than waiting out the cacheLife.
+  for (const record of records) {
+    cacheTag(giftCertificateTag(record.id));
+  }
+
+  return records;
 }
 
 // BigCommerce's v2 endpoint reports no total count anywhere, so the only

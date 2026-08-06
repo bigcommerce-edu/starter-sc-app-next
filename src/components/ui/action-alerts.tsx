@@ -3,6 +3,8 @@
 import { useSyncExternalStore } from "react";
 import { ActionResult } from "@/lib/actions/action-result";
 
+// TODO: Remove unnecessary logic
+
 interface Alert {
   id: number;
   type: "success" | "error";
@@ -51,11 +53,15 @@ function addAlert(type: Alert["type"], text: string, autoDismiss: boolean): void
   }
 }
 
+// TODO: Create alerts manager
+
 export function showSuccessAlert(message: string): void {
+  // TODO: Switch to using alertsManager
   addAlert("success", message, true);
 }
 
 export function showErrorAlert(message: string): void {
+  // TODO: Switch to using alertsManager
   addAlert("error", message, false);
 }
 
@@ -81,6 +87,8 @@ export async function runServerAction(
 }
 
 export function ActionAlertsManager() {
+  // TODO: Convert to BigDesign implementation
+
   const currentAlerts = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   if (currentAlerts.length === 0) {

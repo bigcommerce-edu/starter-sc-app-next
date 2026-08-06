@@ -7,6 +7,7 @@ import NextLink from "next/link";
 // styling as every other link in the app (see globals.css's .app-link rule,
 // shared with Link and ControlPanelLink) so switching a call site between
 // them is a no-op visually.
+// TODO: Convert to a `styled` component
 export function AppLink({
   className,
   ...rest

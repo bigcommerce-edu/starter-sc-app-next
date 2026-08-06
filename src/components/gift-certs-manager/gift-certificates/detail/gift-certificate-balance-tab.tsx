@@ -8,7 +8,7 @@ import {
 } from "@/app/store/[storeHash]/gift-certs/[id]/actions";
 import { runServerAction } from "@/components/ui/action-alerts";
 import { canAddToBalance, canRefill } from "@/lib/gift-certs-manager/gift-certificates/status";
-import { GiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/types";
+import { GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 // TODO: Add "transfer" action
 type BalanceAction = "refill" | "add";
@@ -48,7 +48,7 @@ export function GiftCertificateBalanceTab({
   giftCertificate,
   storeHash,
 }: {
-  giftCertificate: GiftCertificate;
+  giftCertificate: GiftCertificateWithAccounts;
   storeHash: string | undefined;
 }) {
   const [selectedAction, setSelectedAction] = useState<BalanceAction | null>(null);

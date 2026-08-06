@@ -3,10 +3,11 @@
 import { useState, useTransition } from "react";
 import { Box, Button, Flex, Input, Modal, Panel, Small, Text } from "@/components/ui/big-design";
 import {
+  addToGiftCertificateBalance,
   refillGiftCertificateBalance,
 } from "@/app/store/[storeHash]/gift-certs/[id]/actions";
 import { runServerAction } from "@/components/ui/action-alerts";
-import { canRefill } from "@/lib/gift-certs-manager/gift-certificates/status";
+import { canAddToBalance, canRefill } from "@/lib/gift-certs-manager/gift-certificates/status";
 import { GiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 // TODO: Add "transfer" action
@@ -32,7 +33,8 @@ function getConfirmationMessage(action: BalanceAction, amount: number): string {
   switch (action) {
     case "refill":
       return `Refill balance to ${currencyFormatter.format(amount)}?`;
-    // TODO: Add "add" case
+    case "add":
+      return `Add ${currencyFormatter.format(amount)} to the current balance?`;
     // TODO: Add "transfer" case - Label depends on whether recipient has a customer account
   }
 }
@@ -52,7 +54,7 @@ export function GiftCertificateBalanceTab({
   const [selectedAction, setSelectedAction] = useState<BalanceAction | null>(null);
   const [pendingAction, setPendingAction] = useState<BalanceAction | null>(null);
   const [refillAmount, setRefillAmount] = useState(String(giftCertificate.amount));
-  // TODO: Add addAmount state - reset it too when the confirmation is dismissed
+  const [addAmount, setAddAmount] = useState("");
   // TODO: Add transferAmount state - reset it too when the confirmation is dismissed
   const [isPending, startTransition] = useTransition();
 
@@ -73,6 +75,7 @@ export function GiftCertificateBalanceTab({
     setPendingAction(null);
     setSelectedAction(null);
     setRefillAmount(String(giftCertificate.amount));
+    setAddAmount("");
   };
 
   const handleConfirm = () => {
@@ -97,16 +100,20 @@ export function GiftCertificateBalanceTab({
             refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount), storeHash),
           );
           break;
-        // TODO: Add "add" case - Run the appropriate server action
+        case "add":
+          await runServerAction(() =>
+            addToGiftCertificateBalance(giftCertificate.id, Number(addAmount), storeHash),
+          );
+          break;  
         // TODO: Add "transfer" case - Run the appropriate server action
       }
     });
   };
 
-  // TODO: Conditionally set pendingAmount based on pending action
-  const pendingAmount = refillAmount;
+  const pendingAmount = pendingAction === "refill" ? refillAmount : addAmount;
 
   const canSubmitRefill = refillAmount !== "" && Number(refillAmount) > giftCertificate.balance;
+  const canSubmitAdd = addAmount !== "";
 
   return (
     <Panel header={giftCertificate.code}>
@@ -121,7 +128,13 @@ export function GiftCertificateBalanceTab({
         >
           Refill
         </Button>
-        {/* TODO: Add "add" button - Gate it with canAddToBalance from gift-certificates/status.ts */}
+        <Button
+          disabled={!canAddToBalance(giftCertificate)}
+          onClick={() => toggleAction("add")}
+          variant={selectedAction === "add" ? "primary" : "secondary"}
+        >
+          Add to Balance
+        </Button>
         {/* TODO: Add "transfer" button - Gate it with canTransferToStoreCredit from gift-certificates/status.ts */}
       </Flex>
 
@@ -144,8 +157,17 @@ export function GiftCertificateBalanceTab({
         </Box>
       )}
 
-      {/* TODO: Add "add" case - Input + confirm button, shown when selectedAction is "add"; keep the button disabled until an amount is entered, like Refill */}
-      {/* TODO: Add "transfer" case - Input + confirm button, shown when selectedAction is "transfer"; keep the button disabled until an amount is entered, like Refill */}
+      {selectedAction === "add" && (
+        <Box>
+          <Input label="Amount" onChange={(event) => setAddAmount(event.target.value)} type="number" value={addAmount} />
+          <Text>This amount will be added to the current balance.</Text>
+          <Button disabled={!canSubmitAdd} onClick={() => setPendingAction("add")} variant="primary">
+            Add to Balance
+          </Button>
+        </Box>
+      )}
+
+      {/* TODO: Add "transfer" case - Input + confirm button, shown when selectedAction is "transfer" */}
 
       {pendingAction && (
         <Modal

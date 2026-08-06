@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Badge, Table, TableColumn } from "@bigcommerce/big-design";
 import { AppLink } from "@/components/ui/app-link";
+import { GiftCertificateFilters } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-filters";
 import { PendingOverlay } from "@/components/ui/pending-overlay";
 import { buildGiftCertificatesSearchParams } from "@/lib/gift-certs-manager/gift-certificates/query";
 import { GIFT_CERTIFICATE_STATUS_BADGE_VARIANT, GIFT_CERTIFICATE_STATUS_LABEL } from "@/lib/gift-certs-manager/gift-certificates/status";
@@ -127,7 +128,7 @@ export function GiftCertificateTable({ giftCertificates, hasNextPage, query, sto
 
   return (
     <PendingOverlay isPending={isPending}>
-      {/* TODO: Add GiftCertificateFilters */}
+      <GiftCertificateFilters onChange={(filters) => navigate({ ...query, ...filters, page: 1 })} query={query} />
 
       <Table
         columns={columns}

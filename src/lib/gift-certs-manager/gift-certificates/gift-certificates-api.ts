@@ -155,8 +155,19 @@ export async function refillGiftCertificateBalance(
   return updateGiftCertificate(giftCertificate, { balance: String(newBalance), status: "active" }, storeHash);
 }
 
-// TODO: Implement addToGiftCertificateBalance
-//  - Calls update with gift certificate and new balance
+// Same as refilling, but the resulting balance is never capped at the
+// original amount.
+export async function addToGiftCertificateBalance(
+  giftCertificate: GiftCertificate,
+  amount: number,
+  storeHash: string | undefined,
+): Promise<GiftCertificate> {
+  return updateGiftCertificate(
+    giftCertificate,
+    { balance: String(giftCertificate.balance + amount), status: "active" },
+    storeHash,
+  );
+}
 
 // TODO: Implement debitGiftCertificateForTransfer
 //  - Calls update with gift certificate and new balance

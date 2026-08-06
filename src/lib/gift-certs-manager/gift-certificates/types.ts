@@ -35,7 +35,9 @@ export interface GiftCertificate {
 // uppercase (matching BigDesign's TableSortDirection) and lowercased by
 // fetchGiftCertificates for the actual request.
 export interface GiftCertificatesQuery {
-  // TODO: Add code, to_name, to_email filters
+  code: string;
+  to_name: string;
+  to_email: string;
   direction: SortDirection;
   page: number;
   limit: number;

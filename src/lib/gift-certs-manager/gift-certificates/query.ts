@@ -2,7 +2,9 @@ import { SortDirection } from "@/lib/gift-certs-manager/customers/types";
 import { GiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 export const DEFAULT_QUERY: GiftCertificatesQuery = {
-  // TODO: Add code, to_name, to_email filters
+  code: "",
+  to_name: "",
+  to_email: "",
   direction: "DESC",
   page: 1,
   limit: 10,
@@ -17,7 +19,9 @@ function getParam(searchParams: RawSearchParams, key: string): string | undefine
 }
 
 export function parseGiftCertificatesQuery(searchParams: RawSearchParams): GiftCertificatesQuery {
-  // TODO: Parse code, to_name, to_email filters
+  const code = getParam(searchParams, "code") ?? DEFAULT_QUERY.code;
+  const to_name = getParam(searchParams, "to_name") ?? DEFAULT_QUERY.to_name;
+  const to_email = getParam(searchParams, "to_email") ?? DEFAULT_QUERY.to_email;
 
   // BigCommerce only documents sort=id for this endpoint, so the only choice
   // left to the user is direction (newest/oldest by id).
@@ -30,14 +34,23 @@ export function parseGiftCertificatesQuery(searchParams: RawSearchParams): GiftC
   const limitParam = Number(getParam(searchParams, "limit"));
   const limit = Number.isInteger(limitParam) && limitParam > 0 ? limitParam : DEFAULT_QUERY.limit;
 
-  // TODO: Return the parsed filters
-  return { direction, page, limit };
+  return { code, to_name, to_email, direction, page, limit };
 }
 
 export function buildGiftCertificatesSearchParams(query: GiftCertificatesQuery): URLSearchParams {
   const params = new URLSearchParams();
 
-  // TODO: Add code, to_name, to_email filters
+  if (query.code) {
+    params.set("code", query.code);
+  }
+
+  if (query.to_name) {
+    params.set("to_name", query.to_name);
+  }
+
+  if (query.to_email) {
+    params.set("to_email", query.to_email);
+  }
 
   if (query.direction !== DEFAULT_QUERY.direction) {
     params.set("direction", query.direction);

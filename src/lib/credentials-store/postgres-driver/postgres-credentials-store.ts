@@ -85,6 +85,10 @@ export class PostgresCredentialsStore implements CredentialsStore {
     });
   }
 
+  // TODO: add setStoreExtension/getStoreExtension, same pattern as
+  // SqliteCredentialsStore but against the store_extensions table added by
+  // migration 0002_add_store_extensions.sql
+
   async isStoreUserLinked(storeHash: string, userId: number): Promise<boolean> {
     return withDatabaseErrorHandling("isStoreUserLinked", async () => {
       const pool = getPool();
@@ -97,6 +101,11 @@ export class PostgresCredentialsStore implements CredentialsStore {
     });
   }
 
+  // TODO: also DELETE FROM store_extensions WHERE store_hash = $1 in this
+  // same transaction, once store_extensions exists (or rely on the
+  // migration's ON DELETE CASCADE foreign key instead, since it achieves
+  // the same result without an explicit statement here)
+  //
   // Deletes a store's row and its store-user links, and any of those users
   // left with no other store association. Run as a transaction (via one
   // checked-out client) so a crash mid-cascade can't leave orphaned

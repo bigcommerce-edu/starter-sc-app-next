@@ -2,6 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { Panel } from "@bigcommerce/big-design";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
+import { decorateGiftCertificatesWithRecipientAccounts } from "@/lib/gift-certs-manager/gift-certificates/decorate-with-accounts";
 import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { parseGiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/query";
@@ -31,14 +32,12 @@ export async function GiftCertificateListView({
     cacheTag(giftCertificateTag(item.id));
   }
 
-  // TODO: decorate items with their recipient's registered customer account
-  // via decorateGiftCertificatesWithRecipientAccounts(items, storeHash),
-  // before rendering GiftCertificateTable
+  const decoratedItems = await decorateGiftCertificatesWithRecipientAccounts(items, storeHash);
 
   return (
     <Panel header="Gift Certificates">
       <GiftCertificateTable
-        giftCertificates={items}
+        giftCertificates={decoratedItems}
         hasNextPage={hasNextPage}
         query={query}
         storeHash={storeHash}

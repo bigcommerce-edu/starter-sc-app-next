@@ -1,3 +1,4 @@
+// TODO: Import Box/Flex/FlexItem from @bigcommerce/big-design instead
 import { Box } from "@/components/ui/box";
 import { Flex, FlexItem } from "@/components/ui/flex";
 import { DataModeBanner } from "@/components/layout/data-mode-banner";
@@ -5,7 +6,7 @@ import { DeveloperInfoPanel } from "@/components/layout/developer-info-panel";
 
 const SIDEBAR_WIDTH = "280px";
 
-// Plain placeholder shell: no BigDesign yet.
+// TODO: Convert this shell to BigDesign layout
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <Box>

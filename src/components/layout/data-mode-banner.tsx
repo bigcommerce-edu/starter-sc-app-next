@@ -2,6 +2,8 @@ import { Box } from "@/components/ui/box";
 import { InlineMessage } from "@/components/ui/inline-message";
 import { getDataMode } from "@/lib/bc-api-client/data-mode";
 
+// TODO: convert this file's imports from box.tsx/inline-message.tsx to
+// BigDesign (@bigcommerce/big-design) - no other change needed
 const DATA_MODE_LABEL: Record<"MOCK" | "STATIC", string> = {
   MOCK: "mock",
   STATIC: "static token",

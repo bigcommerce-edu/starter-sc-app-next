@@ -13,6 +13,11 @@ type PageProps = {
 // Server Component, so a function value never needs to cross a
 // Server-to-Client boundary.
 //
+// Each page.tsx wraps this in its own <Suspense fallback={<ContentFallback
+// />}> so its shell can paint before this check and the page's data fetching
+// resolve.
+//
+//
 // Lives per-page rather than in a shared layout since a layout's render is
 // skippable by Next's client Router Cache on a same-layout navigation — see
 // is-authorized-for-store.ts.

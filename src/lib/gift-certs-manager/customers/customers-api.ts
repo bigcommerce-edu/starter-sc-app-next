@@ -107,5 +107,19 @@ export async function fetchCustomer(id: number | string, storeHash: string | und
   return record ? parseCustomer(record) : undefined;
 }
 
-// Not implemented yet — built out in the gift-certs-enh enhancement.
-export function addToCustomerStoreCredit(): void {}
+export function addToCustomerStoreCredit(): void {
+  // TODO: grant store credit to a customer
+  //  - BigCommerce's v3 customers PUT is a bulk endpoint (array of updates
+  //    keyed by id), but only id is required per item; store_credit_amounts
+  //    is append-only, BigCommerce sums the store's existing entries plus
+  //    this new one on the next fetch
+  //  - customer.store_credit_amounts is read from an earlier fetch, not one
+  //    taken here - this has the same lost-update shape as the gift
+  //    certificate transfer race documented in docs/ARCHITECTURE.md: if
+  //    another grant to this same customer completes in between, this PUT's
+  //    array is built from a stale snapshot and silently drops that other
+  //    entry. Flagged rather than fixed, since BigCommerce's v3 customers PUT
+  //    has no optimistic-concurrency precondition either
+  //  - throw AppError("NOT_FOUND", ...) if the PUT response has no matching
+  //    record
+}

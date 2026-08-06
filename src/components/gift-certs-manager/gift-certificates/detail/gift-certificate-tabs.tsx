@@ -14,6 +14,8 @@ const TAB_ITEMS = [
   { id: "balance", title: "Balance", ariaControls: "balance-content" },
 ];
 
+// TODO: import GiftCertificateWithAccounts instead of GiftCertificate, now
+// that GiftCertificateView decorates the certificate with account info
 export function GiftCertificateTabs({
   giftCertificate,
   storeHash,

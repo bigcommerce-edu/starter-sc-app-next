@@ -15,6 +15,17 @@ const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
+// TODO: add Recipient and Recipient Email columns
+//  - takes GiftCertificateWithRecipientAccount instead of GiftCertificate,
+//    and a showRecipientColumns flag so the customer detail page's reused
+//    table (every row already sharing the same, known recipient) can hide
+//    them
+//  - Recipient: to_name as plain text, not a link - it's the name typed on
+//    the certificate, which may not match the registered account's actual
+//    name; only the email column (unambiguously the account's identifier)
+//    links to the customer
+//  - Recipient Email: links to /customers/{recipientAccount.id} when a
+//    registered account was found, plain text otherwise
 function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertificate>> {
   return [
     {
@@ -68,9 +79,15 @@ function getColumns(storeHash: string | undefined): Array<TableColumn<GiftCertif
       render: ({ purchase_date }: GiftCertificate) =>
         dateFormatter.format(new Date(Number(purchase_date) * 1000)),
     },
+    // TODO: add an Actions column rendering GiftCertificateActionsMenu,
+    // hideHeader, align "right", width 64
   ];
 }
 
+// TODO: add showFilters/showRecipientColumns?: boolean (both default true)
+// so the customer detail page can reuse this table pre-scoped to one
+// customer's certificates, without the general-purpose filter UI or the
+// (redundant, every row shares the same recipient) recipient columns
 interface GiftCertificateTableProps {
   giftCertificates: GiftCertificate[];
   // BigCommerce's v2 gift certificates endpoint never reports a total count,
@@ -110,6 +127,8 @@ export function GiftCertificateTable({ giftCertificates, hasNextPage, query, sto
 
   return (
     <PendingOverlay isPending={isPending}>
+      {/* TODO: Add GiftCertificateFilters */}
+
       <Table
         columns={columns}
         items={giftCertificates}

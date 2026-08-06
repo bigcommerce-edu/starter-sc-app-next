@@ -13,6 +13,7 @@ import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 
 // Tagged with this customer's own detail tag, so a store credit mutation
 // invalidates it instantly.
+// TODO: Implement searchParams in props
 export async function CustomerView({
   id,
   storeHash,
@@ -24,6 +25,7 @@ export async function CustomerView({
   "use cache: remote";
   cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(customerTag(id));
+  // TODO: Add the gift certificates list cache tag  
   // @cache-components-only:end
 
   const rawCustomer = await fetchCustomer(id, storeHash);
@@ -34,6 +36,15 @@ export async function CustomerView({
   if (!rawCustomer) {
     notFound();
   }
+
+  // TODO: embed this customer's own gift certificates below CustomerInfoPanel
+  //  - fetchGiftCertificates scoped to { to_email: rawCustomer.email } (an
+  //    empty searchParams query, since this filter is implied by the route,
+  //    not user-chosen) - cacheTag(giftCertificateTag(item.id)) for each
+  //    result once known
+  //  - every row's recipient is this customer, so decorate each item with
+  //    recipientAccount: customer directly, instead of a real
+  //    decorateGiftCertificatesWithRecipientAccounts lookup
 
   const customer = await decorateCustomerWithChannels(rawCustomer, storeHash);
 
@@ -49,6 +60,8 @@ export async function CustomerView({
       </Box>
 
       <CustomerInfoPanel customer={customer} />
+
+      {/* TODO: Render a panel with GiftCertificateTable */}
     </Box>
   );
 }

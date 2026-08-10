@@ -20,14 +20,15 @@ export interface InstallStoreResult {
 // The /auth (install) callback's business logic: exchange the code for a
 // store-scoped token, persist the admin/store/store-user link (in that
 // order — the Postgres schema's foreign keys require it), then establish
-// the admin's session. Idempotent — re-installing an already-known store
-// just replaces its token/scope. Throws TokenExchangeFailedError (from
-// exchangeCodeForToken) or InstallSaveFailedError (if persisting a
+// the admin's session. Idempotent — re-installing an already-installed
+// store just replaces its token/scope. Throws TokenExchangeFailedError
+// (from exchangeCodeForToken) or InstallSaveFailedError (if persisting a
 // successful exchange fails); the /auth route decides what each becomes.
 //
 // Agnostic single-click-app plumbing — knows nothing about any specific app
-// extension. Returns accessToken (not just storeHash) so the /auth route
-// can register its own App Extension using this handshake's token directly.
+// extension. Returns accessToken (not just storeHash) so a later /auth
+// route can register its own App Extension using this handshake's token
+// directly.
 export async function installStore(params: InstallStoreParams): Promise<InstallStoreResult> {
   const tokenResponse = await exchangeCodeForToken(params);
   const storeHash = parseStoreHash(tokenResponse.context);

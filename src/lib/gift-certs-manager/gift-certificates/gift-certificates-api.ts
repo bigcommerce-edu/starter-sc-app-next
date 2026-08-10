@@ -39,7 +39,7 @@ async function fetchGiftCertificatesPage(
     params: {
       ... (query.code && { "code": query.code }),
       ... (query.to_name && { "to_name": query.to_name }),
-      ... (query.to_email && { "to_email": query.to_email }),
+      ... (query.to_email && { "to_email": query.to_email }),  
       sort: "id",
       direction: query.direction.toLowerCase(),
       page: query.page,
@@ -122,7 +122,8 @@ function getRequiredFields(giftCertificate: GiftCertificate): Pick<
 
 // Shared by every gift certificate update — callers pass only the field(s)
 // they're actually changing (e.g. { status } or { balance }), and this fills
-// in the required fields from the certificate's current state.
+// in the required fields from the certificate's current state. No mock mode
+// support — there's no mock store to mutate.
 async function updateGiftCertificate(
   giftCertificate: GiftCertificate,
   fields: Partial<Omit<GiftCertificateWireRecord, "id">>,

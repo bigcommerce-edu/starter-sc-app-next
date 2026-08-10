@@ -5,7 +5,6 @@ import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "@/lib/session/types
 import { getAbsoluteAppUrl } from "./lib/routing/app-url";
 
 function redirectToUnauthorized(): NextResponse {
-  console.log("redirecting", getAbsoluteAppUrl(undefined, "/unauthorized"));
   return NextResponse.redirect(getAbsoluteAppUrl(undefined, "/unauthorized"));
 }
 

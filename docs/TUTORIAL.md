@@ -77,7 +77,7 @@ pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc
 
 Starting with this lab, you'll need to switch `DATA_MODE` to "MULTITENANT" in `.env.local`, register an app in the BigCommerce Developer Portal, and set several other storage/app related env vars in `.env.local` in order to install/run your single-click app in your store control panel. (Each step will show clear var changes/additions in `.env.example`.)
 
-TODO: Link to setup guide for running the local project as a single-click app.
+See [Running Locally as a Single-Click App](./LOCAL-SINGLE-CLICK-APP.md) for the full setup: switching to `MULTITENANT` mode, exposing your dev server at a public HTTPS URL, and the minimal BigCommerce developer portal configuration.
 
 At this stage, storage management is handled via a local SQLite database, so no external storage is required.
 
@@ -118,7 +118,7 @@ pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc
 
 For this lab, you'll need to connect to a Postgres database from a local or deployed environment and set related `.env.local` vars as you see them demonstrated in `.env.example`. 
 
-TODO: Link to deployment guide for Vercel
+To deploy the finished app with a hosted Postgres database, see [Deploying to Vercel](./VERCEL-DEPLOYMENT.md).
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/postgres-complete)
 

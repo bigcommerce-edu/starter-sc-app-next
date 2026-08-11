@@ -1,7 +1,7 @@
 # Lab Tutorial: BigCommerce Single-Click App Starter
 
-> **Based on version 1.0.0** — this tutorial corresponds to the latest
-> progressive history tagged `1.0.0`.
+> **Based on version 1.0.1** — this tutorial corresponds to the latest
+> progressive history tagged `1.0.1`.
 
 This document lists the lab exercises and their step-by-step diffs. Each
 main-lab step links to a comparison between the step's `*-pre` (TODO

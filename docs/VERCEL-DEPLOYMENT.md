@@ -101,6 +101,15 @@ Vercel assigns a production domain of the form
 a per-deployment URL (those include a unique hash and change on every
 deploy).
 
+### Deployment Protection
+
+If you're deploying a preview or branch deployment that BigCommerce needs to
+reach, disable or scope Vercel's Deployment Protection for it under
+**Project Settings > Deployment Protection**. Otherwise BigCommerce's
+server-to-server callbacks hit Vercel's SSO gate instead of your app, and
+installs fail in a way that looks like an app bug. Production deployments
+aren't protected by default.
+
 ## 3. Verify the Deployment in MOCK Mode
 
 Open the production URL. In `MOCK` mode the root-level routes under
@@ -158,10 +167,15 @@ its callbacks at the Vercel production URL.
    | Uninstall | `<APP_ORIGIN>/api/app/uninstall` |
    | Remove User | `<APP_ORIGIN>/api/app/remove_user` |
 
-3. On the **Scopes** tab, enable at minimum: **Information & Settings**
-   (read-only), **Customers** (modify), **Marketing** (modify), and **App
-   Extensions** (manage). Scope changes take effect on the next install, so
-   changing them later means uninstalling and reinstalling.
+3. On the **Scopes** tab, enable at minimum:
+
+   * **Customers**: modify
+   * **Marketing**: modify
+   * **Channel Settings**: read-only
+   * **Channel Listings**: read-only
+   * **Information & Settings**: read-only 
+   * **App Extensions**: manage
+
 4. Copy the **Client ID** and **Client Secret** for the next step.
 
 See the [local guide](./LOCAL-SINGLE-CLICK-APP.md#registering-the-app-in-the-developer-portal)
@@ -169,7 +183,7 @@ for more detail on the app profile and what each scope is for.
 
 ## 6. Set the Remaining Environment Variables
 
-In **Project Settings > Environment Variables**, set the following for the
+In Vercel, in **Project Settings > Environment Variables**, set the following for the
 Production environment. `.env.vercel.example` is the generated reference for
 this list.
 
@@ -204,15 +218,6 @@ never derived from the incoming request, since behind Vercel's proxy the
 observed host isn't guaranteed to match the public origin BigCommerce
 called.
 
-Two `CREDENTIALS_STORE_DRIVER` notes:
-
-* It's read at build time as well as runtime. `next.config.ts` aliases the
-  Postgres driver away to a `pg`-free stub unless this is `POSTGRES`, so it
-  has to be set before the build that needs the real driver — which is why
-  the redeploy in the next step matters.
-* The migrate script ignores it entirely and keys on the database URLs, so
-  migrations run as soon as the database is connected.
-
 ## 7. Redeploy and Install
 
 Environment variable changes don't apply to an existing deployment. Trigger
@@ -231,15 +236,6 @@ Then install the app:
    persists the store to Postgres, registers the app extension, and
    redirects into `/store/<storeHash>/`.
 3. Confirm the app renders in the control panel iframe with real store data.
-
-### Deployment Protection
-
-If you're deploying a preview or branch deployment that BigCommerce needs to
-reach, disable or scope Vercel's Deployment Protection for it under
-**Project Settings > Deployment Protection**. Otherwise BigCommerce's
-server-to-server callbacks hit Vercel's SSO gate instead of your app, and
-installs fail in a way that looks like an app bug. Production deployments
-aren't protected by default.
 
 ## Troubleshooting
 
@@ -280,12 +276,6 @@ break, so treat this as one atomic change:
    `APP_ORIGIN` exactly or the OAuth token exchange is rejected.
 4. **Redeploy**, so the new `APP_ORIGIN` is picked up at both build and
    runtime.
-5. **Reinstall the app** in any store that had it installed under the old
-   origin. Existing installs and app extensions still reference the old URL,
-   and the app extension's registered URL is what the control panel menu
-   item points at.
-6. **Verify** a fresh install and a launch (`/api/app/load`) both work on
-   the new domain, and that the control-panel menu item lands on it.
 
 If you keep the `*.vercel.app` domain working alongside the custom one, be
 aware only one can be `APP_ORIGIN`. Requests arriving on the other will

@@ -12,7 +12,7 @@ commit.
 
 ## Getting Started
 
-The tutorial assumes you'll create your own project repo rather than cloning this one. You'll need to start with the project's full boilerplate.
+The tutorial assumes you'll create your own Git repo rather than directly cloning this one. You'll need to start with the project's full boilerplate.
 
 Use the `start` branch:
 
@@ -31,6 +31,12 @@ Copy `.env.example` to `.env.local`:
 ```shell
 cd <project-directory>
 cp .env.example .env.local
+```
+
+Install dependencies and start the server:
+```shell
+pnpm install
+pnpm run dev
 ```
 
 ## Lab 1: Adding BigDesign and basic Gift Certificates UI
@@ -57,7 +63,7 @@ Fresh setup if needed:
 pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc-app-next/tree/rest-api-start
 ```
 
-Starting with this lab, you'll need a real BigCommerce API token. Create a store-level API account in your store control panel, and set the API token and store hash in `.env.local` in the lab steps where you see these added in `.env.example`.
+Starting with this lab, you'll need a real BigCommerce API token. Create a store-level API account in your store control panel (see details in Step 2 of the [README](../README.md)), and set the API token and store hash in `.env.local` in the lab steps where you see these added in `.env.example`.
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/rest-api-complete)
 
@@ -129,49 +135,53 @@ To deploy the finished app with a hosted Postgres database, see [Deploying to Ve
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/postgres-start...postgres-complete?diff=split)
 
-## Enhancement: Uninstall and remove-user callbacks
+## Taking It Further
+
+The state at the end of the previous tutorials still lacks a number of features from the complete app. See the enhancements below for details on how these features are added.
+
+### Enhancement: Uninstall and remove-user callbacks
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/uninstall-post)
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/uninstall-pre...uninstall-post?diff=split)
 
-## Enhancement: Caching and memoization
+### Enhancement: Caching and memoization
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/caching-post)
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/caching-pre...caching-post?diff=split)
 
-## Enhancement: Rate-limit and timeout behavior
+### Enhancement: Rate-limit and timeout behavior
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/rate-limit-post)
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/rate-limit-pre...rate-limit-post?diff=split)
 
-## Enhancement: Customers feature
+### Enhancement: Customers feature
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/customers-post)
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/customers-pre...customers-post?diff=split)
 
-## Enhancement: Gift certificate list filtering, balance actions, and account decoration/transfer-to-store-credit
+### Enhancement: Gift certificate list filtering, balance actions, and account decoration/transfer-to-store-credit
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/gift-certs-enh-post)
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/gift-certs-enh-pre...gift-certs-enh-post?diff=split)
 
-## Enhancement: GraphQL client and App Extension registration
+### Enhancement: GraphQL client and App Extension registration
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/graphql-ext-post)
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/graphql-ext-pre...graphql-ext-post?diff=split)
 
-## Enhancement: Cross-origin BigCommerce control panel links
+### Enhancement: Cross-origin BigCommerce control panel links
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/cp-links-post)
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/cp-links-pre...cp-links-post?diff=split)
 
-## Enhancement: Opt-in Vercel + Postgres deployment scaffolding
+### Enhancement: Opt-in Vercel + Postgres deployment scaffolding
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/scaffold-vercel-post)
 

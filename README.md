@@ -1,6 +1,6 @@
 # BigCommerce Single-Click App Starter
 
-A starter Next.js app for building a BigCommerce single-click installable
+A Next.js starter for building a BigCommerce single-click 
 app — an app a merchant installs from their store's control panel with one
 click, which then runs inside that control panel and manages the merchant's
 store data on their behalf.
@@ -19,7 +19,7 @@ handling.
 
 ## The BigCommerce Developer Portal
 
-A single-click app isn't a standalone website; it's an app **registered with
+A single-click app isn't just a deployed web application; it's an app **registered with
 BigCommerce**. Registration happens in the
 [BigCommerce developer portal](https://build.bigcommerce.com/), and it's
 what makes an app installable into a store.
@@ -45,18 +45,15 @@ and
 [Single-Click App OAuth Flow](https://docs.bigcommerce.com/developer/docs/integrations/apps/guide/auth)
 for the wider context.
 
-Steps 1 and 2 of Getting Started need none of this. It first becomes
-relevant at step 3.
+You can get started with this app without the Developer Portal dependency, but the full functionality exists for the context of a single-click app.
 
-## Getting Started
+## Run the Example App
 
-This is the quick path to getting **the existing example app** up and
-running. It's organized as four steps of increasing infrastructure, and each
-one is a complete working state you can stop at.
+To get the example app up and running with no tutorial or modifications, follow the steps below.
 
-Every step adds exactly one category of thing that can go wrong, which is
-what makes this worth following in order rather than jumping straight to the
-end. Steps 1 and 2 need nothing but a checkout.
+Step 1 is the quickest route to a working UI to explore, and subsequent steps integrate your store's data and the single-click app flow.
+
+(If you want to follow the step-by-step tutorial or just want to start building on the starter foundation, skip this section.)
 
 ### Step 1: Run Locally in MOCK Mode
 
@@ -70,12 +67,12 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). `DATA_MODE` defaults to
+Browse to the local server (`localhost:3000` or your own port). `DATA_MODE` defaults to
 `MOCK`, so no real API calls are made and every page is served from
 in-memory mock data with no authentication. The example feature is fully
 browsable.
 
-This is the fastest feedback loop for UI work, and where any problem is
+When expanding the starter with your own app functionality, this is the fastest feedback loop for UI work, and where any problem is
 unambiguously in your own code.
 
 ### Step 2: Add a Static API Token and Run in STATIC Mode
@@ -84,14 +81,19 @@ Real BigCommerce API calls against a single real store, still with no
 install flow, no session handling, and no database.
 
 In your store's control panel, create a store-level API account
-(**Settings > API > Store-level API accounts**) with read/write scopes for
-Marketing (gift certificates), Customers, and Information & Settings. Then in
+(**Settings > API > Store-level API accounts**) with:
+
+- "Modify" scopes for
+Marketing (gift certificates) and Customers
+- "Read-Only" scopes for Channel Settings, Channel Listings, and Information & Settings. 
+
+Then in
 `.env.local`:
 
 ```dotenv
 DATA_MODE=STATIC
-STATIC_STORE_HASH=your-store-hash
-STATIC_STORE_TOKEN=your-access-token
+STATIC_STORE_HASH=<your-store-hash>
+STATIC_STORE_TOKEN=<your-access-token>
 ```
 
 Restart the dev server. Every request now uses that one token, so the app
@@ -106,22 +108,21 @@ exist precisely because there's no store context in these modes.
 
 ### Step 3: Run Locally as a Single-Click App
 
-Now the app becomes a real single-click app: installed into a store from its
+Add the following configuration to turn your local server into a real single-click app: installed into a store from its
 control panel, rendered inside that control panel's iframe, and
-authenticated per user and per store. Instead of one hardcoded token, each
+authenticated per user and per store. Instead of one hard-coded token, each
 store's access token is obtained during install and looked up per request
 from durable storage.
 
 Three things change:
 
-* **`DATA_MODE=MULTITENANT`.** Every request is scoped to a store through
+* **`DATA_MODE=MULTITENANT`.** in `.env.local`. Every request is scoped to a store through
   the `/store/[storeHash]` route segment and authorized by the app's own
   session cookie. The root-level dev routes stop serving content.
 * **A public HTTPS URL is required.** BigCommerce's servers call your
-  callbacks over the internet and render the app in an iframe, so
+  callbacks and render the app in an iframe, so
   `localhost` alone won't do. A tunneling or port-forwarding service exposes
-  your dev server publicly — VS Code port forwarding, a GitHub Codespace, or
-  ngrok all work. That public URL goes in `APP_ORIGIN` and in the developer
+  your dev server publicly. That public URL goes in `APP_ORIGIN` and in the developer
   portal's callback URLs.
 * **Local SQLite storage.** Store access tokens, users, and store-user links
   persist to a plain file at `data/credentials.sqlite`
@@ -148,51 +149,73 @@ see, which is what the Postgres driver
 (`CREDENTIALS_STORE_DRIVER=POSTGRES`) provides.
 
 Hosting-specific tooling is opt-in via `pnpm scaffold <profile>` rather than
-baked into the app, so this starter can target any provider. **Vercel** is
+baked into the app, a strategy that supports your ability to target any hosting provider you choose.
+
+**Vercel** is
 the provider with built-in support today (`pnpm scaffold vercel`), paired
 with Neon Postgres.
 
 See [docs/VERCEL-DEPLOYMENT.md](docs/VERCEL-DEPLOYMENT.md) for the full
-deployment walkthrough, ordered to work around the fact that `APP_ORIGIN` and
-the portal's callback URLs both need a URL that doesn't exist until you've
-deployed once.
+deployment walkthrough.
 
 ## Using This App as a Tutorial
 
-Rather than reading the finished code, you can build it. This repository
-maintains a tutorial-shaped commit history: starting from basic boilerplate,
-you implement each layer yourself, in order, with a diff for every step.
-
-The progression runs through five main labs — the BigDesign UI, the REST API
-client, the single-click app auth workflow, session tracking and
-authentication, and the Postgres driver — followed by enhancements covering
-uninstall callbacks, caching, rate limiting, the customers feature, GraphQL
-and app extensions, control panel links, and deployment scaffolding.
-
-Each lab step is a pair of commits: one that introduces `TODO:` comments
-marking what to write, and one that resolves them. You work the TODOs, then
-compare against the implementation.
-
-See [docs/TUTORIAL.md](docs/TUTORIAL.md) for the labs and their diffs.
+Rather than reading the finished code, you can build it. To install starting boilerplate and then explore the step-by-step process of adding critical functionality (like BigDesign-based UI, REST API calls, and authentication/session management), start with [docs/TUTORIAL.md](docs/TUTORIAL.md).
 
 ## Using This App as a Starter
 
-To build your own app on this foundation, the essential idea is that the
-gift certificates manager is disposable and everything underneath it isn't.
-`src/lib/gift-certs-manager`, `src/components/gift-certs-manager`, and their
-routes are a worked example meant to be removed once you no longer need the
-reference. The auth, session, API client, credentials storage, caching, and
-error-handling layers are the actual starter and should stay.
+This starter app clearly separates its example use case from core libraries that support authentication, storage, session management, and BigCommerce API interactions.
 
-Beyond the keep/remove/update split, there are a handful of patterns
-specific to this app worth following in your own features: pass-through
-routes for mock-mode development, wrapping every page in `AuthorizedPage`,
-how a feature's data access layer is organized in `lib`, and how mock data
-handlers are registered.
+If you just want to get started building your own app on this foundation, follow [docs/USING-AS-A-STARTER.md](docs/USING-AS-A-STARTER.md) for a guide on what to remove and update.
 
-See [docs/USING-AS-A-STARTER.md](docs/USING-AS-A-STARTER.md) for the full
-guide, including how to add your own credentials store driver or hosting
-scaffold, and how to trim the data modes down if you don't need them.
+## BigDesign and React 19
+
+> [!WARNING]
+> **BigDesign does not officially support React 19.** This is the single
+> most important thing to know before upgrading React, BigDesign, or your
+> package manager.
+
+All three BigDesign packages (`@bigcommerce/big-design`,
+`@bigcommerce/big-design-theme`, and `@bigcommerce/big-design-icons`)
+declare a React 18 peer dependency. This app runs **React 19** (required by
+Next 16), so every one of those peer ranges is unsatisfied. Installing
+without intervention fails or emits loud peer warnings, depending on the
+package manager.
+
+Two things in this repo work around that, and **both must stay in place**:
+
+* **The peer dependency override** — `pnpm-workspace.yaml`'s
+  `peerDependencyRules.allowedVersions` declares React 19 acceptable for
+  each of the three packages, which is what lets `pnpm install` resolve
+  cleanly. Removing those entries breaks a fresh install.
+* **A patched Modal** — `patchedDependencies` applies
+  `patches/@bigcommerce__big-design+modal-removechild-detached-node.patch`,
+  which guards `Modal`'s unmount cleanup with a
+  `modalContainer.parentNode === document.body` check before calling
+  `document.body.removeChild`. React 19 changed unmount ordering enough
+  that the container can already be detached by the time that cleanup runs,
+  making the unguarded `removeChild` throw. This is a real React 19
+  incompatibility in shipped BigDesign code, not just a metadata
+  disagreement.
+
+The override is an assertion that the libraries *do* work on React 19, not
+a guarantee — as the patch above shows, the assertion isn't free. Treat
+React-19-specific breakage in BigDesign components (especially around
+mount/unmount lifecycles and portals) as plausible rather than surprising,
+and check whether a newer BigDesign has fixed it upstream before writing a
+new patch.
+
+Practical consequences:
+
+* **Use `pnpm`.** `npm`/`yarn` don't read `pnpm-workspace.yaml`, so they see
+  neither the peer override nor the patch. `npm install` will fail on the
+  peer conflict without `--legacy-peer-deps`, and even when forced through,
+  it silently skips the Modal patch.
+* **Don't hand-edit `pnpm-workspace.yaml` to "clean up" the peer rules.**
+  They look like leftover noise and are load-bearing.
+* **Re-check the patch when bumping BigDesign.** A version that fixes the
+  Modal bug upstream makes the patch fail to apply, which surfaces as an
+  install error rather than a silent no-op.
 
 ## The Gift Certificates Manager Example
 

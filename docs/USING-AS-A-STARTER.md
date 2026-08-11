@@ -24,7 +24,7 @@ them.
 | `src/app/api/app/*`, `src/app/app-error`, `src/app/unauthorized`, root error boundaries | **Keep** |
 | `src/lib/gift-certs-manager`, `src/components/gift-certs-manager` | **Remove** once you no longer need the reference |
 | `app/(root)/gift-certs`, `app/(root)/customers`, `app/store/[storeHash]/gift-certs`, `app/store/[storeHash]/customers` | **Remove** once you no longer need the reference |
-| `app/store/[storeHash]/page.tsx`, both `layout.tsx` files, the mock handler registry, `/api/app/auth` | **Update** to point at your own feature |
+| `app/store/[storeHash]/page.tsx`, both `layout.tsx` files, the mock handler registry, the app extension install in `/api/app/auth` | **Update** to point at your own feature |
 
 ## What to Keep
 
@@ -357,7 +357,34 @@ connection-string variables rather than on `DATA_MODE` or
 `CREDENTIALS_STORE_DRIVER` — that way it no-ops harmlessly for anyone using
 a different driver instead of failing their build.
 
-## Trimming Data Modes
+## The Four-Step Development Strategy
+
+As you build your own features, the four-step progression from the
+[README](../README.md#getting-started) is the recommended path. It's worth
+following per feature, not just once for the project — each step adds exactly
+one category of failure, so when something breaks you know which layer it's
+in.
+
+1. **`MOCK` locally** — build the UI and the data-access layer's shape
+   against mock handlers. No credentials, no network, no database, no
+   install. Failures here are your own code.
+2. **`STATIC` locally** — point it at one real store with a static API
+   token. This is where real API response shapes, pagination quirks, error
+   codes, and rate limits show up. Failures here are integration issues.
+3. **`MULTITENANT` locally** — install into a store through a tunnel, with
+   SQLite storage. This is where the install flow, session cookie,
+   authorization gates, and iframe/cross-origin behavior get exercised. See
+   [Running Locally as a Single-Click App](./LOCAL-SINGLE-CLICK-APP.md).
+4. **`MULTITENANT` deployed** — a real host and a shared database. This is
+   where multi-instance concerns, build-time configuration, and
+   deployment-protection quirks surface. See
+   [Deploying to Vercel](./VERCEL-DEPLOYMENT.md).
+
+Skipping straight to step 4 with a new feature means debugging a UI bug, a
+malformed API request, a session problem, and a build configuration issue all
+at once, through a control-panel iframe.
+
+## Getting Rid of Data Modes
 
 Three data modes are a development affordance, not a requirement. If you
 don't need them, here's the minimal way to cut them — the goal is removing
@@ -388,55 +415,8 @@ If your app will only ever run as a real multitenant single-click app:
 3. **Remove the now-unused env vars** from `.env.example`: `DATA_MODE`,
    `STATIC_STORE_HASH`, `STATIC_STORE_TOKEN`, and the
    `MOCK_REQUEST_DELAY_*` pair.
-4. **Simplify `getAppUrl`** only if you want to. It already returns an
-   unscoped path when `storeHash` is `undefined`, which is harmless once
-   nothing calls it that way.
-
-### Dropping Mock Data Only
-
-To keep `STATIC` mode but drop mock data:
-
-1. Delete each feature's `mock/` directory.
-2. Empty the `mockRouteHandlers` array in `handler-registry.ts` (or delete
-   `mock-rest-client/` entirely and remove the `MOCK` branch from
-   `get-rest-api-client.ts` and `get-graphql-api-client.ts`).
-3. Remove `MOCK` from `VALID_DATA_MODES` in `data-mode.ts` and change the
-   fallback in `getDataMode` from `"MOCK"` to `"STATIC"`.
-
-Consider keeping mock mode, though. It's the fastest possible feedback loop
-for UI work, it needs no credentials or network, and it makes the app
-demoable without a store.
-
-## The Four-Step Development Strategy
-
-As you build your own features, the four-step progression from the
-[README](../README.md#getting-started) is the recommended path. It's worth
-following per feature, not just once for the project — each step adds exactly
-one category of failure, so when something breaks you know which layer it's
-in.
-
-1. **`MOCK` locally** — build the UI and the data-access layer's shape
-   against mock handlers. No credentials, no network, no database, no
-   install. Failures here are your own code.
-2. **`STATIC` locally** — point it at one real store with a static API
-   token. This is where real API response shapes, pagination quirks, error
-   codes, and rate limits show up. Failures here are integration issues.
-3. **`MULTITENANT` locally** — install into a store through a tunnel, with
-   SQLite storage. This is where the install flow, session cookie,
-   authorization gates, and iframe/cross-origin behavior get exercised. See
-   [Running Locally as a Single-Click App](./LOCAL-SINGLE-CLICK-APP.md).
-4. **`MULTITENANT` deployed** — a real host and a shared database. This is
-   where multi-instance concerns, build-time configuration, and
-   deployment-protection quirks surface. See
-   [Deploying to Vercel](./VERCEL-DEPLOYMENT.md).
-
-Skipping straight to step 4 with a new feature means debugging a UI bug, a
-malformed API request, a session problem, and a build configuration issue all
-at once, through a control-panel iframe.
 
 ## Gotchas
-
-A few things that have already bitten someone on this codebase:
 
 * **Don't pass a Client Component as a named prop** (as opposed to
   `children`) into a BigDesign component from a Server Component. It can

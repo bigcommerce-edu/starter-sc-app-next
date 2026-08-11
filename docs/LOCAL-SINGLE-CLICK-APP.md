@@ -11,65 +11,16 @@ running locally in `MOCK` or `STATIC` mode.
 
 Three things have to be true before a store can install your local app:
 
-* The app runs in `MULTITENANT` mode, so it looks up a per-store API token
-  from durable storage instead of using mock data or one static token.
 * Your `localhost` dev server is reachable at a **public HTTPS URL**, since
   BigCommerce's servers call your app back over the internet and render it
   in an iframe.
-* An app is registered in the BigCommerce developer portal, pointing its
+* An app is registered in the BigCommerce Developer Portal, pointing its
   callback URLs at that public URL.
+* The app runs in `MULTITENANT` mode, so it looks up a per-store API token
+  from durable storage instead of using mock data or one static token.
 
-## Switching to MULTITENANT Mode
-
-In `.env.local`, set:
-
-```dotenv
-DATA_MODE=MULTITENANT
-```
-
-This changes the app's behavior in a few important ways:
-
-* Every request is scoped to a store via the `/store/[storeHash]` route
-  segment, and is authenticated by the app's own session cookie.
-* The root-level dev routes under `app/(root)` stop serving real content.
-  They exist only as a convenience for `MOCK`/`STATIC` development, so in
-  `MULTITENANT` mode they render an "unauthorized" warning instead (see
-  `src/lib/routing/root-route-guard.tsx`).
-* API tokens come from the credentials store rather than
-  `STATIC_STORE_TOKEN`.
-
-Leave `CREDENTIALS_STORE_DRIVER=SQLITE` for local development (see
-[Local Credentials Storage](#local-credentials-storage) below).
-
-## Environment Variables
-
-`MULTITENANT` mode needs these set in `.env.local`. See `.env.example` for
-the full commentary on each one.
-
-| Variable | Where it comes from |
-| --- | --- |
-| `BIGCOMMERCE_CLIENT_ID` | The developer portal, after you create the app |
-| `BIGCOMMERCE_CLIENT_SECRET` | The developer portal, after you create the app |
-| `APP_ORIGIN` | Your public HTTPS tunnel URL, with no trailing slash |
-| `SESSION_SECRET` | Generated locally (see below) |
-| `CREDENTIALS_ENCRYPTION_KEY` | Generated locally (see below) |
-
-Generate the two secrets with:
-
-```shell
-node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
-```
-
-Run it once per variable so they get different values. `SESSION_SECRET`
-signs this app's own session cookie; `CREDENTIALS_ENCRYPTION_KEY` encrypts
-stored store access tokens at rest. Neither is interchangeable with
-`BIGCOMMERCE_CLIENT_SECRET`, which is only used to verify BigCommerce's
-inbound signed payloads.
-
-`APP_ORIGIN` is deliberately never derived from the incoming request — it's
-the single source of truth for the OAuth `redirect_uri` and for the app's
-own browser-facing redirects (see `src/lib/routing/app-url.ts`). It must
-exactly match the origin registered in the developer portal.
+The sections below work through those in order, then cover installing and
+launching.
 
 ## Exposing Localhost Over HTTPS
 
@@ -154,7 +105,7 @@ gives you a stable URL and removes the re-editing loop entirely.
 ## Registering the App in the Developer Portal
 
 App registration happens in the
-[BigCommerce developer portal](https://build.bigcommerce.com/), which is
+[BigCommerce Developer Portal](https://build.bigcommerce.com/), which is
 where you create the app record, get its OAuth credentials, declare its
 callback URLs, and pick its scopes. Creating an account there is free and
 doesn't require a partnership — see
@@ -191,13 +142,12 @@ profile is mandatory unless you're preparing for marketplace approval.
 
 3. On the **Scopes** tab, enable at minimum:
 
-   * **Information & Settings**: read-only (needed to read store
-     information)
-   * **Customers**: modify (the customers feature, and granting store
-     credit)
-   * **Marketing**: modify (gift certificates live under this scope)
-   * **App Extensions**: manage (registering the app's control-panel menu
-     item)
+   * **Customers**: modify
+   * **Marketing**: modify
+   * **Channel Settings**: read-only
+   * **Channel Listings**: read-only
+   * **Information & Settings**: read-only 
+   * **App Extensions**: manage
 
    Scope changes only take effect for a store on the next install, so if
    you change them later, uninstall and reinstall the app.
@@ -205,8 +155,60 @@ profile is mandatory unless you're preparing for marketplace approval.
 4. Copy the **Client ID** and **Client Secret** into `.env.local` as
    `BIGCOMMERCE_CLIENT_ID` and `BIGCOMMERCE_CLIENT_SECRET`.
 
-Keep the app in draft. A draft app is installable from the control panel of
+Keep the app in draft status. A draft app is installable from the control panel of
 any store your developer-portal account owns, which is all you need here.
+
+## Switching to MULTITENANT Mode
+
+In `.env.local`, set:
+
+```dotenv
+DATA_MODE=MULTITENANT
+```
+
+This changes the app's behavior in a few important ways:
+
+* Every request is scoped to a store via the `/store/[storeHash]` route
+  segment, and is authenticated by the app's own session cookie.
+* The root-level dev routes under `app/(root)` stop serving real content.
+  They exist only as a convenience for `MOCK`/`STATIC` development, so in
+  `MULTITENANT` mode they render an "unauthorized" warning instead (see
+  `src/lib/routing/root-route-guard.tsx`).
+* API tokens come from the credentials store rather than
+  `STATIC_STORE_TOKEN`.
+
+Leave `CREDENTIALS_STORE_DRIVER=SQLITE` for local development (see
+[Local Credentials Storage](#local-credentials-storage) below).
+
+## Environment Variables
+
+`MULTITENANT` mode needs these set in `.env.local`. See `.env.example` for
+the full commentary on each one.
+
+| Variable | Where it comes from |
+| --- | --- |
+| `BIGCOMMERCE_CLIENT_ID` | The Developer Portal, after you create the app |
+| `BIGCOMMERCE_CLIENT_SECRET` | The Developer Portal, after you create the app |
+| `APP_ORIGIN` | Your public HTTPS tunnel URL, with no trailing slash |
+| `SESSION_SECRET` | Generated locally (see below) |
+| `CREDENTIALS_ENCRYPTION_KEY` | Generated locally (see below) |
+
+Generate the two secrets with:
+
+```shell
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
+```
+
+Run it once per variable so they get different values. `SESSION_SECRET`
+signs this app's own session cookie; `CREDENTIALS_ENCRYPTION_KEY` encrypts
+stored store access tokens at rest. Neither is interchangeable with
+`BIGCOMMERCE_CLIENT_SECRET`, which is only used to verify BigCommerce's
+inbound signed payloads.
+
+`APP_ORIGIN` is deliberately never derived from the incoming request — it's
+the single source of truth for the OAuth `redirect_uri` and for the app's
+own browser-facing redirects (see `src/lib/routing/app-url.ts`). It must
+exactly match the origin registered in the developer portal.
 
 ## Local Credentials Storage
 

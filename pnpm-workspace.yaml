@@ -1,6 +1,11 @@
 allowBuilds:
   sharp: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@bigcommerce/big-design-icons@2.0.0'
+  - '@bigcommerce/big-design-theme@2.0.0'
+  - '@bigcommerce/big-design@4.0.0'
+  - styled-components@6.5.2
 onlyBuiltDependencies:
   - sharp
   - unrs-resolver

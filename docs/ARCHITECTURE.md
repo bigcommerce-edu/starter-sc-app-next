@@ -9,7 +9,7 @@ layers described below.
 
 ## Data modes
 
-`DATA_MODE` (env var) selects one of three modes everywhere data is fetched:
+`DATA_MODE` (env var) selects one of three modes everywhere data is fetched. The concept of "data mode" is core to the app's aim of a rapid path to development, supporting a working UI without bringing in the single-click app requirements until you're ready.
 
 - **MOCK** (default) — no real API calls; in-memory mock data; no
   authentication. Routes render under `app/(root)/*` (no store context).
@@ -20,16 +20,128 @@ layers described below.
   store via the `app/store/[storeHash]` route segment, authenticated through
   the full install/session flow described below.
 
-`getDataMode()` (`lib/bc-api-client/data-mode.ts`) and
-`resolveStoreHash()`/`resolveApiToken()`
-(`lib/bc-api-client/resolve-store-credentials.ts`, which re-exports
-`getDataMode`) are the single place this branches; most other code doesn't
-need to know which mode is active. `getDataMode` lives in its own
-dependency-free module (just an env var read) rather than alongside the
-other two, since those transitively import the credentials store — a
-caller that only needs `getDataMode` (e.g. `proxy.ts`) would otherwise pull
-in `pg`/`node:sqlite` for no reason, a coupling that breaks on a runtime
-those drivers can't build for.
+Only "MULTITENANT" is intended for production, and a warning banner in the app will alert you to the dev-only nature of the other modes.
+
+## The `app/(root)` routes
+
+`app/(root)/*` exists only so MOCK and STATIC development can render the app
+without a store hash in the URL. Neither mode has (or needs) store context —
+MOCK talks to no real store at all, and STATIC always targets the one store
+configured via `STATIC_STORE_HASH`/`STATIC_STORE_TOKEN` — so requiring a
+`/store/<hash>/` prefix during early development would mean inventing a
+meaningless hash for every URL.
+
+These routes are pass-throughs, not a second implementation: each
+`app/(root)/foo/page.tsx` re-exports the corresponding
+`app/store/[storeHash]/foo/page.tsx` as its own default export, so both URLs
+render exactly the same component tree from one source of truth. The real
+route is the `[storeHash]` one; the root copy just forwards its props.
+
+Because they're a development convenience, they must not serve real content
+in production. `app/(root)/layout.tsx` runs every root route through
+`renderRootRoute` (`lib/routing/root-route-guard.tsx`), which renders
+`UnauthorizedRootRoute` instead of `children` when `DATA_MODE` is
+`MULTITENANT` — in that mode, a request landing on a root-level URL means
+the store segment is missing from the URL, not that the page should render
+unscoped.
+
+## Route conventions
+
+Routes in the example app follow a standard convention in their component structure:
+
+### A corresponding pass-through in `app/(root)`
+
+Any route added under `app/store/[storeHash]/` gets a matching
+`app/(root)/` route that re-exports it (see above), so the page is reachable
+in MOCK/STATIC development. Skipping it means the page only works in
+MULTITENANT mode.
+
+### Authorization via `<AuthorizedPage>`
+
+Every page under `app/store/[storeHash]/` renders its content through
+`AuthorizedPage` (`components/layout/authorized-page.tsx`) rather than
+calling `isAuthorizedForStore` inline. The feature's own page component is
+passed as the `pageComponent` prop — a component *reference*, not
+pre-rendered JSX — so it only renders after the check passes. That works
+because every link in the chain is a Server Component, so a function value
+never has to cross a Server-to-Client boundary.
+
+This check lives per-page rather than in `[storeHash]/layout.tsx` because a
+layout's render is skippable by Next's client Router Cache on a same-layout
+navigation (see the two-tier authorization section above).
+
+### Suspense boundaries
+
+Each segment that does asynchronous work wraps the next one in
+`<Suspense fallback={<ContentFallback />}>`, so the shell above it can paint
+immediately:
+
+- `page.tsx` wraps `AuthorizedPage`, since the authorization check awaits
+  the session cookie and a credentials-store lookup.
+- The page component wraps the view component, since the view fetches data.
+
+### Three segmented components
+
+A route is split into three pieces, each with one responsibility:
+
+1. **The route component** (`app/.../page.tsx`) — no data fetching and no
+   dynamic values. It only composes the Suspense boundary and
+   `AuthorizedPage`, forwarding `params`/`searchParams` along unresolved
+   (as promises). Keeping it free of dynamic data is what lets it render
+   synchronously.
+2. **The page component**
+   (e.g. `components/gift-certs-manager/gift-certificates/detail/gift-certificate-detail-page.tsx`)
+   — awaits and normalizes the dynamic inputs: `params`, `searchParams`,
+   route ids, the store hash. It resolves those into plain, serializable
+   values and passes them down.
+3. **The view component**
+   (e.g. `gift-certificate-view.tsx`) — does the data fetching and renders
+   the result. Because everything it receives is a plain serializable value,
+   it can be a `"use cache: remote"` boundary with its own `cacheLife` and
+   `cacheTag` (see the caching section below).
+
+That split exists for the sake of the third piece. A `use cache` boundary
+can't receive a promise or a non-serializable value, and it can't read
+request-time data like cookies or params — so resolving those has to happen
+strictly *above* the cacheable component. The page component is where that
+resolution happens, which is what leaves the view component cacheable.
+
+## Component library: BigDesign
+
+The UI is built with
+[BigDesign](https://developer.bigcommerce.com/big-design), BigCommerce's
+React design system, so an app rendered inside the control panel iframe
+matches the surrounding native UI. Component docs and a live playground are
+at [developer.bigcommerce.com/big-design](https://developer.bigcommerce.com/big-design);
+the source is at
+[bigcommerce/big-design](https://github.com/bigcommerce/big-design).
+
+BigDesign is `styled-components` based, so it needs two things wired up in
+`app/layout.tsx`:
+
+- **`StyledComponentsRegistry`** (`components/ui/styled-components-registry.tsx`)
+  — collects styled-components' server-rendered styles so they're emitted
+  with the SSR payload instead of flashing unstyled.
+- **`BigDesignProvider`** (`components/ui/big-design-provider.tsx`) — the
+  styled-components `ThemeProvider` with BigDesign's theme, plus
+  `GlobalStyles`.
+
+Components are imported from local re-export barrels
+(`components/ui/big-design.tsx` and `components/ui/big-design-icons.tsx`)
+rather than from `@bigcommerce/big-design` directly. BigDesign components
+are Client Components, and the barrels carry the `"use client"` directive so
+Server Components can import them without each file declaring the boundary
+itself.
+
+One hazard worth knowing: passing a Client Component into a BigDesign
+component as a *named prop* (rather than as `children`) from a Server
+Component can produce hydration mismatches. Prefer `children` where the API
+allows it.
+
+Note that BigDesign does not officially support React 19, which this app
+requires — see
+[BigDesign and React 19](../README.md#bigdesign-and-react-19) in the README
+for the peer dependency override and Modal patch that work around it.
 
 ## Install and session flow
 
@@ -120,27 +232,56 @@ Postgres, so `pg` (which fails to bundle on some deployment targets, e.g.
 Cloudflare Workers) is never compiled into a build that would never select
 that branch anyway.
 
-Every store method wraps its query in a helper that logs and re-throws a
-sanitized `AppError("DATABASE", ...)` rather than letting a raw driver error
-(which can embed connection detail) escape to a caller.
-
-`setStore`/`setUser`/`setStoreUser`/`setStoreExtension` are all upserts
-(`ON CONFLICT ... DO UPDATE`), since `/auth` re-running for an
-already-installed store should replace its token/scope, not error or
-duplicate rows. `deleteStore` (the `/uninstall` cascade) and `deleteUser`
-(the `/remove_user` scope — one user, one store) both run inside a single
-transaction and share a `deleteUsersWithNoRemainingStores` step: a
-set-based `DELETE ... WHERE user_id = ANY($1) AND NOT EXISTS (...)`, rather
-than a per-user count-then-delete loop, since by the time it runs the
-relevant `store_users` rows are already gone and it only needs to ask "does
-this user have any row left at all."
-
 `isStoreUserLinked` is the authoritative half of `isAuthorizedForStore`'s
 check (see above) — the session cookie's claim is optimistic; this confirms
 the link still actually exists. It's a separate query from `getStoreToken`
 (not one join) so each keeps a cache key matching what it's actually keyed
 on — this by `(storeHash, userId)`, the token by `storeHash` alone — and the
 two run concurrently via `Promise.all` in `isAuthorizedForStore`.
+
+## Config-based loading
+
+Both the REST API client and the credentials store are chosen at runtime
+from an env var, behind a `get*` function that is the only supported way to
+obtain one. Nothing else in the app constructs either directly, so no
+calling code knows or cares which implementation it has.
+
+The pattern is the same in both cases:
+
+1. **One interface, several implementations.** `BcRestApiClient`
+   (`rest-client/types.ts`) is implemented by `RestApiClient` and
+   `MockRestApiClient`; `CredentialsStore` (`credentials-store/types.ts`) is
+   implemented by `SqliteCredentialsStore` and `PostgresCredentialsStore`.
+2. **One accessor function that reads config and selects.**
+   `getRestApiClient(storeHash)` branches on `DATA_MODE`;
+   `getCredentialsStore()` branches on `CREDENTIALS_STORE_DRIVER`, falling
+   back to a default (`SQLITE`) when the var is unset or unrecognized rather
+   than throwing.
+3. **Memoized per request with React's `cache()`.** Every call within one
+   request shares an instance — which for `SqliteCredentialsStore` also
+   means sharing one open DB connection. The `cache()` key matters:
+   `getRestApiClient` keys on the *resolved* store hash, not the raw route
+   param, since STATIC mode resolves every route to the same store and
+   should share one client for the request.
+
+Two wrinkles worth noting:
+
+- **Resolution is separate from selection.** `resolve-store-credentials.ts`
+  answers "which store, and with what token" — not always the raw
+  `[storeHash]` route param, since STATIC always targets its one
+  env-configured store and MOCK has no store at all. `resolveApiToken` is
+  itself a `cache()` entry keyed on store hash, which is how
+  `isAuthorizedForStore` reuses the same token lookup instead of making a
+  second DB round-trip.
+- **The Postgres driver is loaded through an extra indirection.**
+  `get-credentials-store.ts` imports `PostgresCredentialsStore` from
+  `postgres-driver-loader.ts`, never from the driver directly. That file
+  exists purely to be a stable specifier for `next.config.ts`'s
+  `turbopack.resolveAlias` to redirect: when the driver isn't Postgres, the
+  alias swaps it for `postgres-driver-loader.unavailable.ts`, keeping `pg`
+  out of a build that would never select that branch. Runtime config
+  selects the branch; build-time config decides whether its dependency is
+  even compiled in. See the credentials storage section below.
 
 ## BigCommerce API clients
 
@@ -171,6 +312,53 @@ two run concurrently via `Promise.all` in `isAuthorizedForStore`.
 - **Errors**: both clients throw `AppError` (`lib/errors/app-error.ts`) with
   a safe, user-facing message; raw response detail goes into `cause` for
   logs only.
+
+### The mock REST client
+
+In MOCK mode, `getRestApiClient` returns `MockRestApiClient`
+(`rest-client/mock-rest-client/`) instead of the real one. It implements the
+same `BcRestApiClient` interface, so nothing above it — data access
+functions, views, actions — knows which client it got.
+
+It dispatches the way a real API does: by path. Each mock endpoint is a
+`MockRouteHandler` (`mock-rest-client/types.ts`) — a `pattern` regex matched
+against the request path, plus a `handle(match, params)` that returns
+`{ data, headers }`. Path segments like a record id come out of the regex's
+capture groups, and query params arrive as `params`, so a handler can
+implement filtering and pagination the way the real endpoint does. The
+optional `headers` exists for handlers mimicking a v2 endpoint's
+header-based pagination; v3-shaped handlers report pagination in the body
+and omit it.
+
+Two deliberate behaviors:
+
+- **Simulated latency** — `MOCK_REQUEST_DELAY_MIN_MS`/`MOCK_REQUEST_DELAY_MAX_MS`
+  add a random delay per request, so Suspense fallbacks and loading states
+  are actually visible during development. Unset or invalid values mean no
+  delay, which is the right default for tests and CI.
+- **Reads only** — `post`/`put`/`delete` throw. Mock mode is for building
+  and demoing UI, not for round-tripping writes against in-memory data.
+
+An unmatched path throws rather than returning an empty result, so a missing
+handler surfaces as an obvious error instead of a silently empty page.
+
+### Registered mock handlers
+
+`MockRestApiClient` never names a feature. Handlers are registered
+externally, in one place: `mock-rest-client/handler-registry.ts`, which
+concatenates each feature's handler array into the `mockRouteHandlers` list
+the client iterates.
+
+Each feature owns its own handlers and its own mock data, and exposes them
+as a single array — for example
+`lib/gift-certs-manager/gift-certificates/mock/`, whose `handlers.ts`
+exports `giftCertificatesMockHandlers`, built from the individual list and
+detail handlers alongside the `mock-gift-certificates.ts` fixtures.
+
+That indirection is what makes the demo feature disposable. Dropping gift
+certificates from mock mode means deleting one import and one array entry
+from `handler-registry.ts`; adding a feature's mocks means adding one of
+each. `MockRestApiClient` itself never changes either way.
 
 ## Caching
 
@@ -220,7 +408,7 @@ which is invisible to and not invalidated by `cacheTag`/`updateTag`.
   Server Action (where a 404 navigation would be wrong) as well as a page
   render — the calling page component makes that call.
 
-## The gift certificates manager example
+## The Gift Certificates Manager example
 
 The included feature demonstrates a few patterns worth understanding even
 though the feature itself is disposable:
@@ -243,26 +431,6 @@ shortcut. A separate, user-triggered retry action
 same `findOrCreateAppExtension` call but surfaces success/failure to the UI
 instead of swallowing it.
 
-### Transfer-to-store-credit (no cross-API transaction)
-
-`transferGiftCertificateBalanceToStoreCredit`
-(`app/store/[storeHash]/gift-certs/[id]/actions.ts`) debits a gift
-certificate and grants the same amount as store credit — two independent
-BigCommerce API calls with no shared transaction. The certificate is
-debited first, then the customer credited: if the second call fails, the
-certificate is already debited with nothing credited yet, which is worse
-for the customer than the reverse order would be, but it avoids ever
-creating store credit unbacked by an actual debit (the more dangerous
-direction — a missed credit can always be granted manually; an
-over-granted one is a much harder conversation to have with a merchant).
-If the credit grant fails, one compensating call attempts to restore the
-certificate's prior balance/status; if that also fails, the returned
-message states exactly what state was left so it can be reconciled by
-hand. This is a real, unresolved race condition if two admins transfer the
-same certificate concurrently (BigCommerce's v2 PUT has no optimistic-
-concurrency precondition) — flagged here rather than fixed, since closing
-it needs either an app-level lock or accepting the residual risk.
-
 ### Cross-origin control panel navigation
 
 `components/ui/control-panel-link.tsx` navigates the BigCommerce control
@@ -281,8 +449,3 @@ Vercel- and Postgres-specific tooling (build scripts, migration runner,
 (`scripts/scaffold.mjs`), not baked into the base app — this starter is
 meant to target any hosting provider. See `scripts/vercel/scaffold.mjs`'s
 own comments for what it adds.
-
-## Known follow-ups
-
-- Whether CI/deploy tooling for a non-Vercel target has
-  `CREDENTIALS_STORE_DRIVER` set correctly before invoking its own build.

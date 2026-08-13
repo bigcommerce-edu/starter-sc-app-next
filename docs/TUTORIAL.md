@@ -49,6 +49,17 @@ pnpm install
 pnpm run dev
 ```
 
+## The Boilerplate
+
+The starting point you copied above is already scaffolded — dependencies are installed, the route structure is in place, and every file the main labs will implement exists as a compile-only stub. You don't need to build any of it, and the labs begin from this state.
+
+If you'd like to review how that scaffolding was assembled before diving in, the diffs below break it into pieces:
+
+* [Dependencies](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/depend-start...depend-complete?diff=split) — the BigDesign, styled-components, `jose`, `zod`, and Postgres packages the app relies on
+* [Route group for `(root)`](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/root-start...root-complete?diff=split) — the `(root)` route group that lets you develop against `MOCK`/`STATIC` data without a store-scoped session
+* [Mock data](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/mock-data-start...mock-data-complete?diff=split) — the gift certificates data-access layer and the mock data/handlers the early labs run against
+* [Full boilerplate](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/boilerplate-start...boilerplate-complete?diff=split) — everything above plus the error/routing/UI primitives and Server Action origin restriction. This diff stops just short of the compile-only stub commit, so it shows the scaffolding without a wall of empty files
+
 ## Lab 1: Adding BigDesign and basic Gift Certificates UI
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/ui-complete)

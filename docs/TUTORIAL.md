@@ -12,24 +12,34 @@ commit.
 
 ## Getting Started
 
-The tutorial assumes you'll create your own Git repo rather than directly cloning this one. You'll need to start with the project's full boilerplate.
+The tutorial assumes you'll create your own Git repo rather than directly cloning this one. You'll need to start with the project's full boilerplate, which you can copy from the `start` branch with [`degit`](https://github.com/Rich-Harris/degit).
 
-Use the `start` branch:
+Install `degit`:
 
 ```shell
-pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc-app-next/tree/start
+npm install -g degit
 ```
 
-If this command doesn't work for you (your starter project should contain the directory `src/components/gift-certs-manager`), you can directly clone `start` and then branch from it:
+Copy the `start` branch into your own working directory, replacing the path with your own:
 
 ```shell
-git clone https://github.com/bigcommerce-edu/starter-sc-app-next.git -b start
+degit https://github.com/bigcommerce-edu/starter-sc-app-next#start /path/to/working/directory
+```
+
+Your starter project should contain the directory `src/components/gift-certs-manager`.
+
+Initialize a Git repository for your project:
+
+```shell
+cd /path/to/working/directory
+git init
+git add .
+git commit -m "Initial project files"
 ```
 
 Copy `.env.example` to `.env.local`:
 
 ```shell
-cd <project-directory>
 cp .env.example .env.local
 ```
 
@@ -60,7 +70,7 @@ This lab works with `DATA_MODE` set to `MOCK` in `.env.local`. No real API reque
 Fresh setup if needed:
 
 ```shell
-pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc-app-next/tree/rest-api-start
+degit https://github.com/bigcommerce-edu/starter-sc-app-next#rest-api-start /path/to/working/directory
 ```
 
 Starting with this lab, you'll need a real BigCommerce API token. Create a store-level API account in your store control panel (see details in Step 2 of the [README](../README.md)), and set the API token and store hash in `.env.local` in the lab steps where you see these added in `.env.example`.
@@ -78,7 +88,7 @@ Starting with this lab, you'll need a real BigCommerce API token. Create a store
 Fresh setup if needed:
 
 ```shell
-pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc-app-next/tree/auth-start
+degit https://github.com/bigcommerce-edu/starter-sc-app-next#auth-start /path/to/working/directory
 ```
 
 Starting with this lab, you'll need to switch `DATA_MODE` to "MULTITENANT" in `.env.local`, register an app in the BigCommerce Developer Portal, and set several other storage/app related env vars in `.env.local` in order to install/run your single-click app in your store control panel. (Each step will show clear var changes/additions in `.env.example`.)
@@ -100,7 +110,7 @@ At this stage, storage management is handled via a local SQLite database, so no 
 Fresh setup if needed:
 
 ```shell
-pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc-app-next/tree/session-start
+degit https://github.com/bigcommerce-edu/starter-sc-app-next#session-start /path/to/working/directory
 ```
 
 In this lab, you'll need to generate and set a secret in `.env.local` when indicated in the `.env.example` changes.
@@ -119,7 +129,7 @@ In this lab, you'll need to generate and set a secret in `.env.local` when indic
 Fresh setup if needed:
 
 ```shell
-pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc-app-next/tree/postgres-start
+degit https://github.com/bigcommerce-edu/starter-sc-app-next#postgres-start /path/to/working/directory
 ```
 
 For this lab, you'll need to connect to a Postgres database from a local or deployed environment and set related `.env.local` vars as you see them demonstrated in `.env.example`. 

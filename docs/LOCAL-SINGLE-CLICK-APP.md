@@ -36,7 +36,9 @@ the length of a work session saves a lot of re-editing.
 
 ### Option 1: VS Code Port Forwarding
 
-Built into VS Code and free with a GitHub account. No extra software.
+Built into VS Code and free with a GitHub account. No extra software. See
+VS Code's [Port Forwarding](https://code.visualstudio.com/docs/debugtest/port-forwarding)
+documentation for full details.
 
 1. Start the dev server (`pnpm dev`) so something is listening on port
    3000.
@@ -54,7 +56,9 @@ Built into VS Code and free with a GitHub account. No extra software.
 ### Option 2: GitHub Codespaces
 
 Runs the whole project in a cloud dev container, which is useful if you'd
-rather not install Node locally or want a disposable environment.
+rather not install Node locally or want a disposable environment. See
+GitHub's [Forwarding ports in your codespace](https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace)
+documentation for full details.
 
 1. Fork or clone this repository into your own GitHub account.
 2. From the repository page on GitHub, choose **Code > Codespaces > Create
@@ -80,7 +84,8 @@ worth re-checking if installs suddenly start failing.
 ### Option 3: Ngrok
 
 A dedicated tunneling tool, and the option most BigCommerce documentation
-assumes. A free account is required for a usable session length.
+assumes. A free account is required for a usable session length. See the
+[ngrok Agent](https://ngrok.com/docs/agent/) documentation for full details.
 
 1. Install ngrok and authenticate it with the token from your ngrok
    dashboard:

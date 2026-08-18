@@ -3,8 +3,8 @@
 This guide covers deploying this app to Vercel as a hosted BigCommerce
 single-click app, backed by a Neon Postgres database.
 
-This is step 4 of the four-step strategy in the
-[README](../README.md#getting-started). Working through
+This is step 4 of the four-step strategy in
+[Run the Example App](./RUN-EXAMPLE-APP.md). Working through
 [Running Locally as a Single-Click App](./LOCAL-SINGLE-CLICK-APP.md) first is
 recommended but not required — the concepts (`MULTITENANT` mode,
 `APP_ORIGIN`, the developer portal callbacks) are the same, with a real host

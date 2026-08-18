@@ -50,6 +50,18 @@ skill, and verified with its `validate-sync` command.
   `-start`/`-complete`), keeping `-pre` consistently meaning "the TODO
   commit" across both main labs and enhancements. Migrated onto a new
   history by the Main Tags publish.
+- **Boilerplate tags**: `<prefix>-start` / `<prefix>-complete` pairs
+  marking segments of the setup/boilerplate phase that precedes `start`.
+  These segments are reference-only — they contain no TODO commits, so
+  there is no `-pre`/`-post` pairing, and `-start` marks the last commit
+  *before* the segment rather than its first commit (so the compare link
+  shows the whole segment). Unlike lab tags, boilerplate segments may
+  overlap or nest: `boilerplate-start`/`boilerplate-complete` span the
+  phase broadly, while `depend-*`, `root-*`, and `mock-data-*` mark
+  sub-ranges within it. `boilerplate-complete` deliberately stops short
+  of the compile-only stub commit, since a diff full of empty stubs is
+  noise for a reader reviewing the scaffolding. Migrated onto a new
+  history by the Main Tags publish.
 
 ## Commit History Structure
 
@@ -65,6 +77,18 @@ skill, and verified with its `validate-sync` command.
   enhancement introduces are created by the enhancement's own TODO commit
   rather than pre-stubbed by the setup phase — the compile-only stub
   commit covers only files a main lab will implement.
+
+### Boilerplate Segments
+
+Reference-only segments of the setup/boilerplate phase preceding `start`.
+`boilerplate` spans the whole phase; the others mark sub-ranges within it.
+
+| Segment | Description | Tag Prefix |
+| ------- | ----------- | ---------- |
+| Dependencies | Installing the project's runtime and dev dependencies | `depend` |
+| Root route group | The `(root)` route group and store-scoped/error routes | `root` |
+| Mock data | The gift certificates data-access layer and its mock data/handlers | `mock-data` |
+| Full boilerplate | The setup phase up to (but excluding) the compile-only stub commit | `boilerplate` |
 
 ### Lab Exercises
 

@@ -162,11 +162,31 @@ The state at the end of the previous tutorials still lacks a number of features 
 
 ### Enhancement: Uninstall and remove-user callbacks
 
+Completes the full set of single-click app callbacks with support for Uninstall and Remove User.
+
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/uninstall-post)
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/uninstall-pre...uninstall-post?diff=split)
 
 ### Enhancement: Caching and memoization
+
+Demonstrates Next.js caching and memoization patterns that 
+optimize the app by avoiding repeat DB lookups and API calls.
+
+> [!WARNING]
+> Caching is an core architectural pattern to understand.
+> However, it might
+> not be a desirable trade-off in an admin-targeted app
+> where data should always be up-to-date. Evaluate your
+> own app's use case.
+>
+> In the Gift Certificates Manager example, cached data
+> will be appropriately invalidated based on the app's own actions
+> (such as refilling a gift certificate), but stale data will persist
+> for the cache lifetime when external updates occur (such as 
+> new gift certificates being purchased).)
+>
+> When your own apps utilize caching, use [webhooks](https://docs.bigcommerce.com/developer/docs/integrations/webhooks/overview) to invalidate cached data wherever possible.
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/caching-post)
 

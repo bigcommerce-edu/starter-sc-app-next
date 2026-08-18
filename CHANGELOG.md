@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.0.2
+
+_Based on Next.js 16.2.9_
+
+### Summary
+
+Documentation-only release. Restructures the written guidance so the README
+acts as a chooser between the project's three uses — running the example,
+following the tutorial, and building on the starter — and moves the
+four-step run-the-example walkthrough into a guide of its own. No lab code
+changed, so the lab steps and their tags are unchanged from `1.0.1`.
+
+### Changes
+
+- Extracted the four-step progression (`MOCK` mode, a static token, the
+  local single-click app, hosted deployment) out of `README.md` into a new
+  `docs/RUN-EXAMPLE-APP.md`, and rewrote the README as a three-option
+  chooser pointing at it. Repointed the cross-references in
+  `docs/LOCAL-SINGLE-CLICK-APP.md`, `docs/USING-AS-A-STARTER.md`,
+  `docs/VERCEL-DEPLOYMENT.md`, and `docs/TUTORIAL.md` from the README's
+  Getting Started anchor to the new guide.
+- Switched the tutorial's setup instructions from
+  `create-next-app -e <tree-url>` to
+  [`degit`](https://github.com/Rich-Harris/degit), in Getting Started and
+  in each lab's "Fresh setup if needed" block, and added the `git init`
+  steps for the learner's own repository.
+- Documented the boilerplate segments in `AGENTS.md` (the reference-only
+  `depend`, `root`, `mock-data`, and `boilerplate` tag pairs) and added a
+  "The Boilerplate" section to `docs/TUTORIAL.md` linking each segment's
+  diff, so a learner can review how the scaffolding was assembled.
+- Added a warning to `docs/ARCHITECTURE.md` and the caching enhancement in
+  `docs/TUTORIAL.md` that caching may be the wrong trade-off for an
+  admin-targeted app, noting that the example invalidates on its own
+  actions but serves stale data when a store changes externally, and
+  recommending webhook-driven invalidation.
+- Added upstream documentation links for the three tunneling options (VS
+  Code port forwarding, GitHub Codespaces, and the ngrok agent) in
+  `docs/LOCAL-SINGLE-CLICK-APP.md`, and short descriptions for the
+  uninstall and caching enhancements in `docs/TUTORIAL.md`.
+- Added `ARTIFACTS/*` to `.gitignore`.
+
 ## 1.0.1
 
 _Based on Next.js 16.2.9_

@@ -1,7 +1,7 @@
 # Lab Tutorial: BigCommerce Single-Click App Starter
 
-> **Based on version 1.0.1** — this tutorial corresponds to the latest
-> progressive history tagged `1.0.1`.
+> **Based on version 1.0.2** — this tutorial corresponds to the latest
+> progressive history tagged `1.0.2`.
 
 This document lists the lab exercises and their step-by-step diffs. Each
 main-lab step links to a comparison between the step's `*-pre` (TODO
@@ -12,24 +12,34 @@ commit.
 
 ## Getting Started
 
-The tutorial assumes you'll create your own Git repo rather than directly cloning this one. You'll need to start with the project's full boilerplate.
+The tutorial assumes you'll create your own Git repo rather than directly cloning this one. You'll need to start with the project's full boilerplate, which you can copy from the `start` branch with [`degit`](https://github.com/Rich-Harris/degit).
 
-Use the `start` branch:
+Install `degit`:
 
 ```shell
-pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc-app-next/tree/start
+npm install -g degit
 ```
 
-If this command doesn't work for you (your starter project should contain the directory `src/components/gift-certs-manager`), you can directly clone `start` and then branch from it:
+Copy the `start` branch into your own working directory, replacing the path with your own:
 
 ```shell
-git clone https://github.com/bigcommerce-edu/starter-sc-app-next.git -b start
+degit https://github.com/bigcommerce-edu/starter-sc-app-next#start /path/to/working/directory
+```
+
+Your starter project should contain the directory `src/components/gift-certs-manager`.
+
+Initialize a Git repository for your project:
+
+```shell
+cd /path/to/working/directory
+git init
+git add .
+git commit -m "Initial project files"
 ```
 
 Copy `.env.example` to `.env.local`:
 
 ```shell
-cd <project-directory>
 cp .env.example .env.local
 ```
 
@@ -38,6 +48,17 @@ Install dependencies and start the server:
 pnpm install
 pnpm run dev
 ```
+
+## The Boilerplate
+
+The starting point you copied above is already scaffolded — dependencies are installed, the route structure is in place, and every file the main labs will implement exists as a compile-only stub. You don't need to build any of it, and the labs begin from this state.
+
+If you'd like to review how that scaffolding was assembled before diving in, the diffs below break it into pieces:
+
+* [Dependencies](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/depend-start...depend-complete?diff=split) — the BigDesign, styled-components, `jose`, `zod`, and Postgres packages the app relies on
+* [Route group for `(root)`](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/root-start...root-complete?diff=split) — the `(root)` route group that lets you develop against `MOCK`/`STATIC` data without a store-scoped session
+* [Mock data](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/mock-data-start...mock-data-complete?diff=split) — the gift certificates data-access layer and the mock data/handlers the early labs run against
+* [Full boilerplate](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/boilerplate-start...boilerplate-complete?diff=split) — everything above plus the error/routing/UI primitives and Server Action origin restriction. This diff stops just short of the compile-only stub commit, so it shows the scaffolding without a wall of empty files
 
 ## Lab 1: Adding BigDesign and basic Gift Certificates UI
 
@@ -60,10 +81,10 @@ This lab works with `DATA_MODE` set to `MOCK` in `.env.local`. No real API reque
 Fresh setup if needed:
 
 ```shell
-pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc-app-next/tree/rest-api-start
+degit https://github.com/bigcommerce-edu/starter-sc-app-next#rest-api-start /path/to/working/directory
 ```
 
-Starting with this lab, you'll need a real BigCommerce API token. Create a store-level API account in your store control panel (see details in Step 2 of the [README](../README.md)), and set the API token and store hash in `.env.local` in the lab steps where you see these added in `.env.example`.
+Starting with this lab, you'll need a real BigCommerce API token. Create a store-level API account in your store control panel (see details in Step 2 of [Run the Example App](./RUN-EXAMPLE-APP.md)), and set the API token and store hash in `.env.local` in the lab steps where you see these added in `.env.example`.
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/rest-api-complete)
 
@@ -78,7 +99,7 @@ Starting with this lab, you'll need a real BigCommerce API token. Create a store
 Fresh setup if needed:
 
 ```shell
-pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc-app-next/tree/auth-start
+degit https://github.com/bigcommerce-edu/starter-sc-app-next#auth-start /path/to/working/directory
 ```
 
 Starting with this lab, you'll need to switch `DATA_MODE` to "MULTITENANT" in `.env.local`, register an app in the BigCommerce Developer Portal, and set several other storage/app related env vars in `.env.local` in order to install/run your single-click app in your store control panel. (Each step will show clear var changes/additions in `.env.example`.)
@@ -100,7 +121,7 @@ At this stage, storage management is handled via a local SQLite database, so no 
 Fresh setup if needed:
 
 ```shell
-pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc-app-next/tree/session-start
+degit https://github.com/bigcommerce-edu/starter-sc-app-next#session-start /path/to/working/directory
 ```
 
 In this lab, you'll need to generate and set a secret in `.env.local` when indicated in the `.env.example` changes.
@@ -119,7 +140,7 @@ In this lab, you'll need to generate and set a secret in `.env.local` when indic
 Fresh setup if needed:
 
 ```shell
-pnpm dlx create-next-app@latest -e https://github.com/bigcommerce-edu/starter-sc-app-next/tree/postgres-start
+degit https://github.com/bigcommerce-edu/starter-sc-app-next#postgres-start /path/to/working/directory
 ```
 
 For this lab, you'll need to connect to a Postgres database from a local or deployed environment and set related `.env.local` vars as you see them demonstrated in `.env.example`. 
@@ -141,11 +162,31 @@ The state at the end of the previous tutorials still lacks a number of features 
 
 ### Enhancement: Uninstall and remove-user callbacks
 
+Completes the full set of single-click app callbacks with support for Uninstall and Remove User.
+
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/uninstall-post)
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/uninstall-pre...uninstall-post?diff=split)
 
 ### Enhancement: Caching and memoization
+
+Demonstrates Next.js caching and memoization patterns that 
+optimize the app by avoiding repeat DB lookups and API calls.
+
+> [!WARNING]
+> Caching is an core architectural pattern to understand.
+> However, it might
+> not be a desirable trade-off in an admin-targeted app
+> where data should always be up-to-date. Evaluate your
+> own app's use case.
+>
+> In the Gift Certificates Manager example, cached data
+> will be appropriately invalidated based on the app's own actions
+> (such as refilling a gift certificate), but stale data will persist
+> for the cache lifetime when external updates occur (such as 
+> new gift certificates being purchased).)
+>
+> When your own apps utilize caching, use [webhooks](https://docs.bigcommerce.com/developer/docs/integrations/webhooks/overview) to invalidate cached data wherever possible.
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/caching-post)
 

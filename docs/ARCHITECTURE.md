@@ -385,6 +385,21 @@ Next's own server-side cache) explicitly set `Cache-Control: no-store` — a
 GET Route Handler's response is otherwise eligible for normal HTTP caching,
 which is invisible to and not invalidated by `cacheTag`/`updateTag`.
 
+> [!WARNING]
+> Caching is an core architectural pattern to understand.
+> However, it might
+> not be a desirable trade-off in an admin-targeted app
+> where data should always be up-to-date. Evaluate your
+> own app's use case.
+>
+> In the Gift Certificates Manager example, cached data
+> will be appropriately invalidated based on the app's own actions
+> (such as refilling a gift certificate), but stale data will persist
+> for the cache lifetime when external updates occur (such as 
+> new gift certificates being purchased).)
+>
+> When your own apps utilize caching, use [webhooks](https://docs.bigcommerce.com/developer/docs/integrations/webhooks/overview) to invalidate cached data wherever possible.
+
 ## Error handling
 
 `lib/errors/` is the shared error-handling foundation:

@@ -5,9 +5,9 @@ BigCommerce single-click app — installed into a store, launched from that
 store's control panel, and authenticated through the full OAuth install and
 session flow.
 
-This is step 3 of the four-step strategy in the
-[README](../README.md#getting-started). It assumes you already have the app
-running locally in `MOCK` or `STATIC` mode.
+This is step 3 of the four-step strategy in
+[Run the Example App](./RUN-EXAMPLE-APP.md). It assumes you already have the
+app running locally in `MOCK` or `STATIC` mode.
 
 Three things have to be true before a store can install your local app:
 

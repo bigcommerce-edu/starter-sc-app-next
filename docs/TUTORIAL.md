@@ -84,7 +84,7 @@ Fresh setup if needed:
 degit https://github.com/bigcommerce-edu/starter-sc-app-next#rest-api-start /path/to/working/directory
 ```
 
-Starting with this lab, you'll need a real BigCommerce API token. Create a store-level API account in your store control panel (see details in Step 2 of the [README](../README.md)), and set the API token and store hash in `.env.local` in the lab steps where you see these added in `.env.example`.
+Starting with this lab, you'll need a real BigCommerce API token. Create a store-level API account in your store control panel (see details in Step 2 of [Run the Example App](./RUN-EXAMPLE-APP.md)), and set the API token and store hash in `.env.local` in the lab steps where you see these added in `.env.example`.
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/rest-api-complete)
 

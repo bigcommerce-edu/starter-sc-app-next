@@ -359,8 +359,8 @@ a different driver instead of failing their build.
 
 ## The Four-Step Development Strategy
 
-As you build your own features, the four-step progression from the
-[README](../README.md#getting-started) is the recommended path. It's worth
+As you build your own features, the four-step progression in
+[Run the Example App](./RUN-EXAMPLE-APP.md) is the recommended path. It's worth
 following per feature, not just once for the project — each step adds exactly
 one category of failure, so when something breaks you know which layer it's
 in.

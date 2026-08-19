@@ -8,6 +8,11 @@ import {
   transferGiftCertificateBalanceToStoreCredit,
 } from "@/app/store/[storeHash]/gift-certs/[id]/actions";
 import { runServerAction } from "@/components/ui/action-alerts";
+import {
+  canAddToBalance,
+  canRefill,
+  canTransferToStoreCredit,
+} from "@/lib/gift-certs-manager/gift-certificates/status";
 import { GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 type BalanceAction = "refill" | "add" | "transfer";
@@ -109,25 +114,21 @@ export function GiftCertificateBalanceTab({
 
       <Flex flexGap="0.5rem" marginBottom="medium">
         <Button
-          disabled={giftCertificate.status === "pending" || giftCertificate.status === "disabled"}
+          disabled={!canRefill(giftCertificate)}
           onClick={() => toggleAction("refill")}
           variant={selectedAction === "refill" ? "primary" : "secondary"}
         >
           Refill
         </Button>
         <Button
-          disabled={giftCertificate.status === "pending" || giftCertificate.status === "disabled"}
+          disabled={!canAddToBalance(giftCertificate)}
           onClick={() => toggleAction("add")}
           variant={selectedAction === "add" ? "primary" : "secondary"}
         >
           Add to Balance
         </Button>
         <Button
-          disabled={
-            !giftCertificate.recipientAccount ||
-            giftCertificate.balance <= 0 ||
-            giftCertificate.status !== "active"
-          }
+          disabled={!canTransferToStoreCredit(giftCertificate)}
           onClick={() => toggleAction("transfer")}
           variant={selectedAction === "transfer" ? "primary" : "secondary"}
         >

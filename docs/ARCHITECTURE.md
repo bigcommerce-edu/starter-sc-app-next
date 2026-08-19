@@ -411,8 +411,9 @@ This app uses Next's Cache Components (`cacheComponents: true`). Two
 `cacheLife` profiles are configured: `standard` (5 min, most data) and
 `extended` (10 min, slower-changing data like channels).
 
-Caching is **off by default** and opt-in via `CACHE_COMPONENTS_ENABLED=true`
-(see below).
+Caching is controlled by `CACHE_COMPONENTS_ENABLED`, which `.env.example`
+ships as `TRUE` so the behavior is visible out of the box. The app's own
+fallback when the var is undefined is *off* (see below).
 
 Data-fetching functions that back a page (e.g.
 `fetchGiftCertificatesPage`) are `"use cache: remote"` and tag themselves
@@ -436,9 +437,17 @@ which is invisible to and not invalidated by `cacheTag`/`updateTag`.
 ### Enabling and disabling caching
 
 Caching is controlled by `CACHE_COMPONENTS_ENABLED`, and is off unless that
-is explicitly `true`. Off is the default because this is an admin-privileged
-app where stale data is usually the worse trade-off (see the warning below);
-enabling it is a deliberate choice.
+is explicitly `true`. Two defaults are worth keeping apart:
+
+- **The code's fallback is off.** An undefined var means no caching, so
+  caching is never on by accident — a deployment that never sets it gets the
+  conservative behavior, which matters for an admin-privileged app where
+  stale data is usually the worse trade-off (see the warning below).
+- **`.env.example` ships `TRUE`.** Caching is one of the patterns this app
+  exists to demonstrate, so the example config opts in deliberately, and
+  anyone starting from it sees the real caching behavior. Set it to `FALSE`
+  when stale reads would get in the way, and decide deliberately for a real
+  deployment rather than inheriting the example's choice.
 
 What the switch does *not* do is turn off Cache Components. `cacheComponents`
 stays `true` either way, because the `use cache` directives and

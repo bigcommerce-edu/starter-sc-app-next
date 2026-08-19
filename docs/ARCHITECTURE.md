@@ -183,37 +183,50 @@ time, unchanged by any later refresh) lets `verifySession` enforce a hard
 still forces re-authentication through `/load` at least once per that
 window no matter how continuously it's used.
 
-### Control panel logout
+### Control panel synchronization
 
-BigCommerce's control panel can log the admin out at any time — including
-from a different tab, which this app's iframe would otherwise never hear
-about — leaving this app holding a session that outlives the one that
-authorized it. [BigCommerce's best-practice
-guidance](https://docs.bigcommerce.com/developer/docs/integrations/apps/guide/following-best-practices#manage-user-session-timeouts)
-is to subscribe to that logout event through their JS SDK.
+The app runs in an iframe inside the BigCommerce control panel, so changes to
+the control panel's own state are invisible to it by default. BigCommerce
+publishes a JS SDK (`https://cdn.bigcommerce.com/jssdk/bc-sdk.js`) whose
+purpose is to keep an app "synchronized with the control panel": it opens a
+`postMessage` channel to the parent frame, and including it on a page is the
+documented way to subscribe to the events sent over that channel.
 
-The signal only exists in the browser, so this is the one place the
-architecture needs a client-side event handler bridging a browser event back
-to the server. `components/layout/control-panel-logout-listener.tsx` is a
-Client Component that loads the SDK (`afterInteractive`, so a cross-origin
-script whose only job is a background subscription can't block the shell's
-first paint), registers `window.bcAsyncInit` to call
-`Bigcommerce.init({ onLogout })`, and from that callback invokes the
-`logoutFromControlPanel` Server Action in `lib/session/logout.ts`, which
-deletes the session cookie via `clearSession`.
+`components/layout/bigcommerce-control-panel-sync.tsx` is the single place
+that loads and initializes the SDK, so it's where any further control panel
+synchronization belongs as it's adopted. It's a Client Component that loads
+the script (`afterInteractive`, so a cross-origin script whose only job is a
+background subscription can't block the shell's first paint) and registers
+`window.bcAsyncInit` to call `Bigcommerce.init()` with whichever callbacks
+the app opts into. These signals only exist in the browser, which is why this
+is the one place the architecture needs a client-side event handler bridging
+a browser event back to the server.
 
 It's mounted in `app/store/[storeHash]/layout.tsx` rather than the root
-layout, so it only runs for store-scoped authenticated routes. Note that a
-layout's render being skippable by the client Router Cache (the reason
-authorization can't live in a layout) is not a problem here: this is a
-subscription on a mounted Client Component, so it stays alive across exactly
-those client-side navigations rather than needing to re-run per page.
+layout, so it only runs for the store-scoped routes actually launched inside
+the control panel. Note that a layout's render being skippable by the client
+Router Cache (the reason authorization can't live in a layout) is not a
+problem here: this is a subscription on a mounted Client Component, so it
+stays alive across exactly those client-side navigations rather than needing
+to re-run per page.
 
-The action takes no arguments and validates nothing, because it only ever
-clears the caller's own cookie — there's no store hash or user id to trust,
-and the worst a forged POST achieves is logging that same caller out. It
-swallows its own errors: there's no UI to report a failure to, and the
-session TTL remains the backstop.
+#### Logout (`onLogout`)
+
+The one event the app currently subscribes to, and the one [BigCommerce's
+best-practice
+guidance](https://docs.bigcommerce.com/developer/docs/integrations/apps/guide/following-best-practices#manage-user-session-timeouts)
+calls out. The control panel can log the admin out at any time — including
+from a different tab, which this app's iframe would otherwise never hear
+about — leaving this app holding a session that outlives the one that
+authorized it.
+
+The callback invokes the `logoutFromControlPanel` Server Action in
+`lib/session/logout.ts`, which deletes the session cookie via
+`clearSession`. That action takes no arguments and validates nothing, because
+it only ever clears the caller's own cookie — there's no store hash or user
+id to trust, and the worst a forged POST achieves is logging that same caller
+out. It swallows its own errors: there's no UI to report a failure to, and
+the session TTL remains the backstop.
 
 ### Two-tier authorization
 

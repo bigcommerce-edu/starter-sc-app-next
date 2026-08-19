@@ -6,7 +6,7 @@ import { clearSession } from "@/lib/session/session-cookie";
 // read one env var — see data-mode.ts.
 import { getDataMode } from "@/lib/bc-api-client/data-mode";
 
-// Server Action invoked by ControlPanelLogoutListener when BigCommerce's
+// Server Action invoked by BigCommerceControlPanelSync when BigCommerce's
 // JS SDK reports the admin logged out of the control panel — possibly from
 // a different tab, so this app's own iframe may never be interacted with
 // again. Dropping the cookie here means the next request from this browser

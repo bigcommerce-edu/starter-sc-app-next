@@ -75,6 +75,21 @@ export function GiftCertificateBalanceTab({
 
   const closeConfirmModal = () => setPendingAction(null);
 
+  // Dismissing the confirmation (Cancel, Esc, the close button) abandons the
+  // whole action, not just the dialog: the open amount panel collapses and
+  // its typed value is dropped, so the user isn't left looking at a
+  // half-filled form whose confirmation they just declined. The amounts are
+  // reseeded from the certificate (the same values useState initialized them
+  // with) rather than blanked, so reopening the panel starts from the same
+  // defaults as a fresh render.
+  const dismissConfirmModal = () => {
+    setPendingAction(null);
+    setSelectedAction(null);
+    setRefillAmount(String(giftCertificate.amount));
+    setAddAmount("");
+    setTransferAmount(String(giftCertificate.balance));
+  };
+
   const handleConfirm = () => {
     const action = pendingAction;
 
@@ -82,6 +97,12 @@ export function GiftCertificateBalanceTab({
     // component can get frozen mid-transition in Next's client Router Cache,
     // which would otherwise replay a stale pendingAction (and a re-opened
     // modal) when navigating back to this cached page.
+    //
+    // Deliberately closeConfirmModal, not dismissConfirmModal: the amount
+    // state is read inside the transition below, so resetting it here would
+    // submit the wrong value. A successful action revalidates and remounts
+    // this component (see the key in gift-certificate-tabs.tsx), which is
+    // what clears the form on the success path.
     closeConfirmModal();
 
     startTransition(async () => {
@@ -185,7 +206,7 @@ export function GiftCertificateBalanceTab({
       {pendingAction && (
         <Modal
           actions={[
-            { text: "Cancel", variant: "subtle", onClick: closeConfirmModal },
+            { text: "Cancel", variant: "subtle", onClick: dismissConfirmModal },
             {
               text: ACTION_LABEL[pendingAction],
               variant: "primary",
@@ -196,7 +217,7 @@ export function GiftCertificateBalanceTab({
           closeOnEscKey
           header={ACTION_LABEL[pendingAction]}
           isOpen
-          onClose={closeConfirmModal}
+          onClose={dismissConfirmModal}
         >
           <Text marginBottom="none">
             {getConfirmationMessage(pendingAction, giftCertificate, Number(pendingAmount))}

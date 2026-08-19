@@ -411,6 +411,9 @@ This app uses Next's Cache Components (`cacheComponents: true`). Two
 `cacheLife` profiles are configured: `standard` (5 min, most data) and
 `extended` (10 min, slower-changing data like channels).
 
+Caching is **off by default** and opt-in via `CACHE_COMPONENTS_ENABLED=true`
+(see below).
+
 Data-fetching functions that back a page (e.g.
 `fetchGiftCertificatesPage`) are `"use cache: remote"` and tag themselves
 with both a shared list tag and a per-record tag (added after the fetch
@@ -429,6 +432,41 @@ Route Handlers that must never be cached by the browser (as opposed to
 Next's own server-side cache) explicitly set `Cache-Control: no-store` — a
 GET Route Handler's response is otherwise eligible for normal HTTP caching,
 which is invisible to and not invalidated by `cacheTag`/`updateTag`.
+
+### Enabling and disabling caching
+
+Caching is controlled by `CACHE_COMPONENTS_ENABLED`, and is off unless that
+is explicitly `true`. Off is the default because this is an admin-privileged
+app where stale data is usually the worse trade-off (see the warning below);
+enabling it is a deliberate choice.
+
+What the switch does *not* do is turn off Cache Components. `cacheComponents`
+stays `true` either way, because the `use cache` directives and
+`cacheTag`/`updateTag` calls throughout the app are compile-time constructs:
+they can't be wrapped in a runtime condition (a directive nested inside an
+`if` is silently ignored rather than honored), and disabling
+`cacheComponents` outright would stop the app compiling at all.
+
+Instead, `next.config.ts` swaps both `cacheLife` profiles for a zero-second
+one (`{ stale: 0, revalidate: 0, expire: 1 }` — Next requires `expire` to
+exceed `revalidate`, so `1` is the floor). A `revalidate` of `0` means every
+entry is already expired by the time the next request tries to read it, so
+nothing is ever reused and each request re-fetches. Overriding the profiles
+covers every cached boundary in the app, since each one selects `standard` or
+`extended`.
+
+This keeps the caching code paths intact and observable while removing the
+staleness: with `LOG_API_REQUESTS=true`, every page load logs its upstream
+requests when caching is off, versus only the first when it's on — which
+makes the switch a useful way to *see* what the caching is actually doing.
+
+One behavior worth knowing either way: a `notFound()` raised inside a
+`use cache: remote` boundary is itself cached, because Next treats the
+not-found result as a legitimate cached outcome rather than an error. With
+caching on, a record deleted upstream keeps rendering the not-found page for
+the remainder of the cache lifetime, and a record created at a previously
+missing id stays invisible for that long. Disabling caching removes that
+window entirely.
 
 > [!WARNING]
 > Caching is an core architectural pattern to understand.

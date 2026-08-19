@@ -173,6 +173,13 @@ Completes the full set of single-click app callbacks with support for Uninstall 
 Demonstrates Next.js caching and memoization patterns that 
 optimize the app by avoiding repeat DB lookups and API calls.
 
+Caching is opt-in via the `CACHE_COMPONENTS_ENABLED` environment variable,
+and off unless it's set to `true`. Set it to `true` to exercise the behavior
+this step builds — pair it with `LOG_API_REQUESTS=true` to watch cache hits
+and misses, since an upstream request is only logged on a miss. Leaving it
+off keeps the code in place but serves nothing stale. See the caching section
+of [ARCHITECTURE.md](./ARCHITECTURE.md#caching) for how that switch works.
+
 > [!WARNING]
 > Caching is an core architectural pattern to understand.
 > However, it might

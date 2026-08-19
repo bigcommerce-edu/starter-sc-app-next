@@ -23,14 +23,6 @@ const DEFAULT_FILTERS: FilterFields = {
 // shift the selected date back a day for any user east of UTC. Reading the
 // parsed Date's local getters (getFullYear/getMonth/getDate) instead
 // recovers the day the user actually clicked.
-//
-// Clearing the input fires onDateChange with an empty string, which parses to
-// an Invalid Date whose getters all return NaN — formatted naively that
-// yields "NaN-NaN-NaN", which is not a date the API can filter on and which
-// later throws a RangeError ("Invalid time value") once something tries to
-// turn it back into a Date. An unparseable value therefore returns "", the
-// same value DEFAULT_FILTERS uses for "no filter", so clearing the field
-// simply removes the filter.
 function toDateOnly(date: string): string {
   const parsed = new Date(date);
 

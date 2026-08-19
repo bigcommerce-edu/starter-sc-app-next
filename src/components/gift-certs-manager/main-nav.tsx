@@ -50,16 +50,6 @@ export function MainNav() {
   const activeSection = getActiveSection(pathname, storeHash);
 
   return (
-    // alignItems is pinned to "stretch" rather than left implicit. Inside the
-    // control panel iframe the items rendered at visibly different heights,
-    // which needs an inherited `align-items` (the control panel sets one that
-    // this Flex was picking up) plus items whose intrinsic heights differ.
-    // "stretch" forces every item to the row's full height, so the pills line
-    // up even if their text metrics disagree — measured at a 0px offset under
-    // deliberately mismatched font sizes, where "center" still left 4px and
-    // "baseline" left 6px. Combined with the uniform font weight below (which
-    // removes the metric difference at the source), this makes the row's
-    // alignment independent of whatever the embedding page sets.
     <Flex alignItems="stretch" flexGap="0.5rem" role="navigation" aria-label="Main">
       {NAV_ITEMS.map((item) => {
         const isActive = item.id === activeSection;
@@ -77,14 +67,6 @@ export function MainNav() {
               href={getAppUrl(storeHash, `/${item.id}`)}
               style={{ textDecoration: "none" }}
             >
-              {/*
-                Every item is bold, active or not — the active item is
-                already distinguished by its filled pill and primary color,
-                so varying the font weight too made the inactive items read
-                as de-emphasized rather than as peer navigation. Keeping the
-                weight uniform also means both items resolve to the same font
-                metrics, which is the other half of the alignment fix above.
-              */}
               <Text bold color={isActive ? "primary" : "secondary70"} margin="none">
                 {item.title}
               </Text>

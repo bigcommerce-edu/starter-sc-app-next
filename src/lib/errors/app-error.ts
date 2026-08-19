@@ -27,3 +27,24 @@ export class AppError extends Error {
 export function toSafeMessage(error: unknown, fallback = "Something went wrong."): string {
   return error instanceof AppError ? error.message : fallback;
 }
+
+// True when an error means "the record isn't there," as opposed to any other
+// failure. Two shapes both mean that, because the two API versions this app
+// talks to report a missing record differently:
+//
+//   - a real 404 from BigCommerce, surfaced by the REST client as an
+//     UPSTREAM_API AppError carrying status 404 (v2 single-resource
+//     endpoints, e.g. a gift certificate by id);
+//   - an explicit NOT_FOUND AppError raised by a data-access function that
+//     had to decide for itself, since v3 list-style lookups report a missing
+//     record as an empty result rather than a 404 (see customers-api.ts).
+//
+// Callers use this to tell the user the record is gone (most likely deleted
+// since the page was loaded) rather than showing a generic failure message.
+export function isNotFoundError(error: unknown): boolean {
+  if (!(error instanceof AppError)) {
+    return false;
+  }
+
+  return error.code === "NOT_FOUND" || (error.code === "UPSTREAM_API" && error.status === 404);
+}

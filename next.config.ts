@@ -15,6 +15,10 @@ if (process.env.APP_ORIGIN) {
 }
 
 const nextConfig: NextConfig = {
+  // TODO: Add turbopack.resolveAlias
+  //  - Swap @/lib/credentials-store/postgres-driver-loader for
+  //    postgres-driver-loader.unavailable whenever CREDENTIALS_STORE_DRIVER
+  //    isn't "POSTGRES", keeping pg out of builds that would never select it
   // Without this, Next's SWC compiler doesn't apply styled-components'
   // displayNameAndId transform, so every styled(...) component (AppLink,
   // ControlPanelLink, etc.) gets its class name generated purely at

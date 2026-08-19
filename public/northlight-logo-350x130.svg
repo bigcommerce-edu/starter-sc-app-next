@@ -1,0 +1,13 @@
+<svg width="350" height="130" viewBox="0 0 350 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    A 350x130 variant of northlight-logo.svg, the aspect ratio the
+    BigCommerce Dev Portal expects for an app listing logo. The mark itself
+    is unchanged (same 40x40 artwork, scaled up and centered); the extra
+    width is transparent padding rather than a redrawn wide lockup, so the
+    two files stay visually identical apart from the framing.
+  -->
+  <g transform="translate(125 15) scale(2.5)">
+    <circle cx="20" cy="20" r="19" stroke="#3C64F4" stroke-width="2" fill="#EEF1FF" />
+    <path d="M20 8L23.5 16.5L32 20L23.5 23.5L20 32L16.5 23.5L8 20L16.5 16.5L20 8Z" fill="#3C64F4" />
+  </g>
+</svg>

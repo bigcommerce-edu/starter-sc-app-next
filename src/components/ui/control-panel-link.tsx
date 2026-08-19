@@ -2,7 +2,7 @@
 
 import { MouseEvent } from "react";
 import styled from "styled-components";
-import { OpenInNewIcon } from "@/components/ui/big-design-icons";
+import { LogoutIcon } from "@/components/ui/big-design-icons";
 import { getControlPanelUrl } from "@/lib/routing/control-panel-url";
 
 // Same visual styling as AppLink, so this reads as the same kind of control
@@ -67,7 +67,16 @@ export function ControlPanelLink({
   return (
     <StyledControlPanelLink href={href} onClick={handleClick} rel="noopener noreferrer">
       {children}
-      <OpenInNewIcon size="medium" />
+      {/*
+        LogoutIcon (an arrow leaving through a doorway), not OpenInNewIcon
+        (a box with an outbound diagonal arrow). OpenInNew is universally
+        read as "opens in a new tab/window", which is wrong here — the click
+        handler above navigates the existing top-level window away from the
+        app. LogoutIcon's "leaving this context" sense matches what actually
+        happens: the user ends up out of the app, in the BigCommerce control
+        panel, in the same tab.
+      */}
+      <LogoutIcon size="medium" />
     </StyledControlPanelLink>
   );
 }

@@ -15,8 +15,22 @@ import {
 } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificates/types";
 import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/session/is-authorized-for-store";
-import { toSafeMessage } from "@/lib/errors/app-error";
+import { isNotFoundError, toSafeMessage } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
+
+// The gift certificate id is the only value these actions trust from the
+// client, and every one of them re-fetches the certificate before mutating
+// it — so a missing record here almost always means it was deleted (in the
+// control panel, or by another admin) after the page was rendered. Calling
+// that out specifically, rather than reporting a generic failure, tells the
+// user their view is stale and a reload is what's needed. See
+// isNotFoundError for how the two API versions signal a missing record
+// differently.
+const GIFT_CERTIFICATE_NOT_FOUND_MESSAGE =
+  "That gift certificate no longer exists. It may have been deleted — reload the page to see the current list.";
+
+const CUSTOMER_NOT_FOUND_MESSAGE =
+  "The recipient's customer account no longer exists. It may have been deleted — reload the page and try again.";
 
 export async function updateGiftCertificateStatus(
   id: number | string,
@@ -38,6 +52,10 @@ export async function updateGiftCertificateStatus(
     await updateGiftCertificateStatusRequest(giftCertificate, status, storeHash);
   } catch (error) {
     logError(`updateGiftCertificateStatus: certificate ${id}`, error);
+
+    if (isNotFoundError(error)) {
+      return { success: false, message: GIFT_CERTIFICATE_NOT_FOUND_MESSAGE };
+    }
 
     return { success: false, message: toSafeMessage(error, "Failed to update the gift certificate status.") };
   }
@@ -80,6 +98,10 @@ export async function refillGiftCertificateBalance(
   } catch (error) {
     logError(`refillGiftCertificateBalance: certificate ${id}`, error);
 
+    if (isNotFoundError(error)) {
+      return { success: false, message: GIFT_CERTIFICATE_NOT_FOUND_MESSAGE };
+    }
+
     return { success: false, message: toSafeMessage(error, "Failed to refill the gift certificate balance.") };
   }
 
@@ -113,6 +135,10 @@ export async function addToGiftCertificateBalance(
     await addToGiftCertificateBalanceRequest(giftCertificate, amount, storeHash);
   } catch (error) {
     logError(`addToGiftCertificateBalance: certificate ${id}`, error);
+
+    if (isNotFoundError(error)) {
+      return { success: false, message: GIFT_CERTIFICATE_NOT_FOUND_MESSAGE };
+    }
 
     return { success: false, message: toSafeMessage(error, "Failed to add to the gift certificate balance.") };
   }
@@ -174,6 +200,13 @@ export async function transferGiftCertificateBalanceToStoreCredit(
   } catch (error) {
     logError(`transferGiftCertificateBalanceToStoreCredit: certificate ${id}`, error);
 
+    // Only the certificate fetch can raise a not-found here — a recipient
+    // with no account is a zero-row list, already handled by the
+    // !foundCustomer check above rather than an error.
+    if (isNotFoundError(error)) {
+      return { success: false, message: GIFT_CERTIFICATE_NOT_FOUND_MESSAGE };
+    }
+
     return { success: false, message: toSafeMessage(error, "Failed to look up the gift certificate or recipient.") };
   }
 
@@ -185,12 +218,23 @@ export async function transferGiftCertificateBalanceToStoreCredit(
   } catch (error) {
     logError(`transferGiftCertificateBalanceToStoreCredit: debit for certificate ${id}`, error);
 
+    // Deleted between the fetch above and this write. Nothing was mutated,
+    // so there's no compensating call to make.
+    if (isNotFoundError(error)) {
+      return { success: false, message: GIFT_CERTIFICATE_NOT_FOUND_MESSAGE };
+    }
+
     return { success: false, message: toSafeMessage(error, "Failed to debit the gift certificate.") };
   }
 
   try {
     await addToCustomerStoreCredit(customer, amount, storeHash);
-  } catch {
+  } catch (creditError) {
+    // The certificate is already debited at this point, so a missing
+    // customer can't just be reported on its own — what matters to the user
+    // is whether the compensating restore below put the balance back.
+    const isMissingCustomer = isNotFoundError(creditError);
+
     try {
       await restoreGiftCertificateBalance(giftCertificate, previousBalance, previousStatus, storeHash);
     } catch {
@@ -200,7 +244,9 @@ export async function transferGiftCertificateBalanceToStoreCredit(
 
       return {
         success: false,
-        message: `Critical: gift certificate ${id} was debited ${amount} but the store credit grant to customer ${customer.id} failed, and reverting the certificate also failed. Manual reconciliation is required.`,
+        message: `Critical: gift certificate ${id} was debited ${amount} but the store credit grant to customer ${customer.id} failed${
+          isMissingCustomer ? " because that customer account no longer exists" : ""
+        }, and reverting the certificate also failed. Manual reconciliation is required.`,
       };
     }
 
@@ -208,7 +254,9 @@ export async function transferGiftCertificateBalanceToStoreCredit(
 
     return {
       success: false,
-      message: "The store credit grant failed, but the gift certificate balance was restored. No changes were made.",
+      message: isMissingCustomer
+        ? `${CUSTOMER_NOT_FOUND_MESSAGE} The gift certificate balance was restored, so no changes were made.`
+        : "The store credit grant failed, but the gift certificate balance was restored. No changes were made.",
     };
   }
 

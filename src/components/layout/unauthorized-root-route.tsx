@@ -4,6 +4,8 @@ import { Panel } from "@/components/ui/panel";
 import { H1, Text } from "@/components/ui/text";
 import { ErrorIcon } from "@/components/ui/icons";
 
+// TODO: convert this file's imports to the BigDesign barrels, same pattern
+// as error-fallback.tsx
 export function UnauthorizedRootRoute() {
   return (
     <Flex justifyContent="center" paddingVertical="xxxLarge">

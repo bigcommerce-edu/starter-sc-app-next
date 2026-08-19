@@ -9,6 +9,10 @@ import { BaselineHelpIcon } from "@/components/ui/icons";
 import { AppLink } from "@/components/ui/app-link";
 import { getAppUrl } from "@/lib/routing/app-url";
 
+// TODO: convert this file's imports to the BigDesign barrels, same pattern
+// as error-fallback.tsx - also change BaselineHelpIcon's color from
+// "secondary60" to "secondary50", matching real BigDesign's icon palette
+//
 // Shared rendering for every not-found.tsx in the app. storeHash is read via
 // useParams() rather than a prop, since not-found.tsx is rendered by Next
 // without route params passed to it — hence the Client Component.

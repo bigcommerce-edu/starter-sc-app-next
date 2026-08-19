@@ -14,11 +14,32 @@ if (process.env.APP_ORIGIN) {
   allowedOrigins.push(new URL(process.env.APP_ORIGIN).host);
 }
 
+// For credentials-store drivers that must have an indirection layer when they're
+// not actually in the configured stack, stub them by aliasing the driver-loader specifier.
+//
+// `pg` is the
+// case in point — it reaches `pg-cloudflare` through a bare require() in
+// pg/lib/stream.js, and that package is one of `pg`'s optionalDependencies, so
+// it usually isn't installed. Plain `next build` doesn't hit this, because `pg`
+// is in Next's default serverExternalPackages and so is left as a runtime
+// require rather than bundled; a Workers build, which has to produce a
+// self-contained bundle, does.
+function buildCredentialsDriverAliases(): Record<string, string> {
+  const configuredDriver = process.env.CREDENTIALS_STORE_DRIVER;
+  const aliases: Record<string, string> = {};
+
+  if (configuredDriver !== "POSTGRES") {
+    aliases["@/lib/credentials-store/postgres-driver-loader"] =
+      "@/lib/credentials-store/postgres-driver-loader.unavailable";
+  }
+
+  return aliases;
+}
+
 const nextConfig: NextConfig = {
-  // TODO: Add turbopack.resolveAlias
-  //  - Swap @/lib/credentials-store/postgres-driver-loader for
-  //    postgres-driver-loader.unavailable whenever CREDENTIALS_STORE_DRIVER
-  //    isn't "POSTGRES", keeping pg out of builds that would never select it
+  turbopack: {
+    resolveAlias: buildCredentialsDriverAliases(),
+  },
   // Without this, Next's SWC compiler doesn't apply styled-components'
   // displayNameAndId transform, so every styled(...) component (AppLink,
   // ControlPanelLink, etc.) gets its class name generated purely at

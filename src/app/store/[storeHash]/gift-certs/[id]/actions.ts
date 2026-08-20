@@ -66,10 +66,12 @@ export async function updateGiftCertificateStatus(
 }
 
 // Refilling only makes sense for a certificate that's still usable (active
-// or expired, not pending or disabled) and can't set a balance above the
-// original value. Validated against a fresh fetch of the certificate (by
-// id, the only value trusted from the client), not client-supplied
-// status/amount.
+// or expired, not pending or disabled), and the new balance has to land
+// between the current balance (exclusive) and the original value
+// (inclusive) — a "refill" that lowers the balance is a debit, which this
+// action deliberately won't do. Validated against a fresh fetch of the
+// certificate (by id, the only value trusted from the client), not
+// client-supplied status/amount.
 export async function refillGiftCertificateBalance(
   id: number | string,
   newBalance: number,
@@ -88,6 +90,10 @@ export async function refillGiftCertificateBalance(
 
     if (!Number.isFinite(newBalance) || newBalance < 0) {
       return { success: false, message: "Refill balance must be a non-negative number." };
+    }
+
+    if (newBalance <= giftCertificate.balance) {
+      return { success: false, message: "Refill balance must be greater than the current gift certificate balance." };
     }
 
     if (newBalance > giftCertificate.amount) {

@@ -128,6 +128,10 @@ export function GiftCertificateBalanceTab({
 
   const pendingAmount = pendingAction === "refill" ? refillAmount : pendingAction === "add" ? addAmount : transferAmount;
 
+  const canSubmitRefill = refillAmount !== "" && Number(refillAmount) > giftCertificate.balance;
+  const canSubmitAdd = addAmount !== "";
+  const canSubmitTransfer = transferAmount !== "";
+
   return (
     <Panel header={giftCertificate.code}>
       <DetailField label="Original Value">{currencyFormatter.format(giftCertificate.amount)}</DetailField>
@@ -166,10 +170,11 @@ export function GiftCertificateBalanceTab({
             value={refillAmount}
           />
           <Text>
-            This will set the total active balance to this amount, up to{" "}
+            This will set the total active balance to this amount — more than the current balance of{" "}
+            <strong>{currencyFormatter.format(giftCertificate.balance)}</strong>, up to{" "}
             <strong>{currencyFormatter.format(giftCertificate.amount)}</strong>.
           </Text>
-          <Button onClick={() => setPendingAction("refill")} variant="primary">
+          <Button disabled={!canSubmitRefill} onClick={() => setPendingAction("refill")} variant="primary">
             Refill
           </Button>
         </Box>
@@ -179,7 +184,7 @@ export function GiftCertificateBalanceTab({
         <Box>
           <Input label="Amount" onChange={(event) => setAddAmount(event.target.value)} type="number" value={addAmount} />
           <Text>This amount will be added to the current balance.</Text>
-          <Button disabled={addAmount === ""} onClick={() => setPendingAction("add")} variant="primary">
+          <Button disabled={!canSubmitAdd} onClick={() => setPendingAction("add")} variant="primary">
             Add to Balance
           </Button>
         </Box>
@@ -197,7 +202,7 @@ export function GiftCertificateBalanceTab({
             The gift certificate balance will be reduced by this amount, and the customer&apos;s store credit
             balance will be increased accordingly.
           </Text>
-          <Button onClick={() => setPendingAction("transfer")} variant="primary">
+          <Button disabled={!canSubmitTransfer} onClick={() => setPendingAction("transfer")} variant="primary">
             Transfer to Store Credit
           </Button>
         </Box>

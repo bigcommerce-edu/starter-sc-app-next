@@ -1,5 +1,87 @@
 # Changelog
 
+## 1.0.3
+
+_Based on Next.js 16.2.9_
+
+### Summary
+
+UAT fixes folded into the existing lab structure. Adds control panel logout
+synchronization, distinguishes a deleted record from a generic failure in the
+gift certificate Server Actions, makes caching switchable by environment
+variable, and unifies the balance-action gating the list and detail pages had
+drifted apart on. No lab steps were added, renumbered, or removed, so the step
+tags are unchanged from `1.0.2`.
+
+### Changes
+
+- Added `components/layout/bigcommerce-control-panel-sync.tsx`, which loads
+  BigCommerce's JS SDK and subscribes to its `onLogout` event, plus the
+  `logoutFromControlPanel` Server Action and the `clearSession` cookie helper
+  it calls. Mounted from the store layout so it only runs on store-scoped
+  routes. The component, the action, the layout mount, and the
+  `session-cookie.ts` stubs are all boilerplate; `clearSession` is implemented
+  alongside the rest of the cookie behavior in the session cookie step.
+- Added `isNotFoundError` to `lib/errors/app-error.ts`, recognizing both a
+  404 from a v2 single-resource endpoint and an explicit `NOT_FOUND` raised
+  by a v3 list-style lookup. Each gift certificate Server Action now reports
+  a missing record distinctly, folded into the step that introduces it.
+- Made caching opt-in via `CACHE_COMPONENTS_ENABLED`. `cacheComponents` stays
+  `true` so the `use cache` directives still compile; the switch instead swaps
+  both `cacheLife` profiles for a zero-second one. Folded into the caching
+  enhancement, with the variable added to `.env.example` in the same commit.
+- Extracted `canRefill`, `canAddToBalance`, and `canTransferToStoreCredit`
+  into `gift-certificates/status.ts` so the list actions menu and the Balance
+  tab share one definition of when each action is offered — they previously
+  disagreed about Refill. All three ship with the gift certificates
+  data-access layer; `canTransferToStoreCredit` is widened to require a
+  registered customer account once the enhancement introduces the
+  account-bearing certificate type.
+- Dismissing a confirmation modal (Cancel, Esc, or the close button) now
+  abandons the pending edit rather than just hiding the dialog, on both the
+  Details and Balance tabs. Each tab's resets land in the step that
+  introduces the corresponding action.
+- Fixed the main nav to highlight Gift Certificates on the index route, and
+  to keep a consistent weight and alignment across items.
+- Treated a cleared date filter in `CustomerFilters` as no filter rather than
+  an invalid date.
+- Switched `ControlPanelLink`'s trailing icon from `OpenInNewIcon` to
+  `LogoutIcon`, signalling that the link leaves the app.
+- Added `public/northlight-logo-350x130.svg`, the aspect ratio the
+  BigCommerce Dev Portal expects for an app listing logo.
+- Documented control panel synchronization and the caching switch in
+  `docs/ARCHITECTURE.md`, and noted the caching variable in
+  `docs/TUTORIAL.md`.
+- Tightened the refill validation: a refill must now raise the balance, so a
+  new balance at or below the current one is rejected server-side rather than
+  silently applied as a debit. The Balance tab says the amount must exceed the
+  current balance and keeps the Refill button disabled until it does, and the
+  Add to Balance and Transfer to Store Credit buttons are likewise disabled
+  until an amount is entered.
+
+### Lab step corrections
+
+Fixes to existing steps that were teaching less than they appeared to. None
+of these change the finished app — the final tree is unchanged.
+
+- Made the `postgres-driver-loader.ts` stub genuinely compile-only. It
+  previously shipped its finished one-line re-export in the stub commit, so
+  the Postgres driver loader step had nothing left to write; that step now
+  adds the export itself.
+- Removed two stale `TODO:` comments in `data-mode-banner.tsx` and
+  `developer-info-panel.tsx` that asked the learner to switch to the
+  BigDesign barrel imports those files already used.
+- Reworded the `globals.css` token header to describe the tokens as
+  temporary stand-ins for the BigDesign theme, rather than a permanent port —
+  the file is deleted two commits later when BigDesign is wired in.
+- Made the gift certificate Server Actions refresh the UI from the step that
+  first writes them, using `revalidatePath` on the list and detail routes.
+  Previously a status update or refill returned success without the page
+  reflecting it until the caching enhancement introduced `updateTag`, so the
+  actions appeared broken for the several steps in between. The caching
+  enhancement now replaces `revalidatePath` with tag-based invalidation
+  rather than adding revalidation for the first time, and its TODO says so.
+
 ## 1.0.2
 
 _Based on Next.js 16.2.9_

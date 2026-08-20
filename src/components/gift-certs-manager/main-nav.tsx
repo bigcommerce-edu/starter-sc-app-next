@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, usePathname } from "next/navigation";
+import { useTheme } from "styled-components";
 import { Box, Flex, Text } from "@/components/ui/big-design";
 import { AppLink } from "@/components/ui/app-link";
 import { getAppUrl } from "@/lib/routing/app-url";
@@ -48,6 +49,7 @@ export function MainNav() {
   const storeHash = params.storeHash;
   const pathname = usePathname();
   const activeSection = getActiveSection(pathname, storeHash);
+  const theme = useTheme();
 
   return (
     <Flex alignItems="stretch" flexGap="0.5rem" role="navigation" aria-label="Main">
@@ -55,12 +57,36 @@ export function MainNav() {
         const isActive = item.id === activeSection;
 
         return (
+          // The pill is styled with an inline `style` rather than Box's
+          // backgroundColor/padding props, which would resolve to a
+          // styled-components generated class. Those classes are keyed to a
+          // per-component "group" whose id is allocated per module registry,
+          // and this app renders through two of them: the build-time
+          // prerender bakes its style tags (with GlobalStyles present, so
+          // StyledBox lands on group 3) into the shell HTML, while the
+          // running server streams the dynamic content from a fresh registry
+          // where StyledBox instead takes group 1. Rehydration pins
+          // component -> group in tag order, so the later id wins and later
+          // inserts for that component compute a CSSOM index from the wrong
+          // group's bookkeeping; styled-components v5 swallows the resulting
+          // insertRule failure (`catch { return false }`), dropping the rule
+          // silently and permanently. That is what removed this pill's
+          // background and padding inside the BigCommerce control panel.
+          //
+          // Inline styles are attribute-level, so they never participate in
+          // that group bookkeeping and cannot be dropped by it. Values come
+          // from the theme rather than literals so they stay in step with
+          // BigDesign. Measured in production output: only the prerender and
+          // runtime registries disagree (8 components affected, StyledBox
+          // among them); `next dev` runs one registry and shows none.
           <Box
             key={item.id}
-            backgroundColor={isActive ? "primary10" : undefined}
-            paddingHorizontal="medium"
-            paddingVertical="xSmall"
-            style={{ borderRadius: "9999px" }}
+            style={{
+              backgroundColor: isActive ? theme.colors.primary10 : undefined,
+              borderRadius: "9999px",
+              paddingBlock: theme.spacing.xSmall,
+              paddingInline: theme.spacing.medium,
+            }}
           >
             <AppLink
               aria-current={isActive ? "page" : undefined}

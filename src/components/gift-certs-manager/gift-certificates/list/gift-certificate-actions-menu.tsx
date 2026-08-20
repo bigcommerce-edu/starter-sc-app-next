@@ -11,6 +11,7 @@ import {
   transferGiftCertificateBalanceToStoreCredit,
 } from "@/app/store/[storeHash]/gift-certs/[id]/actions";
 import { runServerAction } from "@/components/ui/action-alerts";
+import { canRefill, canTransferToStoreCredit } from "@/lib/gift-certs-manager/gift-certificates/status";
 import { GiftCertificateWithRecipientAccount } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -87,10 +88,7 @@ export function GiftCertificateActionsMenu({
     },
     {
       content: "Refill",
-      disabled:
-        certificate.balance >= certificate.amount ||
-        certificate.status === "pending" ||
-        certificate.status === "disabled",
+      disabled: !canRefill(certificate),
       onItemClick: () => {
         setPendingAction("refill");
         setDropdownKey((key) => key + 1);
@@ -98,7 +96,7 @@ export function GiftCertificateActionsMenu({
     },
     {
       content: "Transfer to Credit",
-      disabled: !certificate.recipientAccount || certificate.balance <= 0 || certificate.status !== "active",
+      disabled: !canTransferToStoreCredit(certificate),
       onItemClick: () => {
         setPendingAction("transfer");
         setDropdownKey((key) => key + 1);

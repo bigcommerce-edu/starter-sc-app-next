@@ -82,3 +82,23 @@ export async function removeSessionStore(storeHash: string): Promise<void> {
 
   cookieStore.set(SESSION_COOKIE_NAME, jwt, SESSION_COOKIE_OPTIONS);
 }
+
+// Clears the session cookie outright, ending the session for every store it
+// covered. Called when BigCommerce reports the admin logged out of the
+// control panel (see lib/session/logout.ts) — unlike removeSessionStore,
+// which drops a single stale store claim, a control-panel logout invalidates
+// the whole session regardless of which stores it had accumulated.
+//
+// Deleting rather than re-signing an emptied session is deliberate: there's
+// nothing left to carry forward, and a cookie-less request is exactly what
+// the unauthenticated path already expects. Same Server Action/Route Handler
+// restriction as the other writes here.
+export async function clearSession(): Promise<void> {
+  const cookieStore = await cookies();
+
+  // The delete has to repeat the attributes the cookie was written with —
+  // a Set-Cookie removal only matches on name/path/domain, so omitting
+  // these can leave the original cookie in place inside the control panel's
+  // cross-origin (SameSite=None; Partitioned) iframe.
+  cookieStore.delete({ name: SESSION_COOKIE_NAME, ...SESSION_COOKIE_OPTIONS });
+}

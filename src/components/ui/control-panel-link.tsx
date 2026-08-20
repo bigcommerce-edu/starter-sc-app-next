@@ -2,7 +2,7 @@
 
 import { MouseEvent } from "react";
 import styled from "styled-components";
-import { OpenInNewIcon } from "@/components/ui/big-design-icons";
+import { LogoutIcon } from "@/components/ui/big-design-icons";
 import { getControlPanelUrl } from "@/lib/routing/control-panel-url";
 
 // Same visual styling as AppLink, so this reads as the same kind of control
@@ -67,7 +67,7 @@ export function ControlPanelLink({
   return (
     <StyledControlPanelLink href={href} onClick={handleClick} rel="noopener noreferrer">
       {children}
-      <OpenInNewIcon size="medium" />
+      <LogoutIcon size="medium" />
     </StyledControlPanelLink>
   );
 }

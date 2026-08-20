@@ -5,17 +5,32 @@ import { Box, Flex, Text } from "@/components/ui/big-design";
 import { AppLink } from "@/components/ui/app-link";
 import { getAppUrl } from "@/lib/routing/app-url";
 
+// isIndex marks the item whose page is also served at the app's root path.
+// The root route is a pass-through re-export of the gift certificates page
+// (see app/store/[storeHash]/page.tsx), so "/" renders that section without
+// "gift-certs" ever appearing in the URL — this flag is what lets the item
+// claim the index route without anything outside this directory needing to
+// know which section the root happens to point at. Move it if the root
+// pass-through is ever re-pointed at another section.
 const NAV_ITEMS = [
-  { id: "gift-certs", title: "Gift Certificates" },
-  { id: "customers", title: "Customers" },
+  { id: "gift-certs", title: "Gift Certificates", isIndex: true },
+  { id: "customers", title: "Customers", isIndex: false },
 ];
 
 // A store-scoped path is "/store/<storeHash>/<section>" (see app-url.ts's
 // getAppUrl) — segments[2] is the section. A root-level dev route (no
 // storeHash, no "/store" prefix) has its section at segments[0] instead.
+//
+// An absent section segment means the index route ("/" or
+// "/store/<storeHash>"), which resolves to whichever item is flagged
+// isIndex rather than leaving no item highlighted.
 function getActiveSection(pathname: string, storeHash: string | undefined): string | undefined {
   const segments = pathname.split("/").filter(Boolean);
   const sectionSegment = storeHash ? segments[2] : segments[0];
+
+  if (!sectionSegment) {
+    return NAV_ITEMS.find((item) => item.isIndex)?.id;
+  }
 
   return NAV_ITEMS.some((item) => item.id === sectionSegment) ? sectionSegment : undefined;
 }
@@ -35,7 +50,7 @@ export function MainNav() {
   const activeSection = getActiveSection(pathname, storeHash);
 
   return (
-    <Flex flexGap="0.5rem" role="navigation" aria-label="Main">
+    <Flex alignItems="stretch" flexGap="0.5rem" role="navigation" aria-label="Main">
       {NAV_ITEMS.map((item) => {
         const isActive = item.id === activeSection;
 
@@ -52,7 +67,7 @@ export function MainNav() {
               href={getAppUrl(storeHash, `/${item.id}`)}
               style={{ textDecoration: "none" }}
             >
-              <Text bold={isActive} color={isActive ? "primary" : "secondary70"} margin="none">
+              <Text bold color={isActive ? "primary" : "secondary70"} margin="none">
                 {item.title}
               </Text>
             </AppLink>

@@ -50,10 +50,13 @@ export async function fetchCustomersByEmail(
   return { items: body.data.map(parseCustomer) };
 }
 
-// BigCommerce's v3 customers endpoint sorts by last_name, not "name" — this
-// is the one place that translates the UI's Name column to the real field.
+// BigCommerce's v3 customers endpoint has no "name" field to sort on — this
+// is the one place that translates the UI's Name column to a real field. It
+// sorts on first_name, matching how the Name column actually renders
+// ("{first_name} {last_name}"), so the order the user sees agrees with the
+// column they clicked. The endpoint also accepts last_name and date_created.
 const SORT_FIELD: Record<CustomersQuery["sortColumn"], string> = {
-  name: "last_name",
+  name: "first_name",
   date_created: "date_created",
 };
 

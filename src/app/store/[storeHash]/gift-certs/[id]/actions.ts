@@ -1,6 +1,8 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { ActionResult } from "@/lib/actions/action-result";
+import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   fetchGiftCertificate,
   refillGiftCertificateBalance as refillGiftCertificateBalanceRequest,
@@ -10,7 +12,6 @@ import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificate
 import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/session/is-authorized-for-store";
 import { isNotFoundError, toSafeMessage } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
-import { revalidatePath } from "next/cache";
 
 // The gift certificate id is the only value these actions trust from the
 // client, and every one of them re-fetches the certificate before mutating
@@ -50,10 +51,7 @@ export async function updateGiftCertificateStatus(
     return { success: false, message: toSafeMessage(error, "Failed to update the gift certificate status.") };
   }
 
-  // TODO: Replace revalidateTag with revalidation of this certificate's cache tag once the update succeeds
-  //  - updateTag(giftCertificateTag(id)) right before returning success
-  revalidatePath("/store/[storeHash]/gift-certs/[id]", "page");
-  revalidatePath("/store/[storeHash]/gift-certs", "page");
+  updateTag(giftCertificateTag(id));
 
   return { success: true, message: "Gift certificate status updated." };
 }
@@ -103,11 +101,8 @@ export async function refillGiftCertificateBalance(
 
     return { success: false, message: toSafeMessage(error, "Failed to refill the gift certificate balance.") };
   }
-  
-  // TODO: Replace revalidateTag with revalidation of this certificate's cache tag once the refill succeeds
-  //  - updateTag(giftCertificateTag(id)) right before returning success
-  revalidatePath("/store/[storeHash]/gift-certs/[id]", "page");
-  revalidatePath("/store/[storeHash]/gift-certs", "page");
+
+  updateTag(giftCertificateTag(id));
 
   return { success: true, message: "Gift certificate balance refilled." };
 }

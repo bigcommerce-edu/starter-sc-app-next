@@ -7,6 +7,13 @@ import { fetchGiftCertificate } from "@/lib/gift-certs-manager/gift-certificates
 import { getAppUrl } from "@/lib/routing/app-url";
 import { AppError } from "@/lib/errors/app-error";
 
+import { cacheLife, cacheTag } from "next/cache";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+
+// Tagged per-id (rather than the shared list tag) so a mutation to this
+// certificate updates the detail view immediately without invalidating
+// every other certificate's cached detail view.
 export async function GiftCertificateView({
   id,
   storeHash,
@@ -14,14 +21,10 @@ export async function GiftCertificateView({
   id: string;
   storeHash: string | undefined;
 }) {
-  // TODO: cache this render boundary with Cache Components
-  //  - "use cache: remote" directive
-  //  - cacheLife() with a lifetime profile with cacheProfile()
-  //  - Use CACHE_PROFILE_STANDARD
-  //  - cacheTag(giftCertificateTag(id)) - tagged per-id (not the shared list
-  //    tag) so a mutation to this certificate doesn't invalidate every other
-  //    certificate's cached detail view
-  //
+  "use cache: remote";
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
+  cacheTag(giftCertificateTag(id));
+
   // A missing id is a real 404 from BigCommerce's v2 single-resource
   // endpoint; the translation to notFound() happens here rather than in
   // fetchGiftCertificate, which is also called from Server Actions where a

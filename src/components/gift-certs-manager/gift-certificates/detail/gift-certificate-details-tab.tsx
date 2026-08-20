@@ -25,8 +25,23 @@ export function GiftCertificateDetailsTab({
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const isDirty = status !== giftCertificate.status;
 
-  const handleCancel = () => setStatus(giftCertificate.status);
+  const resetStatus = () => setStatus(giftCertificate.status);
 
+  // Dismissing the confirmation (Cancel, Esc, the close button) abandons the
+  // edit entirely rather than just hiding the dialog: the Select goes back to
+  // the certificate's saved status, which in turn re-disables the in-page
+  // Cancel/Update Status buttons via isDirty. Leaving the pending status
+  // selected would show a form that looks submittable but whose confirmation
+  // the user just declined.
+  const dismissUpdateModal = () => {
+    setIsUpdateModalOpen(false);
+    resetStatus();
+  };
+
+  // The success path deliberately does not reset: giftCertificate.status is
+  // still the pre-update value here, so resetting would briefly show the old
+  // status before the revalidated data arrives and remounts this component
+  // (see the key in gift-certificate-tabs.tsx).
   const closeUpdateModal = () => setIsUpdateModalOpen(false);
 
   const handleUpdate = () => {
@@ -62,7 +77,7 @@ export function GiftCertificateDetailsTab({
 
       <FlexItem>
         <Flex flexGap="0.5rem">
-          <Button disabled={!isDirty || isPending} onClick={handleCancel} variant="subtle">
+          <Button disabled={!isDirty || isPending} onClick={resetStatus} variant="subtle">
             Cancel
           </Button>
           <Button
@@ -77,13 +92,13 @@ export function GiftCertificateDetailsTab({
 
       <Modal
         actions={[
-          { text: "Cancel", variant: "subtle", onClick: closeUpdateModal },
+          { text: "Cancel", variant: "subtle", onClick: dismissUpdateModal },
           { text: "Update Status", variant: "primary", isLoading: isPending, onClick: handleUpdate },
         ]}
         closeOnEscKey
         header="Update Status"
         isOpen={isUpdateModalOpen}
-        onClose={closeUpdateModal}
+        onClose={dismissUpdateModal}
       >
         <Text marginBottom="none">
           Update status from {GIFT_CERTIFICATE_STATUS_LABEL[giftCertificate.status]} to{" "}

@@ -183,6 +183,51 @@ time, unchanged by any later refresh) lets `verifySession` enforce a hard
 still forces re-authentication through `/load` at least once per that
 window no matter how continuously it's used.
 
+### Control panel synchronization
+
+The app runs in an iframe inside the BigCommerce control panel, so changes to
+the control panel's own state are invisible to it by default. BigCommerce
+publishes a JS SDK (`https://cdn.bigcommerce.com/jssdk/bc-sdk.js`) whose
+purpose is to keep an app "synchronized with the control panel": it opens a
+`postMessage` channel to the parent frame, and including it on a page is the
+documented way to subscribe to the events sent over that channel.
+
+`components/layout/bigcommerce-control-panel-sync.tsx` is the single place
+that loads and initializes the SDK, so it's where any further control panel
+synchronization belongs as it's adopted. It's a Client Component that loads
+the script (`afterInteractive`, so a cross-origin script whose only job is a
+background subscription can't block the shell's first paint) and registers
+`window.bcAsyncInit` to call `Bigcommerce.init()` with whichever callbacks
+the app opts into. These signals only exist in the browser, which is why this
+is the one place the architecture needs a client-side event handler bridging
+a browser event back to the server.
+
+It's mounted in `app/store/[storeHash]/layout.tsx` rather than the root
+layout, so it only runs for the store-scoped routes actually launched inside
+the control panel. Note that a layout's render being skippable by the client
+Router Cache (the reason authorization can't live in a layout) is not a
+problem here: this is a subscription on a mounted Client Component, so it
+stays alive across exactly those client-side navigations rather than needing
+to re-run per page.
+
+#### Logout (`onLogout`)
+
+The one event the app currently subscribes to, and the one [BigCommerce's
+best-practice
+guidance](https://docs.bigcommerce.com/developer/docs/integrations/apps/guide/following-best-practices#manage-user-session-timeouts)
+calls out. The control panel can log the admin out at any time — including
+from a different tab, which this app's iframe would otherwise never hear
+about — leaving this app holding a session that outlives the one that
+authorized it.
+
+The callback invokes the `logoutFromControlPanel` Server Action in
+`lib/session/logout.ts`, which deletes the session cookie via
+`clearSession`. That action takes no arguments and validates nothing, because
+it only ever clears the caller's own cookie — there's no store hash or user
+id to trust, and the worst a forged POST achieves is logging that same caller
+out. It swallows its own errors: there's no UI to report a failure to, and
+the session TTL remains the backstop.
+
 ### Two-tier authorization
 
 1. **`src/proxy.ts`** (primary, runs first) — a cheap, optimistic gate that
@@ -366,6 +411,10 @@ This app uses Next's Cache Components (`cacheComponents: true`). Two
 `cacheLife` profiles are configured: `standard` (5 min, most data) and
 `extended` (10 min, slower-changing data like channels).
 
+Caching is controlled by `CACHE_COMPONENTS_ENABLED`, which `.env.example`
+ships as `TRUE` so the behavior is visible out of the box. The app's own
+fallback when the var is undefined is *off* (see below).
+
 Data-fetching functions that back a page (e.g.
 `fetchGiftCertificatesPage`) are `"use cache: remote"` and tag themselves
 with both a shared list tag and a per-record tag (added after the fetch
@@ -384,6 +433,49 @@ Route Handlers that must never be cached by the browser (as opposed to
 Next's own server-side cache) explicitly set `Cache-Control: no-store` — a
 GET Route Handler's response is otherwise eligible for normal HTTP caching,
 which is invisible to and not invalidated by `cacheTag`/`updateTag`.
+
+### Enabling and disabling caching
+
+Caching is controlled by `CACHE_COMPONENTS_ENABLED`, and is off unless that
+is explicitly `true`. Two defaults are worth keeping apart:
+
+- **The code's fallback is off.** An undefined var means no caching, so
+  caching is never on by accident — a deployment that never sets it gets the
+  conservative behavior, which matters for an admin-privileged app where
+  stale data is usually the worse trade-off (see the warning below).
+- **`.env.example` ships `TRUE`.** Caching is one of the patterns this app
+  exists to demonstrate, so the example config opts in deliberately, and
+  anyone starting from it sees the real caching behavior. Set it to `FALSE`
+  when stale reads would get in the way, and decide deliberately for a real
+  deployment rather than inheriting the example's choice.
+
+What the switch does *not* do is turn off Cache Components. `cacheComponents`
+stays `true` either way, because the `use cache` directives and
+`cacheTag`/`updateTag` calls throughout the app are compile-time constructs:
+they can't be wrapped in a runtime condition (a directive nested inside an
+`if` is silently ignored rather than honored), and disabling
+`cacheComponents` outright would stop the app compiling at all.
+
+Instead, `next.config.ts` swaps both `cacheLife` profiles for a zero-second
+one (`{ stale: 0, revalidate: 0, expire: 1 }` — Next requires `expire` to
+exceed `revalidate`, so `1` is the floor). A `revalidate` of `0` means every
+entry is already expired by the time the next request tries to read it, so
+nothing is ever reused and each request re-fetches. Overriding the profiles
+covers every cached boundary in the app, since each one selects `standard` or
+`extended`.
+
+This keeps the caching code paths intact and observable while removing the
+staleness: with `LOG_API_REQUESTS=true`, every page load logs its upstream
+requests when caching is off, versus only the first when it's on — which
+makes the switch a useful way to *see* what the caching is actually doing.
+
+One behavior worth knowing either way: a `notFound()` raised inside a
+`use cache: remote` boundary is itself cached, because Next treats the
+not-found result as a legitimate cached outcome rather than an error. With
+caching on, a record deleted upstream keeps rendering the not-found page for
+the remainder of the cache lifetime, and a record created at a previously
+missing id stays invisible for that long. Disabling caching removes that
+window entirely.
 
 > [!WARNING]
 > Caching is an core architectural pattern to understand.

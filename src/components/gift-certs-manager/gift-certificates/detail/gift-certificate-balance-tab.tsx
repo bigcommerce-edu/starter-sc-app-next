@@ -8,6 +8,11 @@ import {
   transferGiftCertificateBalanceToStoreCredit,
 } from "@/app/store/[storeHash]/gift-certs/[id]/actions";
 import { runServerAction } from "@/components/ui/action-alerts";
+import {
+  canAddToBalance,
+  canRefill,
+  canTransferToStoreCredit,
+} from "@/lib/gift-certs-manager/gift-certificates/status";
 import { GiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 type BalanceAction = "refill" | "add" | "transfer";
@@ -70,6 +75,21 @@ export function GiftCertificateBalanceTab({
 
   const closeConfirmModal = () => setPendingAction(null);
 
+  // Dismissing the confirmation (Cancel, Esc, the close button) abandons the
+  // whole action, not just the dialog: the open amount panel collapses and
+  // its typed value is dropped, so the user isn't left looking at a
+  // half-filled form whose confirmation they just declined. The amounts are
+  // reseeded from the certificate (the same values useState initialized them
+  // with) rather than blanked, so reopening the panel starts from the same
+  // defaults as a fresh render.
+  const dismissConfirmModal = () => {
+    setPendingAction(null);
+    setSelectedAction(null);
+    setRefillAmount(String(giftCertificate.amount));
+    setAddAmount("");
+    setTransferAmount(String(giftCertificate.balance));
+  };
+
   const handleConfirm = () => {
     const action = pendingAction;
 
@@ -77,6 +97,12 @@ export function GiftCertificateBalanceTab({
     // component can get frozen mid-transition in Next's client Router Cache,
     // which would otherwise replay a stale pendingAction (and a re-opened
     // modal) when navigating back to this cached page.
+    //
+    // Deliberately closeConfirmModal, not dismissConfirmModal: the amount
+    // state is read inside the transition below, so resetting it here would
+    // submit the wrong value. A successful action revalidates and remounts
+    // this component (see the key in gift-certificate-tabs.tsx), which is
+    // what clears the form on the success path.
     closeConfirmModal();
 
     startTransition(async () => {
@@ -102,6 +128,10 @@ export function GiftCertificateBalanceTab({
 
   const pendingAmount = pendingAction === "refill" ? refillAmount : pendingAction === "add" ? addAmount : transferAmount;
 
+  const canSubmitRefill = refillAmount !== "" && Number(refillAmount) > giftCertificate.balance;
+  const canSubmitAdd = addAmount !== "";
+  const canSubmitTransfer = transferAmount !== "";
+
   return (
     <Panel header={giftCertificate.code}>
       <DetailField label="Original Value">{currencyFormatter.format(giftCertificate.amount)}</DetailField>
@@ -109,25 +139,21 @@ export function GiftCertificateBalanceTab({
 
       <Flex flexGap="0.5rem" marginBottom="medium">
         <Button
-          disabled={giftCertificate.status === "pending" || giftCertificate.status === "disabled"}
+          disabled={!canRefill(giftCertificate)}
           onClick={() => toggleAction("refill")}
           variant={selectedAction === "refill" ? "primary" : "secondary"}
         >
           Refill
         </Button>
         <Button
-          disabled={giftCertificate.status === "pending" || giftCertificate.status === "disabled"}
+          disabled={!canAddToBalance(giftCertificate)}
           onClick={() => toggleAction("add")}
           variant={selectedAction === "add" ? "primary" : "secondary"}
         >
           Add to Balance
         </Button>
         <Button
-          disabled={
-            !giftCertificate.recipientAccount ||
-            giftCertificate.balance <= 0 ||
-            giftCertificate.status !== "active"
-          }
+          disabled={!canTransferToStoreCredit(giftCertificate)}
           onClick={() => toggleAction("transfer")}
           variant={selectedAction === "transfer" ? "primary" : "secondary"}
         >
@@ -144,10 +170,11 @@ export function GiftCertificateBalanceTab({
             value={refillAmount}
           />
           <Text>
-            This will set the total active balance to this amount, up to{" "}
+            This will set the total active balance to this amount — more than the current balance of{" "}
+            <strong>{currencyFormatter.format(giftCertificate.balance)}</strong>, up to{" "}
             <strong>{currencyFormatter.format(giftCertificate.amount)}</strong>.
           </Text>
-          <Button onClick={() => setPendingAction("refill")} variant="primary">
+          <Button disabled={!canSubmitRefill} onClick={() => setPendingAction("refill")} variant="primary">
             Refill
           </Button>
         </Box>
@@ -157,7 +184,7 @@ export function GiftCertificateBalanceTab({
         <Box>
           <Input label="Amount" onChange={(event) => setAddAmount(event.target.value)} type="number" value={addAmount} />
           <Text>This amount will be added to the current balance.</Text>
-          <Button disabled={addAmount === ""} onClick={() => setPendingAction("add")} variant="primary">
+          <Button disabled={!canSubmitAdd} onClick={() => setPendingAction("add")} variant="primary">
             Add to Balance
           </Button>
         </Box>
@@ -175,7 +202,7 @@ export function GiftCertificateBalanceTab({
             The gift certificate balance will be reduced by this amount, and the customer&apos;s store credit
             balance will be increased accordingly.
           </Text>
-          <Button onClick={() => setPendingAction("transfer")} variant="primary">
+          <Button disabled={!canSubmitTransfer} onClick={() => setPendingAction("transfer")} variant="primary">
             Transfer to Store Credit
           </Button>
         </Box>
@@ -184,7 +211,7 @@ export function GiftCertificateBalanceTab({
       {pendingAction && (
         <Modal
           actions={[
-            { text: "Cancel", variant: "subtle", onClick: closeConfirmModal },
+            { text: "Cancel", variant: "subtle", onClick: dismissConfirmModal },
             {
               text: ACTION_LABEL[pendingAction],
               variant: "primary",
@@ -195,7 +222,7 @@ export function GiftCertificateBalanceTab({
           closeOnEscKey
           header={ACTION_LABEL[pendingAction]}
           isOpen
-          onClose={closeConfirmModal}
+          onClose={dismissConfirmModal}
         >
           <Text marginBottom="none">
             {getConfirmationMessage(pendingAction, giftCertificate, Number(pendingAmount))}

@@ -63,10 +63,12 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
   const dateCreatedMin = getStringParam(params, "date_created:min");
   const dateCreatedMax = getStringParam(params, "date_created:max");
 
-  // sort is a single value with the direction embedded, e.g. "last_name:asc"
-  // — the only field BigCommerce supports sorting customers by is last_name
-  // (also date_created/date_modified, which this mock doesn't model).
-  const [, sortDirectionRaw] = getStringParam(params, "sort").split(":");
+  // sort is a single value with the direction embedded, e.g. "first_name:asc"
+  // — BigCommerce supports first_name, last_name and date_created here (see
+  // SORT_FIELD in customers-api.ts). The field is read, not just the
+  // direction, so this mock orders rows the same way the real endpoint would
+  // rather than always sorting by one field.
+  const [sortFieldRaw, sortDirectionRaw] = getStringParam(params, "sort").split(":");
   const sortDirection = sortDirectionRaw === "desc" ? "DESC" : "ASC";
 
   const currentPage = getNumberParam(params, "page", 1);
@@ -97,7 +99,12 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    const comparison = getFullName(a).localeCompare(getFullName(b));
+    const comparison =
+      sortFieldRaw === "date_created"
+        ? a.date_created.localeCompare(b.date_created)
+        : sortFieldRaw === "last_name"
+          ? a.last_name.localeCompare(b.last_name)
+          : a.first_name.localeCompare(b.first_name);
 
     return sortDirection === "ASC" ? comparison : -comparison;
   });

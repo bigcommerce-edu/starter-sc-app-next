@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.0.4
+
+_Based on Next.js 16.2.9_
+
+### Summary
+
+Two UAT fixes folded into the existing `customers` enhancement: the Name
+column now sorts by the field it actually displays, and the main nav's active
+pill is styled inline so it survives the control panel iframe. No lab steps
+were added, renumbered, or removed, so the step tags are unchanged from
+`1.0.3`.
+
+### Changes
+
+- Sorted the customers Name column on `first_name` instead of `last_name`.
+  The v3 customers endpoint has no `name` field, and the column renders
+  "{first_name} {last_name}", so sorting on the last name disagreed with what
+  the user saw. The mock list handler now reads the sort *field* out of the
+  `sort` param too — not just the direction — so MOCK mode orders rows the
+  same way the real endpoint does instead of always sorting by full name.
+- Styled the main nav's active pill with an inline `style` (values taken from
+  the BigDesign theme) rather than `Box`'s `backgroundColor`/`padding` props.
+  Those props resolve to a styled-components generated class, and in the
+  control panel iframe the build-time prerender and the running server use
+  different module registries that disagree on the component's group id.
+  styled-components v5 swallows the resulting `insertRule` failure, silently
+  dropping the rule and leaving the pill with no background or padding.
+  Inline styles are attribute-level and can't be dropped that way.
+
 ## 1.0.3
 
 _Based on Next.js 16.2.9_

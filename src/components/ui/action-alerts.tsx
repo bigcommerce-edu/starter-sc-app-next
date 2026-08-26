@@ -1,7 +1,7 @@
 "use client";
 
 import { createAlertsManager } from "@bigcommerce/big-design";
-import { AlertsManager } from "@/components/ui/big-design";
+import { AlertsManager } from "@bigcommerce/big-design";
 import { ActionResult } from "@/lib/actions/action-result";
 
 // One manager instance for the whole app: callers show alerts from anywhere

@@ -1,4 +1,4 @@
-import { Box, Flex, ProgressCircle } from "@/components/ui/big-design";
+import { Box, Flex, ProgressCircle } from "@bigcommerce/big-design";
 
 // Dims already-rendered content and overlays a spinner while isPending is
 // true — shows a "refreshing" state for content re-fetched via router.push,

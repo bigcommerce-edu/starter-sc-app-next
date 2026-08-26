@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Dropdown, DropdownLinkItem } from "@/components/ui/big-design";
-import { MoreHorizIcon } from "@/components/ui/big-design-icons";
+import { Button, Dropdown, DropdownLinkItem } from "@bigcommerce/big-design";
+import { MoreHorizIcon } from "@bigcommerce/big-design-icons";
 import { Customer } from "@/lib/gift-certs-manager/customers/types";
 
 export function CustomerActionsMenu({ customer, detailUrl }: { customer: Customer; detailUrl: string }) {

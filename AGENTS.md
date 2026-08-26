@@ -68,7 +68,10 @@ skill, and verified with its `validate-sync` command.
 - The first commit is a clean Next.js install (`create-next-app`).
 - **Strict 1:1 TODO → code** for main labs: each commit that introduces
   `TODO:` comments is immediately followed by the code commit that
-  resolves them (one TODO commit per code commit).
+  resolves them (one TODO commit per code commit). The one exception is a
+  step that only installs dependencies: there is nothing for a learner to
+  fill in, so it is a single code commit with no preceding TODO commit,
+  and its `-pre` tag sits on the commit before it.
 - **Enhancements** use a looser granularity: one broad TODO commit up
   front (covering every TODO the whole feature will resolve, each with
   its own independent, per-function comment) followed by one or more code
@@ -85,7 +88,7 @@ Reference-only segments of the setup/boilerplate phase preceding `start`.
 
 | Segment | Description | Tag Prefix |
 | ------- | ----------- | ---------- |
-| Dependencies | Installing the project's runtime and dev dependencies | `depend` |
+| Dependencies | Installing the project's runtime and dev dependencies, apart from the BigDesign and styled-components packages installed in Lab 1 | `depend` |
 | Root route group | The `(root)` route group and store-scoped/error routes | `root` |
 | Mock data | The gift certificates data-access layer and its mock data/handlers | `mock-data` |
 | Full boilerplate | The setup phase up to (but excluding) the compile-only stub commit | `boilerplate` |
@@ -111,20 +114,23 @@ Reference-only segments of the setup/boilerplate phase preceding `start`.
 ### Lab Step Breakdown
 
 Each main-lab step is a `<tag>-NN-pre` (TODO placeholders) commit
-immediately followed by a `<tag>-NN-post` (implementation) commit.
+immediately followed by a `<tag>-NN-post` (implementation) commit — except
+for a dependency-install step, which has no TODO commit (see the strict
+1:1 rule above).
 
 **Lab 1 — Adding BigDesign and basic Gift Certificates UI (`ui`)** —
 start: `start`, complete: `ui-complete`
 
 | Step | Tag Base | Description |
 | ---- | --- | ----------- |
-| 1 | `ui-01` | Wire BigDesign into the root layout |
-| 2 | `ui-02` | Convert main layout components to BigDesign |
-| 3 | `ui-03` | Build the gift certificates list page |
-| 4 | `ui-04` | Replace the store home page with the gift certificates list |
-| 5 | `ui-05` | Build the gift certificate detail page |
-| 6 | `ui-06` | Status update and balance refill actions |
-| 7 | `ui-07` | Convert remaining components to BigDesign |
+| 1 | `ui-01` | Install the BigDesign and styled-components packages |
+| 2 | `ui-02` | Wire BigDesign into the root layout |
+| 3 | `ui-03` | Convert main layout components to BigDesign |
+| 4 | `ui-04` | Build the gift certificates list page |
+| 5 | `ui-05` | Replace the store home page with the gift certificates list |
+| 6 | `ui-06` | Build the gift certificate detail page |
+| 7 | `ui-07` | Status update and balance refill actions |
+| 8 | `ui-08` | Convert remaining components to BigDesign |
 
 **Lab 2 — Adding the BigCommerce REST API client (`rest-api`)** —
 start: `rest-api-start`, complete: `rest-api-complete`
@@ -225,7 +231,7 @@ removal:
 * `.env.local`
 * `data/` (the gitignored local SQLite credentials file)
 
-## Framework Install Command
+## Framework Install Command and Dependencies Installation
 
 Install the base framework with:
 
@@ -236,3 +242,5 @@ pnpm create next-app@<version>
 Where `<version>` is the version the user specified.
 
 After the main install command completes, run `pnpm approve-builds --all` before making the initial commit. An explicit `pnpm install` is not needed; the install command handles it.
+
+Regarding upgrading dependencies when a framework upgrade is done: Usually all dependent packages are expected to be installed in commits prior to lab boilerplate and lab steps. This project has exceptions: The BigDesign and styled-components packages are installed in a lab step commit (in the UI lab). When dependencies are upgraded, upgrading these packages at that commit should be included.

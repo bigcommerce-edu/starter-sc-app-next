@@ -126,12 +126,10 @@ BigDesign is `styled-components` based, so it needs two things wired up in
   styled-components `ThemeProvider` with BigDesign's theme, plus
   `GlobalStyles`.
 
-Components are imported from local re-export barrels
-(`components/ui/big-design.tsx` and `components/ui/big-design-icons.tsx`)
-rather than from `@bigcommerce/big-design` directly. BigDesign components
-are Client Components, and the barrels carry the `"use client"` directive so
-Server Components can import them without each file declaring the boundary
-itself.
+Components are imported from `@bigcommerce/big-design` and
+`@bigcommerce/big-design-icons` directly. BigDesign ships its own
+`"use client"` boundaries, so a Server Component can import from the
+packages without any local re-export layer in between.
 
 One hazard worth knowing: passing a Client Component into a BigDesign
 component as a *named prop* (rather than as `children`) from a Server

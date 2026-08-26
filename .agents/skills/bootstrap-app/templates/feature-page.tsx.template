@@ -1,0 +1,25 @@
+import { Panel, Text } from "@bigcommerce/big-design";
+
+// Starter page for the __TITLE__ feature. Rendered by
+// app/store/[storeHash]/__FEATURE__/page.tsx through AuthorizedPage, so it only
+// renders after the store authorization check has passed.
+//
+// storeHash is undefined on the root-level MOCK/STATIC dev routes. Pass it
+// through to getRestApiClient(storeHash) in your data access layer rather than
+// resolving credentials yourself — see docs/USING-AS-A-STARTER.md.
+export async function __COMPONENT__({
+  params,
+}: {
+  params: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedParams = await params;
+  const storeHash = resolvedParams.storeHash;
+  const storeHashString = Array.isArray(storeHash) ? storeHash[0] : storeHash;
+
+  return (
+    <Panel header="__TITLE__">
+      <Text>Store: {storeHashString ?? "none (MOCK/STATIC dev route)"}</Text>
+    </Panel>
+  );
+}

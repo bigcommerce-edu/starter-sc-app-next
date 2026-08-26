@@ -1,0 +1,124 @@
+// TEMPLATE: src/lib/<feature>/things/things-api.ts (BigCommerce v2 endpoint)
+// Only the parts that differ from things-api.v3.ts.template. Uncached
+// counterparts, create, and delete follow the v3 template, minus the data
+// envelope (v2 returns the bare record).
+//
+// For a v2 endpoint, ThingsResult in types.ts is
+// `{ items: Thing[]; hasNextPage: boolean }` — no total is available.
+import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+// thingTag is only used inside Cache Components markers in this file, so the
+// swap must drop it too — otherwise it's an unused import on a fetch-level
+// target. Remove this marker if anything outside the markers uses it.
+// @cache-components-only:drop-specifier thingTag
+import { thingTag, THINGS_LIST_TAG } from "@/lib/<feature>/things/cache-tags";
+import { THINGS_PATH, Thing, ThingsQuery, ThingsResult, getThingPath } from "@/lib/<feature>/things/types";
+
+// @cache-components-only:drop-specifier cacheProfile
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+
+// @cache-components-only:start
+import { cacheLife, cacheTag } from "next/cache";
+// @cache-components-only:end
+
+// v2 commonly sends decimal amounts as strings — parse them to numbers once,
+// here, rather than at render time.
+export interface ThingWireRecord extends Omit<Thing, "amount"> {
+  amount: string;
+}
+
+function parseThing(record: ThingWireRecord): Thing {
+  return { ...record, amount: Number(record.amount) };
+}
+
+// v2 list endpoints return a bare array (no envelope, no total), separate
+// sort/direction params, and plain-named filters. Factored out from
+// fetchThings because resolveHasNextPage peeks ahead with it.
+async function fetchThingsPage(query: ThingsQuery, storeHash: string | undefined): Promise<ThingWireRecord[]> {
+  // @cache-components-only:start
+  "use cache: remote";
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
+  cacheTag(THINGS_LIST_TAG);
+  // @cache-components-only:end
+
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: items } = await apiClient.get<ThingWireRecord[]>(THINGS_PATH, {
+    params: {
+      ...(query.name && { name: query.name }),
+      sort: "id",
+      direction: query.direction.toLowerCase(),
+      page: query.page,
+      limit: query.limit,
+    },
+  });
+
+  // v2 list endpoints respond 204 (not 200 + []) when nothing matches; the
+  // REST client returns undefined data for a 204.
+  const records = items ?? [];
+
+  // @cache-components-only:start
+  for (const record of records) {
+    cacheTag(thingTag(record.id));
+  }
+  // @cache-components-only:end
+
+  return records;
+}
+
+// No total count, so the only way to know whether another page exists is to
+// peek at page + 1 with the same limit (its cache entry is reused if the user
+// navigates there). Skipped when this page isn't full.
+async function resolveHasNextPage(
+  query: ThingsQuery,
+  storeHash: string | undefined,
+  items: ThingWireRecord[],
+): Promise<boolean> {
+  if (items.length < query.limit) {
+    return false;
+  }
+
+  const nextPage = await fetchThingsPage({ ...query, page: query.page + 1 }, storeHash);
+
+  return nextPage.length > 0;
+}
+
+export async function fetchThings(query: ThingsQuery, storeHash: string | undefined): Promise<ThingsResult> {
+  const items = await fetchThingsPage(query, storeHash);
+  const hasNextPage = await resolveHasNextPage(query, storeHash, items);
+
+  return { items: items.map(parseThing), hasNextPage };
+}
+
+// v2 single-resource GETs return the bare record; a missing id is a 404.
+export async function fetchThing(id: number | string, storeHash: string | undefined): Promise<Thing> {
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: record } = await apiClient.get<ThingWireRecord>(getThingPath(id), {
+  });
+
+  return parseThing(record);
+}
+
+// Many v2 PUTs are full-object replacements with a set of always-required
+// fields. Pull those from the current record (fetched uncached by the
+// calling Server Action) so each specific update only names what changes.
+function getRequiredFields(thing: Thing): Pick<ThingWireRecord, "name" | "amount"> {
+  return { name: thing.name, amount: String(thing.amount) };
+}
+
+async function updateThing(
+  thing: Thing,
+  fields: Partial<Omit<ThingWireRecord, "id">>,
+  storeHash: string | undefined,
+): Promise<Thing> {
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: record } = await apiClient.put<ThingWireRecord>(getThingPath(thing.id), {
+    body: { ...getRequiredFields(thing), ...fields },
+  });
+
+  return parseThing(record);
+}
+
+// Name each business operation as its own exported function over the shared
+// updateThing, rather than exporting a generic "update anything".
+export async function renameThing(thing: Thing, name: string, storeHash: string | undefined): Promise<Thing> {
+  return updateThing(thing, { name }, storeHash);
+}

@@ -1,0 +1,49 @@
+// TEMPLATE: src/lib/<feature>/things/types.ts
+// The concept's domain types and BigCommerce API paths. No runtime logic
+// beyond path builders, and no dependency on BigDesign or React.
+
+// Shared across concepts in the feature? Move it to src/lib/<feature>/types.ts
+// and import it from there instead. Matches BigDesign's TableSortDirection.
+export type SortDirection = "ASC" | "DESC";
+
+export const THINGS_PATH = "/v3/things";
+
+// Only when the endpoint has a single-resource path. Some v3 endpoints (e.g.
+// /v3/customers) don't, and look a record up through the list path with an
+// id:in filter instead — omit this then, and say so in a comment.
+export function getThingPath(id: number | string): string {
+  return `${THINGS_PATH}/${id}`;
+}
+
+// Matches the BigCommerce resource's field names directly (snake_case), so
+// wire records and domain records differ only where parseThing (in
+// things-api.ts) normalizes a field. Include only the fields this app uses.
+export interface Thing {
+  id: number;
+  name: string;
+  date_created: string;
+}
+
+// UI-facing sort columns, mapped to real API sort fields in things-api.ts.
+export type ThingsSortColumn = "name" | "date_created";
+
+// The list page's query state, parsed from URL search params in query.ts.
+// Field names match the request params fetchThings sends where possible
+// (":min"/":max"/":like" suffixes become "_min"/"_max" etc., since those
+// aren't valid identifier characters).
+export interface ThingsQuery {
+  name: string;
+  sortColumn: ThingsSortColumn;
+  direction: SortDirection;
+  page: number;
+  limit: number;
+}
+
+// v3 endpoints report a total in meta.pagination, so the UI can show page
+// counts. For a v2 endpoint (no total available), use
+// `{ items: Thing[]; hasNextPage: boolean }` instead — see
+// things-api.v2.ts.template.
+export interface ThingsResult {
+  items: Thing[];
+  totalItems: number;
+}

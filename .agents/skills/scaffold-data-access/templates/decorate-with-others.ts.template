@@ -1,0 +1,26 @@
+// TEMPLATE: src/lib/<feature>/things/decorate-with-others.ts
+// A cross-concept join in its own file: attaches related records (here,
+// "Other"s referenced by other_id) that the Thing endpoint doesn't return.
+// Takes storeHash like every data-access function, and accepts an already
+// fetched list so callers that have one don't fetch it twice.
+import { fetchOthers } from "@/lib/<feature>/others/others-api";
+import { Other } from "@/lib/<feature>/others/types";
+import { Thing } from "@/lib/<feature>/things/types";
+
+// Declare the decorated shape in things/types.ts, next to Thing.
+export interface ThingWithOther extends Thing {
+  other: Other | undefined;
+}
+
+export async function decorateThingsWithOthers(
+  things: Thing[],
+  storeHash: string | undefined,
+  others?: Other[],
+): Promise<ThingWithOther[]> {
+  const resolvedOthers = others ?? (await fetchOthers(storeHash)).items;
+
+  return things.map((thing) => ({
+    ...thing,
+    other: resolvedOthers.find((other) => other.id === thing.other_id),
+  }));
+}

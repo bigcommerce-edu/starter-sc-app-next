@@ -1,0 +1,24 @@
+import { Suspense } from "react";
+import { Text } from "@bigcommerce/big-design";
+import { AuthorizedPage } from "@/components/layout/authorized-page";
+import { ContentFallback } from "@/components/layout/content-fallback";
+
+// Temporary home page between removing the example and adding your own
+// feature. bootstrap.mjs replaces this file.
+function PlaceholderPage() {
+  return <Text>This app has no features yet.</Text>;
+}
+
+export default function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return (
+    <Suspense fallback={<ContentFallback />}>
+      <AuthorizedPage params={params} searchParams={searchParams} pageComponent={PlaceholderPage} />
+    </Suspense>
+  );
+}

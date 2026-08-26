@@ -1,0 +1,46 @@
+{
+  "profiles": [
+    {
+      "name": "cloudflare",
+      "label": "Cloudflare",
+      "command": "pnpm scaffold cloudflare",
+      "module": "./cloudflare.mjs",
+      "swapsCache": true,
+      "disablesCacheComponents": true,
+      "paths": ["src", "scripts", "package.json", "next.config.ts"],
+      "creates": [
+        "src/middleware.ts",
+        "open-next.config.ts",
+        "wrangler.jsonc.example",
+        ".dev.vars.example",
+        ".env.production.local.example",
+        ".secrets.production.example"
+      ],
+      "commitMessage": "Add Cloudflare deployment scaffolding",
+      "guide": "docs/CLOUDFLARE-DEPLOYMENT.md"
+    },
+    {
+      "name": "vercel",
+      "label": "Vercel",
+      "command": "pnpm scaffold vercel",
+      "module": "./vercel.mjs",
+      "swapsCache": false,
+      "disablesCacheComponents": false,
+      "paths": ["scripts", "package.json", ".env.example"],
+      "creates": [".env.vercel.example"],
+      "commitMessage": "Add Vercel deployment scaffolding",
+      "guide": "docs/VERCEL-DEPLOYMENT.md"
+    },
+    {
+      "name": "cache-swap",
+      "label": "Cache swap",
+      "command": "node .agents/skills/scaffold-hosting/scripts/run-cache-swap.mjs",
+      "swapsCache": true,
+      "disablesCacheComponents": false,
+      "paths": ["src", "scripts", "next.config.ts"],
+      "creates": [],
+      "commitMessage": "Swap to fetch-level caching",
+      "guide": "docs/CACHE-IMPLEMENTATION-SWAP.md"
+    }
+  ]
+}

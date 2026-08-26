@@ -1,0 +1,12 @@
+// TEMPLATE: src/lib/<feature>/things/mock/mock-things.ts
+// In-memory records in the exact wire format (ThingWireRecord, not Thing),
+// so parseThing runs in MOCK mode just as it does against the real API.
+import { ThingWireRecord } from "@/lib/<feature>/things/things-api";
+
+export const mockThings: ThingWireRecord[] = [
+  {
+    id: 1,
+    name: "Example Thing",
+    date_created: "2026-01-15T14:30:00Z",
+  },
+];

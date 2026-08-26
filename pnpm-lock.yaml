@@ -12,13 +12,13 @@ importers:
   .:
     dependencies:
       '@bigcommerce/big-design':
-        specifier: ^5.0.0
+        specifier: 5.0.0
         version: 5.0.0(patch_hash=c185a2e483d959833f660a67d1b9979d9985869715698dc22053a77047b20791)(@types/react@19.2.18)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(styled-components@6.5.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
       '@bigcommerce/big-design-icons':
-        specifier: ^3.0.0
+        specifier: 3.0.0
         version: 3.0.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(styled-components@6.5.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
       '@bigcommerce/big-design-theme':
-        specifier: ^3.0.0
+        specifier: 3.0.0
         version: 3.0.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(styled-components@6.5.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
       jose:
         specifier: 6.2.3

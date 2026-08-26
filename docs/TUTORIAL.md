@@ -1,7 +1,7 @@
 # Lab Tutorial: BigCommerce Single-Click App Starter
 
-> **Based on version 1.0.4** — this tutorial corresponds to the latest
-> progressive history tagged `1.0.4`.
+> **Based on version 1.1.0** — this tutorial corresponds to the latest
+> progressive history tagged `1.1.0`.
 
 This document lists the lab exercises and their step-by-step diffs. Each
 main-lab step links to a comparison between the step's `*-pre` (TODO
@@ -55,7 +55,7 @@ The starting point you copied above is already scaffolded — dependencies are i
 
 If you'd like to review how that scaffolding was assembled before diving in, the diffs below break it into pieces:
 
-* [Dependencies](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/depend-start...depend-complete?diff=split) — the BigDesign, styled-components, `jose`, `zod`, and Postgres packages the app relies on
+* [Dependencies](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/depend-start...depend-complete?diff=split) — the `jose`, `zod`, and Postgres packages the app relies on. The BigDesign and styled-components packages are installed in Lab 1 instead, since wiring up BigDesign is part of the lab itself
 * [Route group for `(root)`](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/root-start...root-complete?diff=split) — the `(root)` route group that lets you develop against `MOCK`/`STATIC` data without a store-scoped session
 * [Mock data](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/mock-data-start...mock-data-complete?diff=split) — the gift certificates data-access layer and the mock data/handlers the early labs run against
 * [Full boilerplate](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/boilerplate-start...boilerplate-complete?diff=split) — everything above plus the error/routing/UI primitives and Server Action origin restriction. This diff stops just short of the compile-only stub commit, so it shows the scaffolding without a wall of empty files
@@ -66,13 +66,14 @@ If you'd like to review how that scaffolding was assembled before diving in, the
 
 This lab works with `DATA_MODE` set to `MOCK` in `.env.local`. No real API requests are made; mock data is included in the boilerplate.
 
-* [Step 1: Wire BigDesign into the root layout](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-01-pre...ui-01-post?diff=split)
-* [Step 2: Convert main layout components to BigDesign](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-02-pre...ui-02-post?diff=split)
-* [Step 3: Build the gift certificates list page](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-03-pre...ui-03-post?diff=split)
-* [Step 4: Replace the store home page with the gift certificates list](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-04-pre...ui-04-post?diff=split)
-* [Step 5: Build the gift certificate detail page](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-05-pre...ui-05-post?diff=split)
-* [Step 6: Status update and balance refill actions](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-06-pre...ui-06-post?diff=split)
-* [Step 7: Convert remaining components to BigDesign](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-07-pre...ui-07-post?diff=split)
+* [Step 1: Install the BigDesign and styled-components packages](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-01-pre...ui-01-post?diff=split)
+* [Step 2: Wire BigDesign into the root layout](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-02-pre...ui-02-post?diff=split)
+* [Step 3: Convert main layout components to BigDesign](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-03-pre...ui-03-post?diff=split)
+* [Step 4: Build the gift certificates list page](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-04-pre...ui-04-post?diff=split)
+* [Step 5: Replace the store home page with the gift certificates list](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-05-pre...ui-05-post?diff=split)
+* [Step 6: Build the gift certificate detail page](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-06-pre...ui-06-post?diff=split)
+* [Step 7: Status update and balance refill actions](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-07-pre...ui-07-post?diff=split)
+* [Step 8: Convert remaining components to BigDesign](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-08-pre...ui-08-post?diff=split)
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/ui-start...ui-complete?diff=split)
 

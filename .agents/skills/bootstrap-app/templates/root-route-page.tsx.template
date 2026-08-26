@@ -1,0 +1,8 @@
+import __ROUTE_COMPONENT__ from "@/app/store/[storeHash]/__FEATURE__/page";
+
+// This route exists only for MOCK/STATIC development, when there's no store hash
+// context in the page request.
+// See `__ROUTE_COMPONENT__` for the real page route.
+export default function Page(props: React.ComponentProps<typeof __ROUTE_COMPONENT__>) {
+  return <__ROUTE_COMPONENT__ {...props} />;
+}

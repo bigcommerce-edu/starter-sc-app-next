@@ -25,7 +25,7 @@ function redirectToUnauthorized(): NextResponse {
 // check still bounds the session's total lifetime regardless of how much
 // activity keeps refreshing it — continuous use extends the per-request
 // TTL indefinitely but never the absolute ceiling from original login.
-export async function proxy(request: NextRequest): Promise<NextResponse> {
+export async function middleware(request: NextRequest): Promise<NextResponse> {
   if (getDataMode() !== "MULTITENANT") {
     return NextResponse.next();
   }

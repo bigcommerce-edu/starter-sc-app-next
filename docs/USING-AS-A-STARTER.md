@@ -54,13 +54,12 @@ feature.
 * **`components/layout/`** — `AuthorizedPage`, the data-mode banner, error
   and not-found fallbacks, the unauthorized routes, the content fallback,
   and the developer info panel.
-* **`components/ui/`** — the BigDesign re-export barrel and provider, the
-  styled-components registry, `AppLink`, `ControlPanelLink`, action alerts,
-  and the pending overlay.
+* **`components/ui/`** — the BigDesign provider, the styled-components
+  registry, `AppLink`, `ControlPanelLink`, action alerts, and the pending
+  overlay.
 
-`components/ui/big-design.tsx` is a deliberate re-export barrel. Importing
-BigDesign through it (rather than from `@bigcommerce/big-design` directly)
-keeps the `"use client"` boundary in one place — see the note in
+BigDesign components are imported from `@bigcommerce/big-design` directly;
+the packages carry their own `"use client"` boundaries — see the note in
 [Gotchas](#gotchas) about passing client components as named props.
 
 ### `src/proxy.ts`

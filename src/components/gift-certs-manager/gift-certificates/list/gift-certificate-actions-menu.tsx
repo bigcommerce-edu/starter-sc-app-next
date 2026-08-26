@@ -17,7 +17,7 @@ type PendingAction = "refill" | "transfer";
 
 const ACTION_LABEL: Record<PendingAction, string> = {
   refill: "Refill",
-  transfer: "Transfer to Credit",
+  transfer: "Transfer to Store Credit",
 };
 
 function getConfirmationMessage(action: PendingAction, certificate: GiftCertificateWithRecipientAccount): string {
@@ -92,7 +92,7 @@ export function GiftCertificateActionsMenu({
       },
     },
     {
-      content: "Transfer to Credit",
+      content: "Transfer to Store Credit",
       disabled: !canTransferToStoreCredit(certificate),
       onItemClick: () => {
         setPendingAction("transfer");

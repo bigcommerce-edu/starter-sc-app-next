@@ -1,9 +1,7 @@
-import { cacheLife, cacheTag } from "next/cache";
 import { Box, Panel } from "@bigcommerce/big-design";
 import { ControlPanelLink } from "@/components/ui/control-panel-link";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
 import { decorateGiftCertificatesWithRecipientAccounts } from "@/lib/gift-certs-manager/gift-certificates/decorate-with-accounts";
-import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { parseGiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/query";
 
@@ -18,16 +16,8 @@ export async function GiftCertificateListView({
   searchParams: Record<string, string | string[] | undefined>;
   storeHash: string | undefined;
 }) {
-  "use cache: remote";
-  cacheLife("standard");
-  cacheTag(GIFT_CERTIFICATES_LIST_TAG);
-
   const query = parseGiftCertificatesQuery(searchParams);
   const { items, hasNextPage } = await fetchGiftCertificates(query, storeHash);
-
-  for (const item of items) {
-    cacheTag(giftCertificateTag(item.id));
-  }
 
   const decoratedItems = await decorateGiftCertificatesWithRecipientAccounts(items, storeHash);
 

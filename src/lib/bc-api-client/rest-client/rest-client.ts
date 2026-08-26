@@ -45,10 +45,7 @@ async function parseJsonResponse<TResponse>(response: Response, path: string): P
   }
 }
 
-// Off by default (a developer diagnostic, gated by LOG_API_REQUESTS). Also
-// doubles as a cache-observability signal: a fetch only happens on a
-// `use cache` miss, so a logged request means that cache entry was missing
-// or expired.
+// Off by default (a developer diagnostic, gated by LOG_API_REQUESTS).
 function isApiRequestLoggingEnabled(): boolean {
   return process.env.LOG_API_REQUESTS?.toLowerCase() === "true";
 }

@@ -15,9 +15,8 @@ const getCachedRestApiClient = cache(async (resolvedStoreHash: string | undefine
 // store. Takes the [storeHash] route param (or undefined on a root-level
 // dev route) and resolves internally which store to actually target, since
 // that isn't always the same thing (e.g. STATIC mode always targets its one
-// env-configured store). Safe to call from inside a `use cache` boundary —
-// only the plain, serializable storeHash crosses it; the returned client
-// instance must never be passed into another `use cache` scope.
+// env-configured store). The returned client is memoized per request via
+// React's cache(), so repeated calls in one render reuse one instance.
 export async function getRestApiClient(storeHash: string | undefined): Promise<BcRestApiClient> {
   if (getDataMode() === "MOCK") {
     return new MockRestApiClient();

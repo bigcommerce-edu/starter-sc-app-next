@@ -1,11 +1,9 @@
-import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 import { Box, Flex } from "@bigcommerce/big-design";
 import { ArrowBackIcon } from "@bigcommerce/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
 import { GiftCertificateTabs } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-tabs";
 import { decorateGiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/decorate-with-accounts";
-import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { fetchGiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { getAppUrl } from "@/lib/routing/app-url";
 import { AppError } from "@/lib/errors/app-error";
@@ -20,10 +18,6 @@ export async function GiftCertificateView({
   id: string;
   storeHash: string | undefined;
 }) {
-  "use cache: remote";
-  cacheLife("standard");
-  cacheTag(giftCertificateTag(id));
-
   // A missing id is a real 404 from BigCommerce's v2 single-resource
   // endpoint; the translation to notFound() happens here rather than in
   // fetchGiftCertificate, which is also called from Server Actions where a

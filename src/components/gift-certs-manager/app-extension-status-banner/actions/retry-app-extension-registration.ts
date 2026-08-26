@@ -1,10 +1,8 @@
 "use server";
 
-import { updateTag } from "next/cache";
 import { getGraphqlApiClient } from "@/lib/bc-api-client/get-graphql-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
-import { appExtensionStatusTag } from "@/lib/gift-certs-manager/app-extension-status";
 import { findOrCreateAppExtension } from "@/lib/gift-certs-manager/register-app-extension";
 import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/session/is-authorized-for-store";
 import { toSafeMessage } from "@/lib/errors/app-error";
@@ -42,7 +40,7 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
     };
   }
 
-  updateTag(appExtensionStatusTag(storeHash));
-
+  // Nothing to revalidate: the banner polls the status route with
+  // cache: "no-store", so its next check reads fresh state directly.
   return { success: true, message: "App extension registration succeeded" };
 }

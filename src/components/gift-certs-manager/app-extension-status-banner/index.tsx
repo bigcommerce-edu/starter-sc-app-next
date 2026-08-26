@@ -32,7 +32,7 @@ export function AppExtensionStatusBanner() {
           : "/api/internal/app-extension-status";
         // no-store: this URL never changes even though its result can, so
         // the browser's default HTTP caching would otherwise keep serving a
-        // stale response invisibly to server-side cacheTag/updateTag.
+        // stale response after a successful registration retry.
         const response = await fetch(url, { cache: "no-store" });
 
         if (!response.ok) {

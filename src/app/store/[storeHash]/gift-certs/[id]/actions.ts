@@ -1,10 +1,7 @@
 "use server";
 
-import { updateTag } from "next/cache";
 import { ActionResult } from "@/lib/actions/action-result";
-import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { addToCustomerStoreCredit, fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";
-import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   addToGiftCertificateBalance as addToGiftCertificateBalanceRequest,
   debitGiftCertificateForTransfer,
@@ -17,6 +14,7 @@ import { GiftCertificateStatus } from "@/lib/gift-certs-manager/gift-certificate
 import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/session/is-authorized-for-store";
 import { isNotFoundError, toSafeMessage } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
+import { revalidatePath } from "next/cache";
 
 // The gift certificate id is the only value these actions trust from the
 // client, and every one of them re-fetches the certificate before mutating
@@ -60,7 +58,8 @@ export async function updateGiftCertificateStatus(
     return { success: false, message: toSafeMessage(error, "Failed to update the gift certificate status.") };
   }
 
-  updateTag(giftCertificateTag(id));
+  revalidatePath("/store/[storeHash]/gift-certs/[id]", "page");
+  revalidatePath("/store/[storeHash]/gift-certs", "page");
 
   return { success: true, message: "Gift certificate status updated." };
 }
@@ -111,7 +110,8 @@ export async function refillGiftCertificateBalance(
     return { success: false, message: toSafeMessage(error, "Failed to refill the gift certificate balance.") };
   }
 
-  updateTag(giftCertificateTag(id));
+  revalidatePath("/store/[storeHash]/gift-certs/[id]", "page");
+  revalidatePath("/store/[storeHash]/gift-certs", "page");
 
   return { success: true, message: "Gift certificate balance refilled." };
 }
@@ -149,7 +149,8 @@ export async function addToGiftCertificateBalance(
     return { success: false, message: toSafeMessage(error, "Failed to add to the gift certificate balance.") };
   }
 
-  updateTag(giftCertificateTag(id));
+  revalidatePath("/store/[storeHash]/gift-certs/[id]", "page");
+  revalidatePath("/store/[storeHash]/gift-certs", "page");
 
   return { success: true, message: "Amount added to gift certificate balance." };
 }
@@ -245,8 +246,9 @@ export async function transferGiftCertificateBalanceToStoreCredit(
       await restoreGiftCertificateBalance(giftCertificate, previousBalance, previousStatus, storeHash);
     } catch {
       // Only the certificate was mutated — the customer credit never
-      // succeeded, so there's no customer tag to invalidate here.
-      updateTag(giftCertificateTag(id));
+      // succeeded, so there's no customer page to revalidate here.
+      revalidatePath("/store/[storeHash]/gift-certs/[id]", "page");
+      revalidatePath("/store/[storeHash]/gift-certs", "page");
 
       return {
         success: false,
@@ -256,7 +258,8 @@ export async function transferGiftCertificateBalanceToStoreCredit(
       };
     }
 
-    updateTag(giftCertificateTag(id));
+    revalidatePath("/store/[storeHash]/gift-certs/[id]", "page");
+    revalidatePath("/store/[storeHash]/gift-certs", "page");
 
     return {
       success: false,
@@ -266,11 +269,13 @@ export async function transferGiftCertificateBalanceToStoreCredit(
     };
   }
 
-  // Both resources were mutated on the success path, so both tags need
-  // invalidating: the certificate's own balance/status, and this customer's
+  // Both resources were mutated on the success path, so both need
+  // revalidating: the certificate's own balance/status, and this customer's
   // store credit balance shown on their detail page.
-  updateTag(giftCertificateTag(id));
-  updateTag(customerTag(customer.id));
+  revalidatePath("/store/[storeHash]/gift-certs/[id]", "page");
+  revalidatePath("/store/[storeHash]/gift-certs", "page");
+  revalidatePath("/store/[storeHash]/customers/[id]", "page");
+  revalidatePath("/store/[storeHash]/customers", "page");
 
   return { success: true, message: "Gift certificate balance transferred to store credit." };
 }

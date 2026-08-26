@@ -2,7 +2,7 @@
 
 import { MouseEvent } from "react";
 import styled from "styled-components";
-import { LogoutIcon } from "@/components/ui/big-design-icons";
+import { LogoutIcon } from "@bigcommerce/big-design-icons";
 import { getControlPanelUrl } from "@/lib/routing/control-panel-url";
 
 // Same visual styling as AppLink, so this reads as the same kind of control

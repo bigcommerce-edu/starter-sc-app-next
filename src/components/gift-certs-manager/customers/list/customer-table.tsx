@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Box, Table, TableColumn } from "@/components/ui/big-design";
+import { Box, Table, TableColumn } from "@bigcommerce/big-design";
 import { AppLink } from "@/components/ui/app-link";
 import { CustomerActionsMenu } from "@/components/gift-certs-manager/customers/list/customer-actions-menu";
 import { CustomerFilters } from "@/components/gift-certs-manager/customers/list/customer-filters";

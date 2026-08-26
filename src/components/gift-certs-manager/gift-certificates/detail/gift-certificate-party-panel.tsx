@@ -1,4 +1,4 @@
-import { Badge, Box, Panel, Small, Text } from "@/components/ui/big-design";
+import { Badge, Box, Panel, Small, Text } from "@bigcommerce/big-design";
 import { AppLink } from "@/components/ui/app-link";
 import { Customer, sumStoreCredit } from "@/lib/gift-certs-manager/customers/types";
 import { getAppUrl } from "@/lib/routing/app-url";

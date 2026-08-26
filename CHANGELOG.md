@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.1.0
+
+_Based on Next.js 16.2.9_
+
+### Summary
+
+Upgraded BigDesign to 5.x and styled-components to 6.x, and promoted the
+BigDesign dependency install out of the boilerplate into a lab step of its
+own. Lab 1 gains a new first step, so its remaining steps shift by one:
+`ui-01` through `ui-07` are now `ui-02` through `ui-08`. No other lab or
+enhancement changed.
+
+### Changes
+
+- Upgraded `@bigcommerce/big-design` to 5.0.0, `@bigcommerce/big-design-icons`
+  and `@bigcommerce/big-design-theme` to 3.0.0, and `styled-components` to
+  6.5.3. `@types/styled-components` is gone — v6 ships its own types. The
+  `peerDependencyRules` block that pinned BigDesign's React peers to 19 is no
+  longer needed either, since BigDesign 5 supports React 19 directly.
+- Removed the `components/ui/big-design.tsx` and
+  `components/ui/big-design-icons.tsx` re-export barrels. They existed to put
+  the `"use client"` boundary in one place; BigDesign 5 carries its own client
+  boundaries, so every component now imports from `@bigcommerce/big-design`
+  and `@bigcommerce/big-design-icons` directly. The barrels are never created
+  anywhere in the history, so the labs teach direct imports from the start.
+- Added Lab 1 Step 1, "Install the BigDesign and styled-components packages",
+  which installs all four packages in one commit. Installing the UI toolkit is
+  a core part of building a BigCommerce app, so it belongs in the lab rather
+  than in the boilerplate a learner copies. It has no TODO commit, since a
+  dependency install leaves nothing for a learner to fill in.
+- Updated `docs/ARCHITECTURE.md` and `docs/USING-AS-A-STARTER.md`, which still
+  described the removed re-export barrels.
+
 ## 1.0.4
 
 _Based on Next.js 16.2.9_

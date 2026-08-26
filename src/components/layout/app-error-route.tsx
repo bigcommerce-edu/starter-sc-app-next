@@ -1,5 +1,5 @@
-import { Box, Flex, H1, Panel, Text } from "@/components/ui/big-design";
-import { ErrorIcon } from "@/components/ui/big-design-icons";
+import { Box, Flex, H1, Panel, Text } from "@bigcommerce/big-design";
+import { ErrorIcon } from "@bigcommerce/big-design-icons";
 import { AppErrorReason } from "@/lib/bc-auth/app-error-reason";
 
 // Fixed, human-written copy per reason — never the underlying error's own

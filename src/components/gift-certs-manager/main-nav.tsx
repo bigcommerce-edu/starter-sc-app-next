@@ -2,7 +2,7 @@
 
 import { useParams, usePathname } from "next/navigation";
 import { useTheme } from "styled-components";
-import { Box, Flex, Text } from "@/components/ui/big-design";
+import { Box, Flex, Text } from "@bigcommerce/big-design";
 import { AppLink } from "@/components/ui/app-link";
 import { getAppUrl } from "@/lib/routing/app-url";
 

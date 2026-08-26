@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Box, Button, Flex, Input, Modal, Panel, Small, Text } from "@/components/ui/big-design";
+import { Box, Button, Flex, Input, Modal, Panel, Small, Text } from "@bigcommerce/big-design";
 import {
   addToGiftCertificateBalance,
   refillGiftCertificateBalance,

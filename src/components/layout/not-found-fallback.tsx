@@ -1,8 +1,8 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Box, Flex, H1, Panel, Text } from "@/components/ui/big-design";
-import { BaselineHelpIcon } from "@/components/ui/big-design-icons";
+import { Box, Flex, H1, Panel, Text } from "@bigcommerce/big-design";
+import { BaselineHelpIcon } from "@bigcommerce/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
 import { getAppUrl } from "@/lib/routing/app-url";
 

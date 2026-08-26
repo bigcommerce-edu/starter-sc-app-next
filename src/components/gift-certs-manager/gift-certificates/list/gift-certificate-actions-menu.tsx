@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button, Dropdown, DropdownItem, DropdownLinkItem, Modal, Text } from "@/components/ui/big-design";
-import { MoreHorizIcon } from "@/components/ui/big-design-icons";
+import { Button, Dropdown, DropdownItem, DropdownLinkItem, Modal, Text } from "@bigcommerce/big-design";
+import { MoreHorizIcon } from "@bigcommerce/big-design-icons";
 import {
   refillGiftCertificateBalance,
   transferGiftCertificateBalanceToStoreCredit,
@@ -17,7 +17,7 @@ type PendingAction = "refill" | "transfer";
 
 const ACTION_LABEL: Record<PendingAction, string> = {
   refill: "Refill",
-  transfer: "Transfer to Credit",
+  transfer: "Transfer to Store Credit",
 };
 
 function getConfirmationMessage(action: PendingAction, certificate: GiftCertificateWithRecipientAccount): string {
@@ -92,7 +92,7 @@ export function GiftCertificateActionsMenu({
       },
     },
     {
-      content: "Transfer to Credit",
+      content: "Transfer to Store Credit",
       disabled: !canTransferToStoreCredit(certificate),
       onItemClick: () => {
         setPendingAction("transfer");

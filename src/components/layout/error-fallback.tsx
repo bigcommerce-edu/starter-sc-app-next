@@ -1,5 +1,5 @@
-import { Box, Button, Flex, H1, Panel, Text } from "@/components/ui/big-design";
-import { ErrorIcon } from "@/components/ui/big-design-icons";
+import { Box, Button, Flex, H1, Panel, Text } from "@bigcommerce/big-design";
+import { ErrorIcon } from "@bigcommerce/big-design-icons";
 
 // Shared rendering for every error.tsx in the app. Shows only a fixed,
 // generic message — the real Error's message is already stripped to a

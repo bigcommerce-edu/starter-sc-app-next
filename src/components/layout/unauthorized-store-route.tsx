@@ -1,5 +1,5 @@
-import { Box, Flex, H1, Panel, Text } from "@/components/ui/big-design";
-import { ErrorIcon } from "@/components/ui/big-design-icons";
+import { Box, Flex, H1, Panel, Text } from "@bigcommerce/big-design";
+import { ErrorIcon } from "@bigcommerce/big-design-icons";
 
 // Rendered by app/unauthorized/page.tsx, which AuthorizedPage redirects to
 // when isAuthorizedForStore fails. A dedicated top-level route (outside both

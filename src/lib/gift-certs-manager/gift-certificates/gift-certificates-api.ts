@@ -1,4 +1,5 @@
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { CACHE_PROFILE_STANDARD } from "@/lib/bc-api-client/cache-profiles";
 import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   GIFT_CERTIFICATES_PATH,
@@ -36,7 +37,7 @@ async function fetchGiftCertificatesPage(
 ): Promise<GiftCertificateWireRecord[]> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
-    cache: { profile: "standard", tags: [GIFT_CERTIFICATES_LIST_TAG] },
+    cache: { profile: CACHE_PROFILE_STANDARD, tags: [GIFT_CERTIFICATES_LIST_TAG] },
     params: {
       ... (query.code && { "code": query.code }),
       ... (query.to_name && { "to_name": query.to_name }),
@@ -92,7 +93,7 @@ export async function fetchGiftCertificate(
 ): Promise<GiftCertificate> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id), {
-    cache: { profile: "standard", tags: [giftCertificateTag(id)] },
+    cache: { profile: CACHE_PROFILE_STANDARD, tags: [giftCertificateTag(id)] },
   });
 
   return parseGiftCertificate(record);

@@ -1,4 +1,5 @@
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { CACHE_PROFILE_EXTENDED } from "@/lib/bc-api-client/cache-profiles";
 import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
 import { CHANNELS_PATH, Channel } from "@/lib/gift-certs-manager/channels/types";
 
@@ -17,7 +18,7 @@ const CHANNELS_LIST_TAG = "channels:list";
 export async function fetchChannels(storeHash: string | undefined): Promise<ChannelsResult> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<Channel>>(CHANNELS_PATH, {
-    cache: { profile: "extended", tags: [CHANNELS_LIST_TAG] },
+    cache: { profile: CACHE_PROFILE_EXTENDED, tags: [CHANNELS_LIST_TAG] },
   });
 
   return { items: body.data };

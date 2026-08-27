@@ -1,4 +1,5 @@
-import { GiftCertificatesQuery, SortDirection } from "@/lib/gift-certs-manager/gift-certificates/types";
+import { SortDirection } from "@/lib/gift-certs-manager/customers/types";
+import { GiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 export const DEFAULT_QUERY: GiftCertificatesQuery = {
   direction: "DESC",

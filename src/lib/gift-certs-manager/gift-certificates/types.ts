@@ -1,7 +1,4 @@
-// TODO: import SortDirection from customers/types.ts instead of declaring
-// it here, now that the customers enhancement has landed its own copy of
-// this same type - both places would otherwise duplicate it
-export type SortDirection = "ASC" | "DESC";
+import { SortDirection } from "@/lib/gift-certs-manager/customers/types";
 
 export const GIFT_CERTIFICATES_PATH = "/v2/gift_certificates";
 

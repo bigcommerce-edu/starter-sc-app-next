@@ -2,13 +2,19 @@ import { cookies } from "next/headers";
 import { signSession, verifySession } from "@/lib/session/session-jwt";
 import { SessionPayload, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "@/lib/session/types";
 
+// TODO: memoize this per request with cache()
+//  - isAuthorizedForStore calls this on every MULTITENANT request, and a
+//    single page render can call it more than once (e.g. a page's own auth
+//    check plus something else reading the session) — memoizing avoids
+//    re-verifying the same JWT repeatedly within that request
+//  - split the body below into its own readUncachedSession function, then
+//    wrap it: const getCachedSession = cache(readUncachedSession)
+//  - readSession itself just becomes `return getCachedSession();`
+//
 // Reads and verifies the current session cookie, if any. A missing cookie
 // and a failed verification (expired, bad signature, wrong shape) are
 // treated identically — both just mean "not authenticated" to callers,
 // which don't need to distinguish why.
-//
-// Not memoized per request yet — the caching enhancement wraps this in
-// cache().
 export async function readSession(): Promise<SessionPayload | undefined> {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;

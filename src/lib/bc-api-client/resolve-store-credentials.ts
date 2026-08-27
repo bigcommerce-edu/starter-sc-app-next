@@ -31,9 +31,10 @@ export function resolveStoreHash(storeHash: string | undefined): string | undefi
 // — one token per store). Returns undefined rather than throwing when
 // missing, so each API client decides for itself that a missing token is an
 // error.
-//
-// Not memoized per request yet — the caching enhancement wraps this in
-// cache().
+// TODO: memoize this per request with cache()
+//  - keyed on storeHash alone, so isAuthorizedForStore can call this same
+//    cache() entry as part of its own check, reusing the result rather
+//    than triggering a second DB round-trip
 export async function resolveApiToken(storeHash: string | undefined): Promise<string | undefined> {
   if (getDataMode() === "STATIC") {
     return process.env.STATIC_STORE_TOKEN;

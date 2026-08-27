@@ -37,6 +37,9 @@ function buildCredentialsDriverAliases(): Record<string, string> {
 }
 
 const nextConfig: NextConfig = {
+  // TODO: Enable Cache Components
+  //  - cacheComponents: true
+  //  - Add CACHE_ENABLED to .env.example
   turbopack: {
     resolveAlias: buildCredentialsDriverAliases(),
   },

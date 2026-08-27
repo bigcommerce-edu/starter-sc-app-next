@@ -17,7 +17,7 @@ if (process.env.APP_ORIGIN) {
 const nextConfig: NextConfig = {
   // Cache Components (PPR). The lifetime profiles each `use cache` boundary
   // selects, and the CACHE_ENABLED switch that turns caching on and off, live
-  // in lib/bc-api-client/cache-profiles.ts rather than in a `cacheLife` block
+  // in lib/cache/cache-profiles.ts rather than in a `cacheLife` block
   // here — cacheLife accepts an inline profile object, so keeping them in one
   // module avoids splitting the caching configuration across two places.
   cacheComponents: true,

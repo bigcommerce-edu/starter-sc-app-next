@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/bc-api-client/cache-profiles";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
 import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {

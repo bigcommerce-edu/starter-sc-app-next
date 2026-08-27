@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/bc-api-client/cache-profiles";
+import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/cache/cache-profiles";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 
 // One shared tag per store (only one extension is ever registered). Exported

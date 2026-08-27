@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/bc-api-client/cache-profiles";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { Box, Panel } from "@bigcommerce/big-design";
 import { ControlPanelLink } from "@/components/ui/control-panel-link";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";

@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/bc-api-client/cache-profiles";
+import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/cache/cache-profiles";
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
 import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
 import { CHANNELS_PATH, Channel } from "@/lib/gift-certs-manager/channels/types";

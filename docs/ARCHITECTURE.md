@@ -406,7 +406,7 @@ each. `MockRestApiClient` itself never changes either way.
 ## Caching
 
 This app uses Next's Cache Components (`cacheComponents: true`). Two
-lifetime profiles are defined in `lib/bc-api-client/cache-profiles.ts`:
+lifetime profiles are defined in `lib/cache/cache-profiles.ts`:
 `standard` (5 min, most data) and `extended` (10 min, slower-changing data
 like channels). Each `use cache` boundary selects one by calling
 `cacheLife(cacheProfile("standard"))`.

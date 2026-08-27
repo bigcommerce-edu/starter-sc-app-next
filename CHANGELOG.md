@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.1.1
+
+_Based on Next.js 16.2.9_
+
+### Summary
+
+Consolidated the caching configuration into a single module. The lifetime
+profiles and the switch that enables caching moved out of `next.config.ts`
+into `lib/cache/cache-profiles.ts`, and the environment variable that
+controls caching was renamed from `CACHE_COMPONENTS_ENABLED` to
+`CACHE_ENABLED`. Caching behavior is unchanged. No lab or enhancement was
+added, removed, or renumbered.
+
+This is groundwork for hosting the app on Cloudflare Workers, which cannot
+run Cache Components: the staged-render path corrupts streamed HTML there
+(see opennextjs-cloudflare#1225). A Cloudflare build has to cache at the
+fetch level instead, so the parts of the caching setup that don't depend on
+where caching attaches now live in one module that both approaches can
+share.
+
+### Changes
+
+- Added `lib/cache/cache-profiles.ts`, holding the `standard` and `extended`
+  lifetime profiles, the zero-second profile used when caching is off, and
+  the `cacheProfile()` lookup each `use cache` boundary now calls. `cacheLife`
+  accepts an inline `{ stale, revalidate, expire }` object as well as a named
+  profile, so the `cacheLife` block and its helpers were removed from
+  `next.config.ts`. Folded into the caching enhancement, which is where the
+  module is introduced.
+- Added a `CacheLifetimeProfile` interface and `CACHE_PROFILE_STANDARD` /
+  `CACHE_PROFILE_EXTENDED` constants, so profiles are typed and selected by
+  constant rather than by a bare string. All three lifetime fields are
+  required, unlike Next's own `CacheLife`, where each is optional.
+- Renamed `CACHE_COMPONENTS_ENABLED` to `CACHE_ENABLED`. The old name
+  described the `cacheComponents` flag it worked around; the variable now
+  simply turns caching on and off. Folded into the caching enhancement's
+  step, alongside the `.env.example` entry.
+- Converted the `cacheLife` call sites in the customers and App Extension
+  enhancements to the new `cacheProfile()` form, each folded into the code
+  commit that introduced that call.
+
 ## 1.1.0
 
 _Based on Next.js 16.2.9_

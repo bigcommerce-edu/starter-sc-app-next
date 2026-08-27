@@ -1,7 +1,6 @@
 // The app's cache lifetime profiles, and the switch that turns caching on and
 // off. Every `use cache` boundary selects one by calling
 // `cacheLife(cacheProfile(CACHE_PROFILE_STANDARD))`.
-//
 
 // A cache lifetime, in seconds. Structurally compatible with Next's own
 // CacheLife type, but all three fields are required: every profile here sets

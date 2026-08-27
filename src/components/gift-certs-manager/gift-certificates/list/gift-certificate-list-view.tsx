@@ -1,4 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { Box, Panel } from "@bigcommerce/big-design";
 import { ControlPanelLink } from "@/components/ui/control-panel-link";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
@@ -19,7 +20,7 @@ export async function GiftCertificateListView({
   storeHash: string | undefined;
 }) {
   "use cache: remote";
-  cacheLife("standard");
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(GIFT_CERTIFICATES_LIST_TAG);
 
   const query = parseGiftCertificatesQuery(searchParams);

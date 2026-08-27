@@ -406,7 +406,7 @@ each. `MockRestApiClient` itself never changes either way.
 ## Caching
 
 This app caches at the fetch level. Two lifetime profiles are defined in
-`lib/bc-api-client/cache-profiles.ts`: `standard` (5 min, most data) and
+`lib/cache/cache-profiles.ts`: `standard` (5 min, most data) and
 `extended` (10 min, slower-changing data like channels).
 
 Caching is controlled by `CACHE_ENABLED`, which `.env.example` ships as

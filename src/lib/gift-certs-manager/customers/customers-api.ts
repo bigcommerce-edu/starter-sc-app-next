@@ -1,7 +1,7 @@
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
-import { CACHE_PROFILE_STANDARD } from "@/lib/bc-api-client/cache-profiles";
 import { customerTag, CUSTOMERS_LIST_TAG } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
+import { CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { CUSTOMERS_PATH, Customer, CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
 import { AppError } from "@/lib/errors/app-error";
 

@@ -1,4 +1,4 @@
-import { CacheOptions } from "@/lib/bc-api-client/cache-profiles";
+import { CacheOptions } from "@/lib/cache/cache-profiles";
 
 export type ApiRequestParams = Record<string, string | number | boolean | undefined>;
 
@@ -23,7 +23,7 @@ export interface V3ListResponse<TItem> {
 
 // `cache` opts this GET into fetch-level caching under the given tags and
 // lifetime profile; omitting it leaves the request uncached. See
-// lib/bc-api-client/cache-profiles.ts.
+// lib/cache/cache-profiles.ts.
 export interface ApiRequestOptions {
   params?: ApiRequestParams;
   cache?: CacheOptions;

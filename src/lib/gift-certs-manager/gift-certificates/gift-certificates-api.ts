@@ -1,4 +1,5 @@
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   GIFT_CERTIFICATES_PATH,
   GiftCertificate,
@@ -20,6 +21,13 @@ function parseGiftCertificate(record: GiftCertificateWireRecord): GiftCertificat
   return { ...record, amount: Number(record.amount), balance: Number(record.balance) };
 }
 
+// Cached under the shared list tag (not per-id): unlike a `use cache`
+// boundary, fetch tags have to be known before the request is made, so the
+// per-record tags the old boundary added after resolving can't be attached
+// here. Any mutation revalidates this tag alongside the record's own, so a
+// stale listing is still impossible — see the actions in
+// app/store/[storeHash]/gift-certs/[id]/actions.ts.
+//
 // Factored out as its own function because resolveHasNextPage below peeks
 // ahead at the next page using it. See docs/ARCHITECTURE.md.
 async function fetchGiftCertificatesPage(
@@ -28,6 +36,7 @@ async function fetchGiftCertificatesPage(
 ): Promise<GiftCertificateWireRecord[]> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
+    cache: { profile: "standard", tags: [GIFT_CERTIFICATES_LIST_TAG] },
     params: {
       ... (query.code && { "code": query.code }),
       ... (query.to_name && { "to_name": query.to_name }),
@@ -82,7 +91,9 @@ export async function fetchGiftCertificate(
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
   const apiClient = await getRestApiClient(storeHash);
-  const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id));
+  const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id), {
+    cache: { profile: "standard", tags: [giftCertificateTag(id)] },
+  });
 
   return parseGiftCertificate(record);
 }

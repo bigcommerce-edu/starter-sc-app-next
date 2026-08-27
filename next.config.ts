@@ -27,8 +27,13 @@ const nextConfig: NextConfig = {
   //
   // Note that dropping only the `remote` qualifier (plain `use cache`) does
   // NOT avoid this: PPR stays enabled and the corruption is unchanged. The
-  // flag itself has to be off. `updateTag` call sites are still valid
-  // without it and are left in place. Restore caching once #1318 ships.
+  // flag itself has to be off.
+  //
+  // Caching itself is NOT gone — it moved down to the fetches the cached
+  // components used to wrap, keeping the same two lifetime profiles and the
+  // same cache tags. See lib/bc-api-client/cache-profiles.ts, and
+  // CACHE_COMPONENTS_ENABLED still switches it on and off. Reconsider
+  // component-level caching once #1318 ships.
   cacheComponents: false,
   
   // Swaps the Postgres credentials-store driver for a `pg`-free stub

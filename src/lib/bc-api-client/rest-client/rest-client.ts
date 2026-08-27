@@ -2,6 +2,7 @@ import { ApiMutationOptions, ApiRequestOptions, ApiResponse, BcRestApiClient } f
 import { StoreApiCredentials } from "@/lib/bc-api-client/types";
 import { API_REQUEST_TIMEOUT_MS } from "@/lib/bc-api-client/request-timeout";
 import { retryOnRateLimit } from "@/lib/bc-api-client/rate-limit";
+import { toFetchCacheOptions } from "@/lib/bc-api-client/cache-profiles";
 import { AppError } from "@/lib/errors/app-error";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
@@ -90,6 +91,7 @@ export class RestApiClient implements BcRestApiClient {
             Accept: "application/json",
           },
           signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS),
+          ...toFetchCacheOptions(options.cache),
         }),
       );
     } catch (error) {

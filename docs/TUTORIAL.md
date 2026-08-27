@@ -174,7 +174,7 @@ Completes the full set of single-click app callbacks with support for Uninstall 
 Demonstrates Next.js caching and memoization patterns that 
 optimize the app by avoiding repeat DB lookups and API calls.
 
-Caching is controlled by the `CACHE_COMPONENTS_ENABLED` environment variable.
+Caching is controlled by the `CACHE_ENABLED` environment variable.
 `.env.example` ships it as `TRUE`, so if you copied your `.env.local` from
 there you're already exercising the behavior this step builds — pair it with
 `LOG_API_REQUESTS=true` to watch cache hits and misses, since an upstream

@@ -5,16 +5,16 @@
 // lifetime profiles, and the same cache tags, just applied to the fetches
 // the cached components used to wrap rather than to the components.
 //
-// Since there's no `cacheComponents` flag to satisfy here, CACHE_COMPONENTS_ENABLED
-// can be read directly at the call site instead of having to be folded into a
+// Since there's no `cacheComponents` flag to satisfy here, CACHE_ENABLED can be
+// read directly at the call site instead of having to be folded into a
 // cacheLife profile override.
 
-// Caching is opt-in, and off unless CACHE_COMPONENTS_ENABLED is explicitly
-// "true". An admin-privileged app showing stale data is usually the worse
+// Caching is opt-in, and off unless CACHE_ENABLED is explicitly "true". An
+// admin-privileged app showing stale data is usually the worse
 // trade-off (see the caching section of docs/ARCHITECTURE.md), so the safe
 // behavior is the default and enabling it is a deliberate choice.
 function isCachingEnabled(): boolean {
-  return process.env.CACHE_COMPONENTS_ENABLED?.toLowerCase() === "true";
+  return process.env.CACHE_ENABLED?.toLowerCase() === "true";
 }
 
 // This is an admin-privileged app, so most fetches use a short lifetime —

@@ -405,20 +405,32 @@ each. `MockRestApiClient` itself never changes either way.
 
 ## Caching
 
-This app uses Next's Cache Components (`cacheComponents: true`). Two
-`cacheLife` profiles are configured: `standard` (5 min, most data) and
+This app caches at the fetch level. Two lifetime profiles are defined in
+`lib/bc-api-client/cache-profiles.ts`: `standard` (5 min, most data) and
 `extended` (10 min, slower-changing data like channels).
 
-Caching is controlled by `CACHE_COMPONENTS_ENABLED`, which `.env.example`
-ships as `TRUE` so the behavior is visible out of the box. The app's own
-fallback when the var is undefined is *off* (see below).
+Caching is controlled by `CACHE_ENABLED`, which `.env.example` ships as
+`TRUE` so the behavior is visible out of the box. The app's own fallback
+when the var is undefined is *off* (see below).
 
 Data-fetching functions that back a page (e.g.
-`fetchGiftCertificatesPage`) are `"use cache: remote"` and tag themselves
-with both a shared list tag and a per-record tag (added after the fetch
-resolves, once record ids are known). Mutations call `updateTag` on the
-relevant tags so a change is visible immediately rather than waiting out
-the `cacheLife`.
+`fetchGiftCertificatesPage`) pass a `cache` option to the REST client
+naming a profile and the tags the response should be stored under; the
+client turns that into Next's `next: { revalidate, tags }` fetch option.
+Mutations call `revalidateTag` on the relevant tags so a change is visible
+immediately rather than waiting out the lifetime.
+
+Detail fetches tag per record (`gift-cert:<id>`, `customer:<id>`); list
+fetches carry only the shared list tag. Unlike a `use cache` boundary,
+fetch tags have to be known *before* the request is issued, so the
+per-record tags a listing would need aren't available to it. Every mutation
+revalidates the relevant list tag alongside the record's own tag, so a
+stale listing still isn't possible.
+
+Note that `cacheComponents` is `false`: Cache Components (PPR) corrupts
+streamed HTML on Cloudflare Workers via `@opennextjs/cloudflare`, so this
+app caches at the fetch level instead. See the comment on `cacheComponents`
+in `next.config.ts`.
 
 Pagination is stateless (BigCommerce's v2 gift certificates endpoint
 reports no total count anywhere), so "is there a next page" is answered by
@@ -430,11 +442,11 @@ entry the peek already created instead of re-fetching.
 Route Handlers that must never be cached by the browser (as opposed to
 Next's own server-side cache) explicitly set `Cache-Control: no-store` — a
 GET Route Handler's response is otherwise eligible for normal HTTP caching,
-which is invisible to and not invalidated by `cacheTag`/`updateTag`.
+which is invisible to and not invalidated by `revalidateTag`.
 
 ### Enabling and disabling caching
 
-Caching is controlled by `CACHE_COMPONENTS_ENABLED`, and is off unless that
+Caching is controlled by `CACHE_ENABLED`, and is off unless that
 is explicitly `true`. Two defaults are worth keeping apart:
 
 - **The code's fallback is off.** An undefined var means no caching, so
@@ -447,20 +459,11 @@ is explicitly `true`. Two defaults are worth keeping apart:
   when stale reads would get in the way, and decide deliberately for a real
   deployment rather than inheriting the example's choice.
 
-What the switch does *not* do is turn off Cache Components. `cacheComponents`
-stays `true` either way, because the `use cache` directives and
-`cacheTag`/`updateTag` calls throughout the app are compile-time constructs:
-they can't be wrapped in a runtime condition (a directive nested inside an
-`if` is silently ignored rather than honored), and disabling
-`cacheComponents` outright would stop the app compiling at all.
-
-Instead, `next.config.ts` swaps both `cacheLife` profiles for a zero-second
-one (`{ stale: 0, revalidate: 0, expire: 1 }` — Next requires `expire` to
-exceed `revalidate`, so `1` is the floor). A `revalidate` of `0` means every
-entry is already expired by the time the next request tries to read it, so
-nothing is ever reused and each request re-fetches. Overriding the profiles
-covers every cached boundary in the app, since each one selects `standard` or
-`extended`.
+Because the switch only has to change what options a fetch is issued with,
+it can be read at the call site: `toFetchCacheOptions` returns
+`next: { revalidate, tags }` when caching is on and `cache: "no-store"`
+when it's off, so nothing is stored or reused. Call sites always pass their
+profile and tags and never check the variable themselves.
 
 This keeps the caching code paths intact and observable while removing the
 staleness: with `LOG_API_REQUESTS=true`, every page load logs its upstream

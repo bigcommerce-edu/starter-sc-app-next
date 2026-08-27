@@ -1,10 +1,10 @@
 "use server";
 
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { ActionResult } from "@/lib/actions/action-result";
-import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
+import { customerTag, CUSTOMERS_LIST_TAG } from "@/lib/gift-certs-manager/customers/cache-tags";
+import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { addToCustomerStoreCredit, fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";
-import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   addToGiftCertificateBalance as addToGiftCertificateBalanceRequest,
   debitGiftCertificateForTransfer,
@@ -60,7 +60,8 @@ export async function updateGiftCertificateStatus(
     return { success: false, message: toSafeMessage(error, "Failed to update the gift certificate status.") };
   }
 
-  updateTag(giftCertificateTag(id));
+  revalidateTag(giftCertificateTag(id), "max");
+  revalidateTag(GIFT_CERTIFICATES_LIST_TAG, "max");
 
   return { success: true, message: "Gift certificate status updated." };
 }
@@ -111,7 +112,8 @@ export async function refillGiftCertificateBalance(
     return { success: false, message: toSafeMessage(error, "Failed to refill the gift certificate balance.") };
   }
 
-  updateTag(giftCertificateTag(id));
+  revalidateTag(giftCertificateTag(id), "max");
+  revalidateTag(GIFT_CERTIFICATES_LIST_TAG, "max");
 
   return { success: true, message: "Gift certificate balance refilled." };
 }
@@ -149,7 +151,8 @@ export async function addToGiftCertificateBalance(
     return { success: false, message: toSafeMessage(error, "Failed to add to the gift certificate balance.") };
   }
 
-  updateTag(giftCertificateTag(id));
+  revalidateTag(giftCertificateTag(id), "max");
+  revalidateTag(GIFT_CERTIFICATES_LIST_TAG, "max");
 
   return { success: true, message: "Amount added to gift certificate balance." };
 }
@@ -246,7 +249,8 @@ export async function transferGiftCertificateBalanceToStoreCredit(
     } catch {
       // Only the certificate was mutated — the customer credit never
       // succeeded, so there's no customer tag to invalidate here.
-      updateTag(giftCertificateTag(id));
+      revalidateTag(giftCertificateTag(id), "max");
+      revalidateTag(GIFT_CERTIFICATES_LIST_TAG, "max");
 
       return {
         success: false,
@@ -256,7 +260,8 @@ export async function transferGiftCertificateBalanceToStoreCredit(
       };
     }
 
-    updateTag(giftCertificateTag(id));
+    revalidateTag(giftCertificateTag(id), "max");
+    revalidateTag(GIFT_CERTIFICATES_LIST_TAG, "max");
 
     return {
       success: false,
@@ -266,11 +271,15 @@ export async function transferGiftCertificateBalanceToStoreCredit(
     };
   }
 
-  // Both resources were mutated on the success path, so both tags need
-  // invalidating: the certificate's own balance/status, and this customer's
-  // store credit balance shown on their detail page.
-  updateTag(giftCertificateTag(id));
-  updateTag(customerTag(customer.id));
+  // Both resources were mutated on the success path, so both sets of tags
+  // need invalidating: the certificate's own balance/status, and this
+  // customer's store credit balance shown on their detail page. The two list
+  // tags cover the fetches whose tags can't be known before the request —
+  // the listings and the decorators' email lookups.
+  revalidateTag(giftCertificateTag(id), "max");
+  revalidateTag(GIFT_CERTIFICATES_LIST_TAG, "max");
+  revalidateTag(customerTag(customer.id), "max");
+  revalidateTag(CUSTOMERS_LIST_TAG, "max");
 
   return { success: true, message: "Gift certificate balance transferred to store credit." };
 }

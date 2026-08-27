@@ -15,12 +15,26 @@ if (process.env.APP_ORIGIN) {
 }
 
 const nextConfig: NextConfig = {
-  // Cache Components (PPR). The lifetime profiles each `use cache` boundary
-  // selects, and the CACHE_ENABLED switch that turns caching on and off, live
-  // in lib/cache/cache-profiles.ts rather than in a `cacheLife` block
-  // here — cacheLife accepts an inline profile object, so keeping them in one
-  // module avoids splitting the caching configuration across two places.
-  cacheComponents: true,
+  // Cache Components (PPR) is off, and every `use cache` boundary plus its
+  // cacheLife/cacheTag calls has been removed alongside it, because the PPR
+  // staged-render path corrupts streamed HTML on Cloudflare Workers via
+  // @opennextjs/cloudflare: chunks of the RSC flight payload are emitted
+  // outside their `<script>` wrapper and render as raw JSON on the page.
+  // Reproducible on `wrangler dev --local` and byte-identical on the edge,
+  // while plain `next start` (Node) is unaffected — see
+  // https://github.com/opennextjs/opennextjs-cloudflare/issues/1225 and
+  // https://github.com/opennextjs/opennextjs-cloudflare/pull/1318.
+  //
+  // Note that dropping only the `remote` qualifier (plain `use cache`) does
+  // NOT avoid this: PPR stays enabled and the corruption is unchanged. The
+  // flag itself has to be off.
+  //
+  // Caching itself is NOT gone — it moved down to the fetches the cached
+  // components used to wrap, keeping the same two lifetime profiles and the
+  // same cache tags. See lib/cache/cache-profiles.ts, and
+  // CACHE_ENABLED still switches it on and off. Reconsider
+  // component-level caching once #1318 ships.
+  cacheComponents: false,
   
   // Swaps the Postgres credentials-store driver for a `pg`-free stub
   // whenever CREDENTIALS_STORE_DRIVER isn't "POSTGRES" — see

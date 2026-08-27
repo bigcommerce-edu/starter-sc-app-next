@@ -1,3 +1,5 @@
+import { CacheOptions } from "@/lib/cache/cache-profiles";
+
 export type ApiRequestParams = Record<string, string | number | boolean | undefined>;
 
 // The standard BigCommerce v3 list-endpoint envelope: a page of records plus
@@ -19,8 +21,12 @@ export interface V3ListResponse<TItem> {
   };
 }
 
+// `cache` opts this GET into fetch-level caching under the given tags and
+// lifetime profile; omitting it leaves the request uncached. See
+// lib/cache/cache-profiles.ts.
 export interface ApiRequestOptions {
   params?: ApiRequestParams;
+  cache?: CacheOptions;
 }
 
 export interface ApiMutationOptions {

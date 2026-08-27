@@ -1,5 +1,7 @@
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { customerTag, CUSTOMERS_LIST_TAG } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
+import { CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { CUSTOMERS_PATH, Customer, CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
 import { AppError } from "@/lib/errors/app-error";
 
@@ -27,8 +29,11 @@ function parseCustomer(record: CustomerWireRecord): Customer {
 }
 
 // Looks up registered customer accounts by email — this data isn't returned
-// by the gift certificates endpoint itself. Caching lives in the calling
-// *View component, not here.
+// by the gift certificates endpoint itself. Called from the gift-certificate
+// decorators, which previously ran inside those views' cache boundaries, so
+// it carries the shared customers list tag: any customer mutation (e.g. a
+// store credit grant) has to invalidate it, since the emails looked up here
+// aren't known ahead of the request.
 export async function fetchCustomersByEmail(
   emails: string[],
   storeHash: string | undefined,
@@ -41,6 +46,7 @@ export async function fetchCustomersByEmail(
 
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    cache: { profile: CACHE_PROFILE_STANDARD, tags: [CUSTOMERS_LIST_TAG] },
     params: {
       "email:in": uniqueEmails.join(","),
       include: "storecredit",
@@ -80,6 +86,7 @@ export async function fetchCustomers(
 ): Promise<CustomersListResult> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    cache: { profile: CACHE_PROFILE_STANDARD, tags: [CUSTOMERS_LIST_TAG] },
     params: {
       ... (query.name && { "name:like": query.name }),
       ... (query.email && { "email:in": query.email }),
@@ -103,6 +110,7 @@ export async function fetchCustomers(
 export async function fetchCustomer(id: number | string, storeHash: string | undefined): Promise<Customer | undefined> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    cache: { profile: CACHE_PROFILE_STANDARD, tags: [customerTag(id)] },
     params: { "id:in": id, include: "storecredit" },
   });
 

@@ -1,6 +1,5 @@
-import { cacheLife, cacheTag } from "next/cache";
-import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   GIFT_CERTIFICATES_PATH,
@@ -23,20 +22,22 @@ function parseGiftCertificate(record: GiftCertificateWireRecord): GiftCertificat
   return { ...record, amount: Number(record.amount), balance: Number(record.balance) };
 }
 
-// Cached on its own (not just at the calling *View's render boundary)
-// because resolveHasNextPage below peeks ahead at the next page using this
-// same function — tagging/caching it here means a real "next" click reuses
-// that peek's cache entry instead of re-fetching. See docs/ARCHITECTURE.md.
+// Cached under the shared list tag (not per-id): unlike a `use cache`
+// boundary, fetch tags have to be known before the request is made, so the
+// per-record tags the old boundary added after resolving can't be attached
+// here. Any mutation revalidates this tag alongside the record's own, so a
+// stale listing is still impossible — see the actions in
+// app/store/[storeHash]/gift-certs/[id]/actions.ts.
+//
+// Factored out as its own function because resolveHasNextPage below peeks
+// ahead at the next page using it. See docs/ARCHITECTURE.md.
 async function fetchGiftCertificatesPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
 ): Promise<GiftCertificateWireRecord[]> {
-  "use cache: remote";
-  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
-  cacheTag(GIFT_CERTIFICATES_LIST_TAG);
-
   const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
+    cache: { profile: CACHE_PROFILE_STANDARD, tags: [GIFT_CERTIFICATES_LIST_TAG] },
     params: {
       ... (query.code && { "code": query.code }),
       ... (query.to_name && { "to_name": query.to_name }),
@@ -50,16 +51,7 @@ async function fetchGiftCertificatesPage(
 
   // BigCommerce's v2 endpoint responds 204 (not 200 + []) when nothing
   // matches.
-  const records = items ?? [];
-
-  // Tag with every certificate id in the result (known only after the
-  // fetch resolves), so a mutation to one invalidates this page/peek
-  // immediately rather than waiting out the cacheLife.
-  for (const record of records) {
-    cacheTag(giftCertificateTag(record.id));
-  }
-
-  return records;
+  return items ?? [];
 }
 
 // BigCommerce's v2 endpoint reports no total count anywhere, so the only
@@ -100,7 +92,9 @@ export async function fetchGiftCertificate(
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
   const apiClient = await getRestApiClient(storeHash);
-  const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id));
+  const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id), {
+    cache: { profile: CACHE_PROFILE_STANDARD, tags: [giftCertificateTag(id)] },
+  });
 
   return parseGiftCertificate(record);
 }

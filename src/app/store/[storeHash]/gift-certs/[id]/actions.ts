@@ -22,8 +22,6 @@ import { revalidatePath } from "next/cache";
 // differently.
 const GIFT_CERTIFICATE_NOT_FOUND_MESSAGE =
   "That gift certificate no longer exists. It may have been deleted — reload the page to see the current list.";
-
-// No cache tag revalidation yet - that's the caching enhancement.
 export async function updateGiftCertificateStatus(
   id: number | string,
   status: GiftCertificateStatus,
@@ -52,6 +50,8 @@ export async function updateGiftCertificateStatus(
     return { success: false, message: toSafeMessage(error, "Failed to update the gift certificate status.") };
   }
 
+  // TODO: Replace revalidateTag with revalidation of this certificate's cache tag once the update succeeds
+  //  - updateTag(giftCertificateTag(id)) right before returning success
   revalidatePath("/store/[storeHash]/gift-certs/[id]", "page");
   revalidatePath("/store/[storeHash]/gift-certs", "page");
 
@@ -104,6 +104,8 @@ export async function refillGiftCertificateBalance(
     return { success: false, message: toSafeMessage(error, "Failed to refill the gift certificate balance.") };
   }
   
+  // TODO: Replace revalidateTag with revalidation of this certificate's cache tag once the refill succeeds
+  //  - updateTag(giftCertificateTag(id)) right before returning success
   revalidatePath("/store/[storeHash]/gift-certs/[id]", "page");
   revalidatePath("/store/[storeHash]/gift-certs", "page");
 

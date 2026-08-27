@@ -15,6 +15,9 @@ if (process.env.APP_ORIGIN) {
 }
 
 const nextConfig: NextConfig = {
+  // TODO: Enable Cache Components
+  //  - cacheComponents: true
+  //  - Add CACHE_ENABLED to .env.example
   // Swaps the Postgres credentials-store driver for a `pg`-free stub
   // whenever CREDENTIALS_STORE_DRIVER isn't "POSTGRES" — see
   // lib/credentials-store/postgres-driver-loader.ts and

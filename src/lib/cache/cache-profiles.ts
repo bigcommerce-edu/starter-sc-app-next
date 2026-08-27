@@ -2,11 +2,6 @@
 // off. Every `use cache` boundary selects one by calling
 // `cacheLife(cacheProfile(CACHE_PROFILE_STANDARD))`.
 //
-// These are passed to cacheLife as inline objects rather than being declared as
-// named profiles in next.config.ts. cacheLife accepts either a profile name or
-// a `{ stale, revalidate, expire }` object, and taking the second form keeps
-// the profile durations and the CACHE_ENABLED switch together in one module
-// instead of splitting them between the Next config and the call sites.
 
 // A cache lifetime, in seconds. Structurally compatible with Next's own
 // CacheLife type, but all three fields are required: every profile here sets
@@ -24,10 +19,7 @@ export interface CacheLifetimeProfile {
   expire: number;
 }
 
-// Caching is opt-in, and off unless CACHE_ENABLED is explicitly "true". An
-// admin-privileged app showing stale data is usually the worse trade-off (see
-// the caching section of docs/ARCHITECTURE.md), so the safe behavior is the
-// default and enabling it is a deliberate choice.
+// Caching is opt-in, and off unless CACHE_ENABLED is explicitly "true"
 function isCachingEnabled(): boolean {
   return process.env.CACHE_ENABLED?.toLowerCase() === "true";
 }
@@ -42,8 +34,7 @@ function isCachingEnabled(): boolean {
 // requires expire > revalidate, hence 1 rather than 0.
 const CACHE_DISABLED_PROFILE: CacheLifetimeProfile = { stale: 0, revalidate: 0, expire: 1 };
 
-// Profile names, exported so call sites select a profile by constant rather
-// than by repeating a bare string.
+// Profile names
 export const CACHE_PROFILE_STANDARD = "standard";
 export const CACHE_PROFILE_EXTENDED = "extended";
 
@@ -52,9 +43,7 @@ export const CACHE_PROFILE_EXTENDED = "extended";
 // shouldn't stay stale for long even where no cache tag invalidates them.
 const STANDARD_PROFILE: CacheLifetimeProfile = { stale: 300, revalidate: 300, expire: 300 };
 
-// Channels change far less often than gift certificates or customers (they're
-// a store configuration concern, not day-to-day transactional data), so this
-// can tolerate a much longer lifetime.
+// For data that changes very infrequently
 const EXTENDED_PROFILE: CacheLifetimeProfile = { stale: 600, revalidate: 600, expire: 600 };
 
 const PROFILES = {
@@ -64,9 +53,7 @@ const PROFILES = {
 
 export type CacheProfile = keyof typeof PROFILES;
 
-// What every `use cache` boundary passes to cacheLife. Returns the
-// zero-second profile when caching is off, which is why call sites can always
-// name their profile and never have to check the env var themselves.
+// What every `use cache` boundary passes to cacheLife
 export function cacheProfile(profile: CacheProfile): CacheLifetimeProfile {
   return isCachingEnabled() ? PROFILES[profile] : CACHE_DISABLED_PROFILE;
 }

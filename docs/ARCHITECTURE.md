@@ -406,10 +406,12 @@ each. `MockRestApiClient` itself never changes either way.
 ## Caching
 
 This app uses Next's Cache Components (`cacheComponents: true`). Two
-`cacheLife` profiles are configured: `standard` (5 min, most data) and
-`extended` (10 min, slower-changing data like channels).
+lifetime profiles are defined in `lib/cache/cache-profiles.ts`:
+`standard` (5 min, most data) and `extended` (10 min, slower-changing data
+like channels). Each `use cache` boundary selects one by calling
+`cacheLife(cacheProfile("standard"))`.
 
-Caching is controlled by `CACHE_COMPONENTS_ENABLED`, which `.env.example`
+Caching is controlled by `CACHE_ENABLED`, which `.env.example`
 ships as `TRUE` so the behavior is visible out of the box. The app's own
 fallback when the var is undefined is *off* (see below).
 
@@ -434,7 +436,7 @@ which is invisible to and not invalidated by `cacheTag`/`updateTag`.
 
 ### Enabling and disabling caching
 
-Caching is controlled by `CACHE_COMPONENTS_ENABLED`, and is off unless that
+Caching is controlled by `CACHE_ENABLED`, and is off unless that
 is explicitly `true`. Two defaults are worth keeping apart:
 
 - **The code's fallback is off.** An undefined var means no caching, so
@@ -454,13 +456,13 @@ they can't be wrapped in a runtime condition (a directive nested inside an
 `if` is silently ignored rather than honored), and disabling
 `cacheComponents` outright would stop the app compiling at all.
 
-Instead, `next.config.ts` swaps both `cacheLife` profiles for a zero-second
-one (`{ stale: 0, revalidate: 0, expire: 1 }` — Next requires `expire` to
+Instead, `cacheProfile()` returns a zero-second profile
+(`{ stale: 0, revalidate: 0, expire: 1 }` — Next requires `expire` to
 exceed `revalidate`, so `1` is the floor). A `revalidate` of `0` means every
 entry is already expired by the time the next request tries to read it, so
-nothing is ever reused and each request re-fetches. Overriding the profiles
-covers every cached boundary in the app, since each one selects `standard` or
-`extended`.
+nothing is ever reused and each request re-fetches. Because every cached
+boundary selects its profile through `cacheProfile()`, the switch covers all
+of them, and call sites never have to check the variable themselves.
 
 This keeps the caching code paths intact and observable while removing the
 staleness: with `LOG_API_REQUESTS=true`, every page load logs its upstream

@@ -1,6 +1,6 @@
-// Matches BigDesign's TableSortDirection type. Defined here for now; once
-// the customers enhancement lands its own SortDirection, both places should
-// share the one in customers/types.ts instead of duplicating it.
+// TODO: import SortDirection from customers/types.ts instead of declaring
+// it here, now that the customers enhancement has landed its own copy of
+// this same type - both places would otherwise duplicate it
 export type SortDirection = "ASC" | "DESC";
 
 export const GIFT_CERTIFICATES_PATH = "/v2/gift_certificates";

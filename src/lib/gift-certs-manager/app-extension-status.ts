@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { cacheProfile } from "@/lib/bc-api-client/cache-profiles";
+import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/bc-api-client/cache-profiles";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 
 // One shared tag per store (only one extension is ever registered). Exported
@@ -10,7 +10,7 @@ export function appExtensionStatusTag(storeHash: string): string {
 
 async function fetchStoreExtensionStatus(storeHash: string): Promise<{ isRegistered: boolean }> {
   "use cache: remote";
-  cacheLife(cacheProfile("extended"));
+  cacheLife(cacheProfile(CACHE_PROFILE_EXTENDED));
   cacheTag(appExtensionStatusTag(storeHash));
 
   const extensionId = await getCredentialsStore().getStoreExtension(storeHash);

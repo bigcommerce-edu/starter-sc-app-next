@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
-import { cacheProfile } from "@/lib/bc-api-client/cache-profiles";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/bc-api-client/cache-profiles";
 import { Box, Flex, Panel } from "@bigcommerce/big-design";
 import { ArrowBackIcon } from "@bigcommerce/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
@@ -28,7 +28,7 @@ export async function CustomerView({
   storeHash: string | undefined;
 }) {
   "use cache: remote";
-  cacheLife(cacheProfile("standard"));
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(customerTag(id));
   cacheTag(GIFT_CERTIFICATES_LIST_TAG);
 

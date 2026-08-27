@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
-import { cacheProfile } from "@/lib/bc-api-client/cache-profiles";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/bc-api-client/cache-profiles";
 import { Box, Flex } from "@bigcommerce/big-design";
 import { ArrowBackIcon } from "@bigcommerce/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
@@ -22,7 +22,7 @@ export async function GiftCertificateView({
   storeHash: string | undefined;
 }) {
   "use cache: remote";
-  cacheLife(cacheProfile("standard"));
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(giftCertificateTag(id));
 
   // A missing id is a real 404 from BigCommerce's v2 single-resource

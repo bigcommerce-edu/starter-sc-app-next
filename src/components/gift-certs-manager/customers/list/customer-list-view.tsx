@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { cacheProfile } from "@/lib/bc-api-client/cache-profiles";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/bc-api-client/cache-profiles";
 import { Box, Panel } from "@bigcommerce/big-design";
 import { ControlPanelLink } from "@/components/ui/control-panel-link";
 import { CustomerTable } from "@/components/gift-certs-manager/customers/list/customer-table";
@@ -23,7 +23,7 @@ export async function CustomerListView({
   storeHash: string | undefined;
 }) {
   "use cache: remote";
-  cacheLife(cacheProfile("standard"));
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(CUSTOMERS_LIST_TAG);
 
   const query = parseCustomersQuery(searchParams);

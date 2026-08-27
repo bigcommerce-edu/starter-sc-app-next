@@ -3,8 +3,10 @@ import { getDataMode, resolveApiToken, resolveStoreHash } from "@/lib/bc-api-cli
 import { RestApiClient } from "@/lib/bc-api-client/rest-client/rest-client";
 import { BcRestApiClient } from "@/lib/bc-api-client/rest-client/types";
 
-// Not memoized per request yet — the caching enhancement wraps this
-// resolution in cache().
+// TODO: memoize this per request with cache()
+//  - keyed on the resolved store hash (not the raw route param) — e.g. in
+//    STATIC mode every call resolves to the same store regardless of route
+//    param, and should share one instance per request
 async function getConfiguredRestApiClient(resolvedStoreHash: string | undefined): Promise<BcRestApiClient> {
   return new RestApiClient({ storeHash: resolvedStoreHash, apiToken: await resolveApiToken(resolvedStoreHash) });
 }

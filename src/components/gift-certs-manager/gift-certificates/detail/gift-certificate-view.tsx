@@ -14,6 +14,14 @@ export async function GiftCertificateView({
   id: string;
   storeHash: string | undefined;
 }) {
+  // TODO: cache this render boundary with Cache Components
+  //  - "use cache: remote" directive
+  //  - cacheLife() with a lifetime profile with cacheProfile()
+  //  - Use CACHE_PROFILE_STANDARD
+  //  - cacheTag(giftCertificateTag(id)) - tagged per-id (not the shared list
+  //    tag) so a mutation to this certificate doesn't invalidate every other
+  //    certificate's cached detail view
+  //
   // A missing id is a real 404 from BigCommerce's v2 single-resource
   // endpoint; the translation to notFound() happens here rather than in
   // fetchGiftCertificate, which is also called from Server Actions where a

@@ -1,7 +1,7 @@
 # Lab Tutorial: BigCommerce Single-Click App Starter
 
-> **Based on version 1.1.0** — this tutorial corresponds to the latest
-> progressive history tagged `1.1.0`.
+> **Based on version 1.1.1** — this tutorial corresponds to the latest
+> progressive history tagged `1.1.1`.
 
 This document lists the lab exercises and their step-by-step diffs. Each
 main-lab step links to a comparison between the step's `*-pre` (TODO
@@ -174,7 +174,7 @@ Completes the full set of single-click app callbacks with support for Uninstall 
 Demonstrates Next.js caching and memoization patterns that 
 optimize the app by avoiding repeat DB lookups and API calls.
 
-Caching is controlled by the `CACHE_COMPONENTS_ENABLED` environment variable.
+Caching is controlled by the `CACHE_ENABLED` environment variable.
 `.env.example` ships it as `TRUE`, so if you copied your `.env.local` from
 there you're already exercising the behavior this step builds — pair it with
 `LOG_API_REQUESTS=true` to watch cache hits and misses, since an upstream

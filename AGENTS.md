@@ -179,6 +179,7 @@ pre: `uninstall-pre`, post: `uninstall-post`
 pre: `caching-pre`, post: `caching-post`
 
 - Enable Cache Components in `next.config.ts`
+- Define the cache lifetime profiles and the caching on/off switch
 - Implement caching in appropriate components/actions
 - Implement Suspense boundaries and fallbacks
 - Memoize various lookups per-request

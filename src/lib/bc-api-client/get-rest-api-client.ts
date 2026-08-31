@@ -1,14 +1,23 @@
 import { MockRestApiClient } from "@/lib/bc-api-client/rest-client/mock-rest-client/mock-rest-client";
-import { getDataMode } from "@/lib/bc-api-client/data-mode";
+import { getDataMode, resolveApiToken, resolveStoreHash } from "@/lib/bc-api-client/resolve-store-credentials";
+import { RestApiClient } from "@/lib/bc-api-client/rest-client/rest-client";
 import { BcRestApiClient } from "@/lib/bc-api-client/rest-client/types";
 
-// TODO: Add getConfiguredRestApiClient to return the non-mock client
+// Not memoized per request yet — the caching enhancement wraps this
+// resolution in cache().
+async function getConfiguredRestApiClient(resolvedStoreHash: string | undefined): Promise<BcRestApiClient> {
+  return new RestApiClient({ storeHash: resolvedStoreHash, apiToken: await resolveApiToken(resolvedStoreHash) });
+}
 
+// Selects and configures the BigCommerce REST API client for the given
+// store. Takes the [storeHash] route param (or undefined on a root-level
+// dev route) and resolves internally which store to actually target, since
+// that isn't always the same thing (e.g. STATIC mode always targets its one
+// env-configured store).
 export async function getRestApiClient(storeHash: string | undefined): Promise<BcRestApiClient> {
   if (getDataMode() === "MOCK") {
     return new MockRestApiClient();
   }
 
-  // TODO: Fetch the real client
-  throw new Error("Not implemented yet.");
+  return getConfiguredRestApiClient(resolveStoreHash(storeHash));
 }

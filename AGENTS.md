@@ -62,6 +62,10 @@ skill, and verified with its `validate-sync` command.
   of the compile-only stub commit, since a diff full of empty stubs is
   noise for a reader reviewing the scaffolding. Migrated onto a new
   history by the Main Tags publish.
+- **eLearning tags**: `e-` prefixed duplicates of the step and boilerplate
+  tags above, pointing at the same commits (e.g. `e-ui-01-pre` alongside
+  `ui-01-pre`). Migrated by the eLearning publish, independently of the
+  Main Tags publish.
 
 ## Commit History Structure
 

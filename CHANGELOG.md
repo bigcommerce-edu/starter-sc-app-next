@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.1.2
+
+_Based on Next.js 16.2.9_
+
+### Summary
+
+Moved the **Add to Balance** gift certificate action out of Lab 1 and into
+the gift certificate enhancement that is meant to teach it. No framework or
+dependency versions changed, and the final state of the code is identical to
+1.1.1 — this release only changes *which step* introduces the action. No lab
+or enhancement was added, removed, or renumbered.
+
+In 1.1.1, `gift-certificate-balance-tab.tsx` already declared the `"add"`
+balance action from Lab 1 Step 7 onward: the `BalanceAction` union, its
+`ACTION_LABEL` entry, the `getConfirmationMessage` case, and the `addAmount`
+state were all present hundreds of commits before the `gift-certs-enh`
+enhancement whose "Add to Balance action for gift certificates" step is
+supposed to introduce them. That left the enhancement step with almost
+nothing to do, and gave Lab 1 learners a balance tab containing an action no
+lab step had explained.
+
+### Changes
+
+- Narrowed `BalanceAction` to `"refill"` in Lab 1's "Status update and
+  balance refill actions" step, and dropped the matching `ACTION_LABEL`
+  entry, so Lab 1 introduces only the refill action its own step covers.
+- Reinstated the `add` action in the enhancement's "Add to Balance action
+  for gift certificates" step, which now adds the union member, the
+  `ACTION_LABEL` entry, the `getConfirmationMessage` case, and the
+  `addAmount` state itself — matching the TODO comment that precedes it.
+- Adjusted the pending-action TODO markers between those two points to read
+  `// TODO: Add "add" and "transfer" actions` while the `add` action is
+  still outstanding.
+
 ## 1.1.1
 
 _Based on Next.js 16.2.9_

@@ -1,9 +1,19 @@
 "use client";
 
-import { Box, Panel, Small, Text } from "@bigcommerce/big-design";
+import { useState, useTransition } from "react";
+import { Box, Button, Flex, Input, Modal, Panel, Small, Text } from "@bigcommerce/big-design";
+import {
+  refillGiftCertificateBalance,
+} from "@/app/store/[storeHash]/gift-certs/[id]/actions";
+import { runServerAction } from "@/components/ui/action-alerts";
+import { canRefill } from "@/lib/gift-certs-manager/gift-certificates/status";
 import { GiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/types";
 
-// TODO: Action type and label constants
+type BalanceAction = "refill";
+
+const ACTION_LABEL: Record<BalanceAction, string> = {
+  refill: "Refill",
+};
 
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
@@ -16,7 +26,12 @@ function DetailField({ label, children }: { label: string; children: React.React
   );
 }
 
-// TODO: Add getConfirmationMessage function
+function getConfirmationMessage(action: BalanceAction, amount: number): string {
+  switch (action) {
+    case "refill":
+      return `Refill balance to ${currencyFormatter.format(amount)}?`;
+  }
+}
 
 // No Transfer to Store Credit yet — that needs a registered customer
 // account, added by a later enhancement.
@@ -33,26 +48,113 @@ export function GiftCertificateBalanceTab({
   giftCertificate: GiftCertificate;
   storeHash: string | undefined;
 }) {
-  // TODO: Add state values for selected and pending action, refill amount, and transition
+  const [selectedAction, setSelectedAction] = useState<BalanceAction | null>(null);
+  const [pendingAction, setPendingAction] = useState<BalanceAction | null>(null);
+  const [refillAmount, setRefillAmount] = useState(String(giftCertificate.amount));
+  const [isPending, startTransition] = useTransition();
 
-  // TODO: toggleAction function
+  const toggleAction = (action: BalanceAction) => {
+    setSelectedAction((current) => (current === action ? null : action));
+  };
 
-  // TODO: Handle action confirmation
-  //  - Dismissing the confirmation (Cancel, Esc, the close button) should
-  //    abandon the whole action: collapse the open amount panel and reseed
-  //    its amount from the certificate. Confirming must not do that - the
-  //    amount is read inside the transition, so resetting first would
-  //    submit the wrong value
+  const closeConfirmModal = () => setPendingAction(null);
+
+  // Dismissing the confirmation (Cancel, Esc, the close button) abandons the
+  // whole action, not just the dialog: the open amount panel collapses and
+  // its typed value is dropped, so the user isn't left looking at a
+  // half-filled form whose confirmation they just declined. The amounts are
+  // reseeded from the certificate (the same values useState initialized them
+  // with) rather than blanked, so reopening the panel starts from the same
+  // defaults as a fresh render.
+  const dismissConfirmModal = () => {
+    setPendingAction(null);
+    setSelectedAction(null);
+    setRefillAmount(String(giftCertificate.amount));
+  };
+
+  const handleConfirm = () => {
+    const action = pendingAction;
+
+    // Closed synchronously on click, not after the action resolves: this
+    // component can get frozen mid-transition in Next's client Router Cache,
+    // which would otherwise replay a stale pendingAction (and a re-opened
+    // modal) when navigating back to this cached page.
+    //
+    // Deliberately closeConfirmModal, not dismissConfirmModal: the amount
+    // state is read inside the transition below, so resetting it here would
+    // submit the wrong value. A successful action revalidates and remounts
+    // this component (see the key in gift-certificate-tabs.tsx), which is
+    // what clears the form on the success path.
+    closeConfirmModal();
+
+    startTransition(async () => {
+      switch (action) {
+        case "refill":
+          await runServerAction(() =>
+            refillGiftCertificateBalance(giftCertificate.id, Number(refillAmount), storeHash),
+          );
+          break;
+      }
+    });
+  };
+
+  const pendingAmount = refillAmount;
+
+  const canSubmitRefill = refillAmount !== "" && Number(refillAmount) > giftCertificate.balance;
 
   return (
     <Panel header={giftCertificate.code}>
       <DetailField label="Original Value">{currencyFormatter.format(giftCertificate.amount)}</DetailField>
       <DetailField label="Current Balance">{currencyFormatter.format(giftCertificate.balance)}</DetailField>
 
-      {/* TODO: Add action buttons and panels - the panel's submit button
-          should stay disabled until its amount is filled in and, for Refill,
-          is above the current balance, so the action can't be sent in a state
-          the server will just reject */}
+      <Flex flexGap="0.5rem" marginBottom="medium">
+        <Button
+          disabled={!canRefill(giftCertificate)}
+          onClick={() => toggleAction("refill")}
+          variant={selectedAction === "refill" ? "primary" : "secondary"}
+        >
+          Refill
+        </Button>
+      </Flex>
+
+      {selectedAction === "refill" && (
+        <Box>
+          <Input
+            label="Refill to new balance"
+            onChange={(event) => setRefillAmount(event.target.value)}
+            type="number"
+            value={refillAmount}
+          />
+          <Text>
+            This will set the total active balance to this amount — more than the current balance of{" "}
+            <strong>{currencyFormatter.format(giftCertificate.balance)}</strong>, up to{" "}
+            <strong>{currencyFormatter.format(giftCertificate.amount)}</strong>.
+          </Text>
+          <Button disabled={!canSubmitRefill} onClick={() => setPendingAction("refill")} variant="primary">
+            Refill
+          </Button>
+        </Box>
+      )}
+
+      {pendingAction && (
+        <Modal
+          actions={[
+            { text: "Cancel", variant: "subtle", onClick: dismissConfirmModal },
+            {
+              text: ACTION_LABEL[pendingAction],
+              variant: "primary",
+              isLoading: isPending,
+              onClick: handleConfirm,
+            },
+          ]}
+          closeOnEscKey
+          header={ACTION_LABEL[pendingAction]}
+          isOpen
+          onClose={dismissConfirmModal}
+        >
+          <Text marginBottom="none">{getConfirmationMessage(pendingAction, Number(pendingAmount))}</Text>
+        </Modal>
+      )}
     </Panel>
   );
 }

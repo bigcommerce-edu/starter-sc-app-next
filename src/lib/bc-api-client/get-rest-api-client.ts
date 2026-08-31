@@ -2,13 +2,13 @@ import { MockRestApiClient } from "@/lib/bc-api-client/rest-client/mock-rest-cli
 import { getDataMode } from "@/lib/bc-api-client/data-mode";
 import { BcRestApiClient } from "@/lib/bc-api-client/rest-client/types";
 
-// Selects and configures the BigCommerce REST API client for the given
-// store. Only MOCK mode is implemented so far — STATIC/MULTITENANT are
-// added once the real REST client exists.
+// TODO: Add getConfiguredRestApiClient to return the non-mock client
+
 export async function getRestApiClient(storeHash: string | undefined): Promise<BcRestApiClient> {
   if (getDataMode() === "MOCK") {
     return new MockRestApiClient();
   }
 
+  // TODO: Fetch the real client
   throw new Error("Not implemented yet.");
 }

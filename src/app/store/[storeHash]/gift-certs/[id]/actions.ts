@@ -4,6 +4,7 @@ import { updateTag } from "next/cache";
 import { ActionResult } from "@/lib/actions/action-result";
 import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
+  addToGiftCertificateBalance as addToGiftCertificateBalanceRequest,
   fetchGiftCertificate,
   refillGiftCertificateBalance as refillGiftCertificateBalanceRequest,
   updateGiftCertificateStatus as updateGiftCertificateStatusRequest,
@@ -107,11 +108,43 @@ export async function refillGiftCertificateBalance(
   return { success: true, message: "Gift certificate balance refilled." };
 }
 
-// TODO: Implement addToGiftCertificateBalance - add an arbitrary amount to a gift certificate balance
-//  - Requires the certificate to be active or expired, and the amount to be a positive number
-//  - Update the cache tag for the affected gift certificate
-//  - Report a missing certificate distinctly from other failures, the same
-//    way the existing actions above do
+// Same usability restriction as refilling, but no ceiling on the resulting
+// balance — adding can push it above the certificate's original amount.
+export async function addToGiftCertificateBalance(
+  id: number | string,
+  amount: number,
+  storeHash: string | undefined,
+): Promise<ActionResult> {
+  if (!(await isAuthorizedForStore(storeHash))) {
+    return { success: false, message: NOT_AUTHORIZED_FOR_STORE_MESSAGE };
+  }
+
+  try {
+    const giftCertificate = await fetchGiftCertificate(id, storeHash);
+
+    if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
+      return { success: false, message: "Only active or expired gift certificates can have balance added." };
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { success: false, message: "Amount must be a positive number." };
+    }
+
+    await addToGiftCertificateBalanceRequest(giftCertificate, amount, storeHash);
+  } catch (error) {
+    logError(`addToGiftCertificateBalance: certificate ${id}`, error);
+
+    if (isNotFoundError(error)) {
+      return { success: false, message: GIFT_CERTIFICATE_NOT_FOUND_MESSAGE };
+    }
+
+    return { success: false, message: toSafeMessage(error, "Failed to add to the gift certificate balance.") };
+  }
+
+  updateTag(giftCertificateTag(id));
+
+  return { success: true, message: "Amount added to gift certificate balance." };
+}
 
 // TODO: Implement transferGiftCertificateBalanceToStoreCredit - transfer a gift certificate's balance to the recipient's customer
 // store credit

@@ -38,6 +38,11 @@ yarn-error.log*
 !.env.example
 !.env.*.example
 
+# Cloudflare Worker secrets, uploaded by `pnpm deploy` via `wrangler secret
+# bulk`. Only the .example template is committed.
+.secrets*
+!.secrets.*.example
+
 # vercel
 .vercel
 

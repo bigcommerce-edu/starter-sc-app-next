@@ -14,6 +14,25 @@ if (process.env.APP_ORIGIN) {
   allowedOrigins.push(new URL(process.env.APP_ORIGIN).host);
 }
 
+// Stubs out the Postgres and D1 credentials-store drivers unless
+// CREDENTIALS_STORE_DRIVER actually selects that one. SQLite is never stubbed:
+// it depends only on node:sqlite, which bundles anywhere.
+function buildCredentialsDriverAliases(): Record<string, string> {
+  const configuredDriver = process.env.CREDENTIALS_STORE_DRIVER;
+  const aliases: Record<string, string> = {};
+
+  if (configuredDriver !== "POSTGRES") {
+    aliases["@/lib/credentials-store/postgres-driver-loader"] =
+      "@/lib/credentials-store/postgres-driver-loader.unavailable";
+  }
+
+  if (configuredDriver !== "D1") {
+    aliases["@/lib/credentials-store/d1-driver-loader"] = "@/lib/credentials-store/d1-driver-loader.unavailable";
+  }
+
+  return aliases;
+}
+
 const nextConfig: NextConfig = {
   // Cache Components (PPR) is off, and every `use cache` boundary plus its
   // cacheLife/cacheTag calls has been removed alongside it, because the PPR
@@ -36,25 +55,30 @@ const nextConfig: NextConfig = {
   // component-level caching once #1318 ships.
   cacheComponents: false,
   
-  // Swaps the Postgres credentials-store driver for a `pg`-free stub
-  // whenever CREDENTIALS_STORE_DRIVER isn't "POSTGRES" — see
-  // lib/credentials-store/postgres-driver-loader.ts and
-  // postgres-driver-loader.unavailable.ts. This isn't just an unused-code
-  // optimization: `pg` does an unconditional `require("pg-cloudflare")`
-  // internally that fails to resolve when bundled for some deployment
-  // targets (e.g. Cloudflare Workers via @opennextjs/cloudflare), even
-  // though that branch would never actually execute there — a build-time
-  // alias is the only lever that keeps `pg` out of the compiled output
-  // entirely, since neither a runtime env check nor a dynamic import stops
-  // a bundler from tracing into a statically-reachable module.
+  // Swaps each of the two remote credentials-store drivers for a
+  // dependency-free stub unless CREDENTIALS_STORE_DRIVER actually selects it
+  // — see lib/credentials-store/{postgres,d1}-driver-loader.ts and their
+  // .unavailable.ts counterparts.
+  //
+  // This isn't just an unused-code optimization. Each driver has a
+  // dependency that can't be bundled for the *other* driver's deployment
+  // target, so leaving both in the graph breaks whichever build it isn't
+  // meant for:
+  //
+  //   - `pg` (Postgres) does an unconditional `require("pg-cloudflare")`
+  //     internally that fails to resolve when bundled for Cloudflare Workers
+  //     via @opennextjs/cloudflare, even though that branch would never
+  //     execute there.
+  //   - @opennextjs/cloudflare (D1) is the Workers adapter itself; a Node
+  //     host's build has no reason to trace into it for a driver it would
+  //     never select.
+  //
+  // A build-time alias is the only lever that keeps either out of the
+  // compiled output entirely, since neither a runtime env check nor a
+  // dynamic import stops a bundler from tracing into a statically-reachable
+  // module.
   turbopack: {
-    resolveAlias:
-      process.env.CREDENTIALS_STORE_DRIVER !== "POSTGRES"
-        ? {
-            "@/lib/credentials-store/postgres-driver-loader":
-              "@/lib/credentials-store/postgres-driver-loader.unavailable",
-          }
-        : {},
+    resolveAlias: buildCredentialsDriverAliases(),
   },
   // Without this, Next's SWC compiler doesn't apply styled-components'
   // displayNameAndId transform, so every styled(...) component (AppLink,

@@ -4,12 +4,12 @@ This guide covers deploying this app to Cloudflare Workers as a hosted
 BigCommerce single-click app, using `@opennextjs/cloudflare` to adapt the
 Next.js build for the Workers runtime.
 
-This document currently covers only the **cache infrastructure** — the R2
-bucket, the cache-tag D1 database, and the Durable Objects that back
-revalidation. The credentials-store database (D1) and the full
-register-and-install walkthrough are not covered yet.
+This document covers the **storage and cache infrastructure**: the R2 bucket,
+the cache-tag D1 database, the Durable Objects that back revalidation, and
+the D1 database backing the credentials store. The full register-and-install
+walkthrough is not covered yet.
 
-## Supported Cache Infrastructure
+## Supported Infrastructure
 
 Next.js caching on Workers is assembled from several separate pieces, because
 there's no single storage primitive that does all of it well:
@@ -26,7 +26,14 @@ there's no single storage primitive that does all of it well:
   single operations: the queue deduplicates concurrent revalidations of the
   same route, and the purge buffer batches tag invalidations behind an alarm.
 
-The cache-tag D1 database is deliberately **separate** from the app's
+Alongside those, a fourth resource holds application data rather than cache
+state:
+
+* **D1** — the credentials store. Holds each installed store's encrypted API
+  token, its authorized users, and its registered App Extension. This is the
+  app's system of record.
+
+The cache-tag D1 database is deliberately **separate** from that
 system-of-record database. It's cache bookkeeping rather than application
 data, with a completely different churn and durability profile, and keeping
 them apart means neither one's scaling or backup story constrains the other.
@@ -106,7 +113,88 @@ pnpm wrangler d1 execute starter-sc-app-next-cache-tags --remote \
   --command "SELECT * FROM revalidations LIMIT 10;"
 ```
 
-## 3. Durable Objects Need No Provisioning Step
+## 3. Create the Credentials Store D1 Database
+
+This is the app's own system-of-record database — the one that stores each
+installing store's encrypted API token, its users, and its registered App
+Extension. It is **separate** from the cache-tag database created above, for
+the reasons in "Supported Infrastructure": different churn, different
+durability expectations, and no reason for either to constrain the other.
+
+```shell
+pnpm wrangler d1 create starter-sc-app-next-credentials
+```
+
+Copy the printed `database_id` into `wrangler.jsonc`, replacing the
+`REPLACE_WITH_CREDENTIALS_D1_DATABASE_ID` placeholder under the
+`CREDENTIALS_D1` binding.
+
+Unlike the OpenNext cache bindings, `CREDENTIALS_D1` is this app's own name
+rather than one the adapter looks up. If you change it, change
+`D1_BINDING_NAME` in `src/lib/credentials-store/d1-driver/get-database.ts` to
+match.
+
+### Apply the Schema Migrations
+
+This database's schema is **not** created for you — unlike the cache-tag
+database, nothing in the deploy pipeline provisions it. Apply the migrations
+explicitly:
+
+```shell
+pnpm wrangler d1 migrations apply starter-sc-app-next-credentials --remote
+```
+
+The `--remote` flag is what distinguishes the deployed database from the
+local one `wrangler dev` uses. Run the same command with `--local` to set up
+a local database for `pnpm preview`; the two are entirely separate, and a
+fresh checkout needs both.
+
+Migrations live in `src/lib/credentials-store/d1-driver/migrations/`, next to
+the driver they belong to, rather than in a top-level `migrations/` folder.
+That's the `migrations_dir` setting on the `CREDENTIALS_D1` binding in
+`wrangler.jsonc` — it mirrors how the Postgres driver keeps its own
+migrations under `postgres-driver/migrations/`.
+
+To add a migration later, let Wrangler generate the correctly-numbered file
+rather than hand-naming it:
+
+```shell
+pnpm wrangler d1 migrations create starter-sc-app-next-credentials add_some_table
+```
+
+Check what has and hasn't been applied:
+
+```shell
+pnpm wrangler d1 migrations list starter-sc-app-next-credentials --remote
+```
+
+### Select the D1 Driver
+
+Creating the database isn't enough on its own — the app has three
+credentials-store drivers and has to be told to use this one. That takes two
+settings, in two different places, because they're read at two different
+times:
+
+* `CREDENTIALS_STORE_DRIVER` in `wrangler.jsonc`'s `vars` — read at
+  **runtime** by the deployed Worker, and what actually selects the driver.
+* `CREDENTIALS_STORE_DRIVER` in `.env.production.local` — read at **build**
+  time by `next.config.ts`, which stubs out every driver except the one named
+  there. `wrangler.jsonc` can't reach this: its `vars` populate the Worker's
+  runtime env, long after `next build` has finished.
+
+Both must be `D1`. Nothing enforces that they agree, and disagreement gives
+you a bundle built for one driver and a runtime asking for another. See
+`.env.production.local.example` for the copy-and-edit template.
+
+D1 is the only driver that works on Workers. `SQLITE` writes to a local file
+the runtime has no persistent equivalent of, and `POSTGRES` pulls in `pg`,
+which cannot be bundled for workerd at all.
+
+Note that the driver is only actually exercised in `DATA_MODE=MULTITENANT` —
+`MOCK` and `STATIC` never look up a stored credential, so a deploy in either
+of those modes will appear healthy whether or not this database exists.
+
+## 4. Durable Objects Need No Provisioning Step
 
 There's no `wrangler ... create` command for the two Durable Objects. They're
 provisioned automatically on first deploy, from the `exports` block in
@@ -126,7 +214,7 @@ Note that `DOQueueHandler` calls back into this Worker through the
 `name`, or revalidation will fail at runtime while everything else appears
 healthy.
 
-## 4. The Cache Overrides
+## 5. The Cache Overrides
 
 Creating the resources and declaring the bindings is not enough on its own —
 `open-next.config.ts` is what activates them. Every override defaults to
@@ -158,10 +246,10 @@ control. Until then, expect that log line on every path invalidation and treat
 it as informational. When you do add a zone, `CACHE_PURGE_API_TOKEN` is a
 credential and belongs in `.secrets.production`, not in `wrangler.jsonc`.
 
-## 5. Verify
+## 6. Verify
 
-Once the resources exist and `wrangler.jsonc` has the real `database_id`,
-check that the config itself is valid:
+Once the resources exist and `wrangler.jsonc` has the real `database_id` for
+**both** D1 databases, check that the config itself is valid:
 
 ```shell
 pnpm cf-typegen
@@ -182,9 +270,19 @@ Deploying uploads secrets, builds, and deploys in one step:
 pnpm deploy
 ```
 
+Note that `pnpm deploy` does **not** run D1 migrations — schema changes are
+deliberately a separate, explicit step (see "Apply the Schema Migrations"
+above), so a deploy never silently alters the database holding live store
+credentials. After adding a migration, apply it yourself:
+
+```shell
+pnpm wrangler d1 migrations apply starter-sc-app-next-credentials --remote
+```
+
 ## Reference
 
 * [OpenNext Cloudflare caching docs](https://opennext.js.org/cloudflare/caching)
 * [Cloudflare R2 documentation](https://developers.cloudflare.com/r2/)
 * [Cloudflare D1 documentation](https://developers.cloudflare.com/d1/)
+* [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/)
 * [Durable Objects documentation](https://developers.cloudflare.com/durable-objects/)

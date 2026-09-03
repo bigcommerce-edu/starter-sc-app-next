@@ -61,22 +61,25 @@
     // This app's own error logging for caught DB/upstream failures. On, since
     // it's how an operator notices a real production failure.
     "ERROR_LOGGING_ENABLED": "TRUE",
-    // Which driver backs credentials storage. SQLITE for now, which is also
-    // the app's fallback when this is unset or invalid (see
-    // getConfiguredDriver in
-    // src/lib/credentials-store/get-credentials-store.ts).
+    // Which driver backs credentials storage. D1 is the only one that
+    // actually works on Workers: SQLITE writes to a local file the runtime
+    // doesn't have, and POSTGRES needs `pg`, which can't be bundled for
+    // workerd at all. (SQLITE is still the app's fallback when this is unset
+    // or invalid — see getConfiguredDriver in
+    // src/lib/credentials-store/get-credentials-store.ts — which is right for
+    // local dev but wrong here, so this is set explicitly.)
     //
     // Note this is only reached in MULTITENANT mode — MOCK and STATIC never
-    // look up a stored credential — so with DATA_MODE=MOCK above, the value
+    // look up a stored credential — so with DATA_MODE=STATIC above, the value
     // here doesn't affect request handling yet.
     //
-    // It does still matter at build time: next.config.ts aliases the Postgres
-    // driver to a `pg`-free stub whenever this isn't "POSTGRES", and that
-    // alias is what keeps `pg`'s unconditional require("pg-cloudflare") out
-    // of the Workers bundle. Setting this to POSTGRES would pull `pg` back in
-    // and break the build for this target. The D1 driver this project is
-    // moving toward will become the real value here.
-    "CREDENTIALS_STORE_DRIVER": "SQLITE",
+    // It also matters at build time, where wrangler.jsonc can't reach:
+    // next.config.ts stubs out every driver except the configured one, and
+    // it reads this var from .env.production.local rather than from here
+    // (see .env.production.local.example). Keep the two in sync — nothing
+    // enforces it, and drift gives you a bundle built for one driver and a
+    // runtime asking for another.
+    "CREDENTIALS_STORE_DRIVER": "D1",
     // Developer branding shown in the app shell's support panel. Public-facing
     // by definition, and the same across this app's deployments.
     "DEVELOPER_LOGO_FILENAME": "northlight-logo.svg",
@@ -146,6 +149,8 @@
   // `populate-cache` step of `opennextjs-cloudflare deploy`/`preview` runs the
   // CREATE TABLE IF NOT EXISTS for you (see populateD1TagCache in the CLI). It
   // throws if this binding is missing, so the binding name matters.
+  // Two D1 databases, deliberately separate (see the note above): the cache
+  // tag store, and the app's own credentials store.
   "d1_databases": [
     {
       "binding": "NEXT_TAG_CACHE_D1",
@@ -153,6 +158,24 @@
       // Replace with the ID returned by `wrangler d1 create` — see
       // docs/CLOUDFLARE-DEPLOYMENT.md.
       "database_id": "3e27582b-5447-4aaf-9a67-a6d49332797e"
+    },
+    {
+      // The app's system-of-record database, backing the D1
+      // credentials-store driver (src/lib/credentials-store/d1-driver/).
+      // This binding name is NOT read by OpenNext — it's this app's own, and
+      // must match D1_BINDING_NAME in d1-driver/get-database.ts.
+      "binding": "CREDENTIALS_D1",
+      "database_name": "starter-sc-app-next-credentials",
+      // Replace with the ID returned by `wrangler d1 create` — see
+      // docs/CLOUDFLARE-DEPLOYMENT.md.
+      "database_id": "54f41ff4-ec46-40a5-a3e4-47e3d4248576",
+      // Points `wrangler d1 migrations apply` at this driver's own
+      // migrations rather than the default top-level ./migrations, keeping
+      // schema next to the driver it belongs to — the same arrangement as
+      // the Postgres driver's migrations/ folder. Only the credentials
+      // database has migrations of its own; the cache-tag database's schema
+      // is created by OpenNext's populate-cache step.
+      "migrations_dir": "src/lib/credentials-store/d1-driver/migrations"
     }
   ],
   // Revalidation queue + cache purge, both Durable Objects.

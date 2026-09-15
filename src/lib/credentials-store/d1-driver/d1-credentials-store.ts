@@ -1,4 +1,4 @@
-import { getDatabase } from "@/lib/credentials-store/d1-driver/get-database";
+import { D1DatabaseLike, D1StatementLike } from "@/lib/credentials-store/d1-driver/types";
 import { decrypt, encrypt } from "@/lib/credentials-store/encryption";
 import { CredentialsStore, StoreExtensionRecord, StoreRecord, StoreUserRecord, UserRecord } from "@/lib/credentials-store/types";
 import { AppError } from "@/lib/errors/app-error";
@@ -33,10 +33,16 @@ interface ExtensionIdRow {
 // implicit transaction. Atomicity across statements comes from batch(), which
 // rolls back the whole sequence if any statement fails — that constraint is
 // what shapes deleteStore/deleteUser below.
+//
+// The database handle is injected rather than looked up here: obtaining it is
+// platform-specific (it comes from the Worker's env), while everything below
+// is portable SQL. That keeps this file free of any Cloudflare import.
 export class D1CredentialsStore implements CredentialsStore {
+  constructor(private readonly db: D1DatabaseLike) {}
+
   async setStore(store: StoreRecord): Promise<void> {
     await withDatabaseErrorHandling("setStore", async () => {
-      await getDatabase()
+      await this.db
         .prepare(
           `INSERT INTO stores (store_hash, access_token, scope, admin_user_id)
            VALUES (?, ?, ?, ?)
@@ -52,7 +58,7 @@ export class D1CredentialsStore implements CredentialsStore {
 
   async setUser(user: UserRecord): Promise<void> {
     await withDatabaseErrorHandling("setUser", async () => {
-      await getDatabase()
+      await this.db
         .prepare(
           `INSERT INTO users (user_id, email)
            VALUES (?, ?)
@@ -66,7 +72,7 @@ export class D1CredentialsStore implements CredentialsStore {
 
   async setStoreUser(storeUser: StoreUserRecord): Promise<void> {
     await withDatabaseErrorHandling("setStoreUser", async () => {
-      await getDatabase()
+      await this.db
         .prepare(
           `INSERT INTO store_users (store_hash, user_id)
            VALUES (?, ?)
@@ -79,7 +85,7 @@ export class D1CredentialsStore implements CredentialsStore {
 
   async getStoreToken(storeHash: string): Promise<string | undefined> {
     return withDatabaseErrorHandling("getStoreToken", async () => {
-      const row = await getDatabase()
+      const row = await this.db
         .prepare("SELECT access_token FROM stores WHERE store_hash = ?")
         .bind(storeHash)
         .first<StoreTokenRow>();
@@ -94,7 +100,7 @@ export class D1CredentialsStore implements CredentialsStore {
   // replacing a stale extension_id from a prior install.
   async setStoreExtension(storeExtension: StoreExtensionRecord): Promise<void> {
     await withDatabaseErrorHandling("setStoreExtension", async () => {
-      await getDatabase()
+      await this.db
         .prepare(
           `INSERT INTO store_extensions (store_hash, extension_id)
            VALUES (?, ?)
@@ -108,7 +114,7 @@ export class D1CredentialsStore implements CredentialsStore {
 
   async getStoreExtension(storeHash: string): Promise<string | undefined> {
     return withDatabaseErrorHandling("getStoreExtension", async () => {
-      const row = await getDatabase()
+      const row = await this.db
         .prepare("SELECT extension_id FROM store_extensions WHERE store_hash = ?")
         .bind(storeHash)
         .first<ExtensionIdRow>();
@@ -119,7 +125,7 @@ export class D1CredentialsStore implements CredentialsStore {
 
   async isStoreUserLinked(storeHash: string, userId: number): Promise<boolean> {
     return withDatabaseErrorHandling("isStoreUserLinked", async () => {
-      const row = await getDatabase()
+      const row = await this.db
         .prepare("SELECT 1 FROM store_users WHERE store_hash = ? AND user_id = ?")
         .bind(storeHash, userId)
         .first();
@@ -140,13 +146,11 @@ export class D1CredentialsStore implements CredentialsStore {
   // rows the earlier statements remove.
   async deleteStore(storeHash: string): Promise<void> {
     await withDatabaseErrorHandling("deleteStore", async () => {
-      const db = getDatabase();
-
-      await db.batch([
-        db.prepare("DELETE FROM store_users WHERE store_hash = ?").bind(storeHash),
-        db.prepare("DELETE FROM store_extensions WHERE store_hash = ?").bind(storeHash),
-        db.prepare("DELETE FROM stores WHERE store_hash = ?").bind(storeHash),
-        deleteUsersWithNoRemainingStores(db),
+      await this.db.batch([
+        this.db.prepare("DELETE FROM store_users WHERE store_hash = ?").bind(storeHash),
+        this.db.prepare("DELETE FROM store_extensions WHERE store_hash = ?").bind(storeHash),
+        this.db.prepare("DELETE FROM stores WHERE store_hash = ?").bind(storeHash),
+        deleteUsersWithNoRemainingStores(this.db),
       ]);
     });
   }
@@ -156,11 +160,9 @@ export class D1CredentialsStore implements CredentialsStore {
   // association. Does not touch the store or any other user.
   async deleteUser(storeHash: string, userId: number): Promise<void> {
     await withDatabaseErrorHandling("deleteUser", async () => {
-      const db = getDatabase();
-
-      await db.batch([
-        db.prepare("DELETE FROM store_users WHERE store_hash = ? AND user_id = ?").bind(storeHash, userId),
-        deleteUsersWithNoRemainingStores(db, userId),
+      await this.db.batch([
+        this.db.prepare("DELETE FROM store_users WHERE store_hash = ? AND user_id = ?").bind(storeHash, userId),
+        deleteUsersWithNoRemainingStores(this.db, userId),
       ]);
     });
   }
@@ -173,7 +175,7 @@ export class D1CredentialsStore implements CredentialsStore {
 // deleteStore uses the unnarrowed form, which is safe rather than overbroad: a
 // users row with no store_users row is unreachable by every read path here, so
 // anything extra it removes is an orphan from a prior partial failure.
-function deleteUsersWithNoRemainingStores(db: D1Database, userId?: number): D1PreparedStatement {
+function deleteUsersWithNoRemainingStores(db: D1DatabaseLike, userId?: number): D1StatementLike {
   const narrowToUser = userId !== undefined;
 
   const statement = db.prepare(

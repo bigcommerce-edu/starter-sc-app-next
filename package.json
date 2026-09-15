@@ -17,7 +17,6 @@
     "@bigcommerce/big-design": "5.0.0",
     "@bigcommerce/big-design-icons": "3.0.0",
     "@bigcommerce/big-design-theme": "3.0.0",
-    "@opennextjs/cloudflare": "1.20.5",
     "jose": "6.2.3",
     "next": "16.2.9",
     "pg": "8.22.0",
@@ -34,7 +33,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "node-pg-migrate": "9.0.0",
-    "typescript": "^5",
-    "wrangler": "^4.128.0"
+    "typescript": "^5"
   }
 }

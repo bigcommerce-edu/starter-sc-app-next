@@ -1,8 +1,9 @@
-// The Postgres and D1 drivers come from their *-driver-loader.ts files rather
-// than directly from their implementations, so a build-time alias can swap in
-// a stub — see those files.
+// Postgres comes from its *-driver-loader.ts file rather than directly from
+// the implementation, so a build-time alias can swap in a stub. D1 is built by
+// a factory for a different reason: its database handle is supplied by the
+// platform. See both loader files.
 import { cache } from "react";
-import { D1CredentialsStore } from "@/lib/credentials-store/d1-driver-loader";
+import { createD1CredentialsStore } from "@/lib/credentials-store/d1-driver-loader";
 import { PostgresCredentialsStore } from "@/lib/credentials-store/postgres-driver-loader";
 import { SqliteCredentialsStore } from "@/lib/credentials-store/sqlite-driver/sqlite-credentials-store";
 import { CredentialsStore, CredentialsStoreDriver } from "@/lib/credentials-store/types";
@@ -27,7 +28,7 @@ const getCachedCredentialsStore = cache((driver: CredentialsStoreDriver): Creden
     case "POSTGRES":
       return new PostgresCredentialsStore();
     case "D1":
-      return new D1CredentialsStore();
+      return createD1CredentialsStore();
   }
 });
 

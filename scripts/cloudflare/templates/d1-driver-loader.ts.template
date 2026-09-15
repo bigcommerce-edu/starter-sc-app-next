@@ -12,15 +12,6 @@ const D1_BINDING_NAME = "CREDENTIALS_D1";
 // platform-specific, so that step is isolated in this module. A D1 binding
 // only exists on Cloudflare Workers, so this is the file that differs between
 // a Cloudflare deployment and any other target.
-//
-// A lookup, not a connection — a D1 binding arrives ready to use, so there's
-// nothing to pool. Deliberately not cached across calls either: the binding
-// belongs to the current request's env, and get-credentials-store.ts already
-// memoizes the store instance per request. The synchronous form of
-// getCloudflareContext() is safe because every caller is already in a request.
-//
-// Schema is applied by `wrangler d1 migrations apply` (see
-// d1-driver/migrations/) before deploy; the driver assumes it exists.
 export function createD1CredentialsStore(): CredentialsStore {
   const database = getCloudflareContext().env[D1_BINDING_NAME];
 

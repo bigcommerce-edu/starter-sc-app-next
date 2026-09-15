@@ -18,14 +18,19 @@ if (process.env.APP_ORIGIN) {
 // CREDENTIALS_STORE_DRIVER selects, by aliasing its *-driver-loader specifier
 // to the .unavailable.ts counterpart (see lib/credentials-store/).
 //
-// This isn't just an unused-code optimization. A driver can carry a dependency
-// that fails to bundle for a deployment target it would never run on — `pg`,
-// for instance, does an unconditional `require("pg-cloudflare")` internally
-// that fails to resolve on some targets even though that branch would never
-// execute. A build-time alias is the only lever that keeps such a dependency
-// out of the compiled output entirely, since neither a runtime env check nor a
-// dynamic import stops a bundler from tracing into a statically-reachable
-// module.
+// This isn't just an unused-code optimization: a driver can carry a dependency
+// that can't be built for a target that driver would never run on. `pg` is the
+// case in point — it reaches `pg-cloudflare` through a bare require() in
+// pg/lib/stream.js, and that package is one of `pg`'s optionalDependencies, so
+// it usually isn't installed. Plain `next build` doesn't hit this, because `pg`
+// is in Next's default serverExternalPackages and so is left as a runtime
+// require rather than bundled; a Workers build, which has to produce a
+// self-contained bundle, does.
+//
+// The alias is what keeps the driver out of the module graph in the first
+// place. A runtime env check wouldn't do it: the driver is reachable from a
+// static import chain, and a bundler traces those regardless of which branch
+// can execute.
 //
 // SQLite needs no stub: node:sqlite bundles anywhere.
 function buildCredentialsDriverAliases(): Record<string, string> {

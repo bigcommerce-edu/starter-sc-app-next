@@ -15,83 +15,29 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  // Non-sensitive settings that are the same for any deployment of this app.
-  // These are committed and served in plaintext, so nothing sensitive and
-  // nothing environment-specific belongs here — that goes in
-  // .secrets.production instead (see .secrets.production.example for the split).
-  //
-  // Values here are the defaults a fresh deploy starts from, not a
-  // production-only profile: DATA_MODE in particular is expected to move
-  // MOCK -> STATIC -> MULTITENANT as an app is built out.
+  // Non-sensitive vars with the same value in any deployment of this app.
+  // Sensitive or per-environment vars go in .secrets.production instead — see
+  // .secrets.production.example. What each var does is documented in
+  // .env.example.
   "vars": {
-    // How the app sources data. MOCK here so a fresh deploy comes up working
-    // with in-memory fixtures, no BigCommerce credentials, and no external
-    // requests. The two other values are prototyping/production steps:
-    //   STATIC      - every request uses the single store token in
-    //                 STATIC_STORE_HASH/STATIC_STORE_TOKEN (see
-    //                 .secrets.production.example) — one real store, not multi-user.
-    //   MULTITENANT - production: tokens looked up per-user from durable
-    //                 storage based on the authenticated session.
     "DATA_MODE": "MULTITENANT",
-    // Simulates network latency on every MOCK-mode request so loading and
-    // Suspense states stay visible in a deployed demo — the same reason
-    // .env.example sets them for local dev. Each request waits a random
-    // number of ms in this range.
-    //
-    // Commented out because absent vars mean no delay (see
-    // getMockRequestDelayRangeMs in
-    // src/lib/bc-api-client/rest-client/mock-rest-client/mock-rest-client.ts),
-    // which is the right default for a deployed environment. Uncomment both
-    // to opt in — the delay only applies if both parse as finite numbers with
-    // 0 <= MIN <= MAX, so setting just one leaves it off. Unread outside
-    // DATA_MODE=MOCK, so these can stay as-is once you move to STATIC or
-    // MULTITENANT.
     // "MOCK_REQUEST_DELAY_MIN_MS": "500",
     // "MOCK_REQUEST_DELAY_MAX_MS": "2000",
-    // Cache Components caching for API data. On here because caching is one
-    // of the patterns this app exists to demonstrate; see
-    // src/lib/cache/cache-profiles.ts and docs/ARCHITECTURE.md.
     "CACHE_ENABLED": "TRUE",
-    // Logs every outgoing BigCommerce API request (method, URL, status,
-    // duration). Off by default — it's a developer diagnostic, and it does
-    // nothing in MOCK mode anyway, since no upstream request is ever made.
-    // Turn it on alongside CACHE_ENABLED in STATIC/MULTITENANT to watch cache
-    // behavior: a logged request means a `use cache` miss just occurred.
     "LOG_API_REQUESTS": "FALSE",
-    // This app's own error logging for caught DB/upstream failures. On, since
-    // it's how an operator notices a real production failure.
     "ERROR_LOGGING_ENABLED": "TRUE",
-    // Which driver backs credentials storage. D1 is the only one that
-    // actually works on Workers: SQLITE writes to a local file the runtime
-    // doesn't have, and POSTGRES needs `pg`, which can't be bundled for
-    // workerd at all. (SQLITE is still the app's fallback when this is unset
-    // or invalid — see getConfiguredDriver in
-    // src/lib/credentials-store/get-credentials-store.ts — which is right for
-    // local dev but wrong here, so this is set explicitly.)
-    //
-    // Note this is only reached in MULTITENANT mode — MOCK and STATIC never
-    // look up a stored credential — so with DATA_MODE=STATIC above, the value
-    // here doesn't affect request handling yet.
-    //
-    // It also matters at build time, where wrangler.jsonc can't reach:
-    // next.config.ts stubs out every driver except the configured one, and
-    // it reads this var from .env.production.local rather than from here
-    // (see .env.production.local.example). Keep the two in sync — nothing
-    // enforces it, and drift gives you a bundle built for one driver and a
-    // runtime asking for another.
+
+    // D1 is the only driver that works on Workers. Keep in sync with
+    // .env.production.local, which is what the build reads.
     "CREDENTIALS_STORE_DRIVER": "D1",
-    // Developer branding shown in the app shell's support panel. Public-facing
-    // by definition, and the same across this app's deployments.
+
     "DEVELOPER_LOGO_FILENAME": "northlight-logo.svg",
     "DEVELOPER_NAME": "Northlight Apps",
     "SUPPORT_EMAIL": "support@northlightapps.dev",
     "SUPPORT_URL": "https://northlightapps.dev/support",
     "SUPPORT_PHONE": "+1 (555) 010-0142"
   },
-  // Mirrors the var names in .secrets.production (see .secrets.production.example).
-  // Declaring them here drives type generation and makes a missing secret a
-  // local-dev warning rather than a runtime failure after deploy. Adding a
-  // secret means adding it in both places.
+  // Mirrors the var names in .secrets.production
   "secrets": {
     "required": [
       "BIGCOMMERCE_CLIENT_ID",
@@ -99,10 +45,6 @@
       "APP_ORIGIN",
       "SESSION_SECRET",
       "CREDENTIALS_ENCRYPTION_KEY",
-      // Only read when DATA_MODE is STATIC, but listed here because
-      // `wrangler secret bulk` uploads them as empty secrets in the other
-      // modes — so the bindings exist either way. Drop them from this list if
-      // you also remove them from .secrets.production.
       "STATIC_STORE_HASH",
       "STATIC_STORE_TOKEN"
     ]
@@ -116,78 +58,46 @@
   ],
   // ===== OPENNEXT CACHE INFRASTRUCTURE =====
   //
-  // Every binding name below is read by name from the OpenNext adapters — they
-  // are NOT arbitrary. See the R2/D1/DO override implementations under
-  // node_modules/@opennextjs/cloudflare/dist/api/overrides/. Renaming one
-  // silently disables that layer (or throws, in D1's case).
+  // The NEXT_* binding names below are read by name from the OpenNext
+  // adapters — renaming one silently disables that layer (or throws, for D1).
+  // The bucket/database names are yours to set; see
+  // docs/CLOUDFLARE-DEPLOYMENT.md for the commands that create them.
   //
-  // The `bucket_name` and `database_name`/`database_id` values, by contrast,
-  // are yours to set — see docs/CLOUDFLARE-DEPLOYMENT.md for the wrangler
-  // commands that create them. The D1 `database_id` placeholder below must be
-  // replaced with the real ID before this config will deploy.
-  //
-  // These bindings are activated by the matching overrides in
-  // open-next.config.ts. Each OpenNext override defaults to "dummy" (a no-op)
-  // when omitted, so a binding declared here but unreferenced there changes no
-  // caching behavior — that file is the switch.
+  // These bindings only take effect via the matching overrides in
+  // open-next.config.ts, which is the switch.
 
-  // Incremental cache: stores the cached response payloads themselves.
+  // Incremental cache: the cached response payloads themselves.
   "r2_buckets": [
     {
       "binding": "NEXT_INC_CACHE_R2_BUCKET",
       "bucket_name": "starter-sc-app-next-cache"
     }
   ],
-  // Tag cache: maps cache tags to revalidation timestamps, which is what makes
-  // on-demand revalidation (revalidateTag) work.
-  //
-  // Per the design spec, this must be a SEPARATE D1 instance from the app's
-  // system-of-record database — it's high-churn cache bookkeeping, not app
-  // data, and mixing the two couples their scaling and backup story.
-  //
-  // The `revalidations` table this needs is created automatically: the
-  // `populate-cache` step of `opennextjs-cloudflare deploy`/`preview` runs the
-  // CREATE TABLE IF NOT EXISTS for you (see populateD1TagCache in the CLI). It
-  // throws if this binding is missing, so the binding name matters.
-  // Two D1 databases, deliberately separate (see the note above): the cache
-  // tag store, and the app's own credentials store.
+  // Two deliberately separate databases: high-churn cache bookkeeping, and the
+  // app's system of record.
   "d1_databases": [
     {
+      // Maps cache tags to revalidation timestamps, which is what makes
+      // revalidateTag() work. Its `revalidations` table is created for you by
+      // the populate-cache step of `opennextjs-cloudflare deploy`/`preview`.
       "binding": "NEXT_TAG_CACHE_D1",
       "database_name": "starter-sc-app-next-cache-tags",
-      // Replace with the ID returned by `wrangler d1 create` — see
-      // docs/CLOUDFLARE-DEPLOYMENT.md.
       "database_id": "3e27582b-5447-4aaf-9a67-a6d49332797e"
     },
     {
-      // The app's system-of-record database, backing the D1
-      // credentials-store driver (src/lib/credentials-store/d1-driver/).
-      // This binding name is NOT read by OpenNext — it's this app's own, and
-      // must match D1_BINDING_NAME in d1-driver/get-database.ts.
+      // Backs the D1 credentials-store driver. This binding name is the app's
+      // own, and must match D1_BINDING_NAME in d1-driver/get-database.ts.
       "binding": "CREDENTIALS_D1",
       "database_name": "starter-sc-app-next-credentials",
-      // Replace with the ID returned by `wrangler d1 create` — see
-      // docs/CLOUDFLARE-DEPLOYMENT.md.
       "database_id": "54f41ff4-ec46-40a5-a3e4-47e3d4248576",
-      // Points `wrangler d1 migrations apply` at this driver's own
-      // migrations rather than the default top-level ./migrations, keeping
-      // schema next to the driver it belongs to — the same arrangement as
-      // the Postgres driver's migrations/ folder. Only the credentials
-      // database has migrations of its own; the cache-tag database's schema
-      // is created by OpenNext's populate-cache step.
+      // Keeps schema next to the driver it belongs to, rather than in the
+      // default top-level ./migrations.
       "migrations_dir": "src/lib/credentials-store/d1-driver/migrations"
     }
   ],
-  // Revalidation queue + cache purge, both Durable Objects.
-  //
-  // NEXT_CACHE_DO_QUEUE deduplicates and serializes ISR/SWR revalidations so a
-  // burst of requests for one stale route triggers a single revalidation
-  // rather than a thundering herd. It calls back into this Worker through the
-  // WORKER_SELF_REFERENCE service binding above, which is why that binding is
-  // a prerequisite rather than incidental.
-  //
-  // NEXT_CACHE_DO_PURGE buffers cache-purge-by-tag calls and flushes them on an
-  // alarm, so many tag invalidations collapse into fewer purge operations.
+  // NEXT_CACHE_DO_QUEUE collapses a burst of revalidations for one stale route
+  // into a single pass, calling back in through WORKER_SELF_REFERENCE above.
+  // NEXT_CACHE_DO_PURGE buffers purge-by-tag calls and flushes them on an alarm.
   "durable_objects": {
     "bindings": [
       {
@@ -200,26 +110,13 @@
       }
     ]
   },
-  // Declares each Durable Object class the runtime should stand up, and which
-  // storage backend it gets. This is the modern replacement for a `migrations`
-  // block with `new_sqlite_classes` — the two are mutually exclusive in
-  // wrangler config, so this file must use one or the other, not both.
+  // Stands up the two Durable Object classes, which the OpenNext worker
+  // template already exports. `storage: "sqlite"` is required by both. This is
+  // the replacement for a `migrations` block with `new_sqlite_classes`; the
+  // two are mutually exclusive.
   //
-  // The class names are resolved against the built Worker's own exports.
-  // Nothing needs adding here to make them resolvable: the OpenNext worker
-  // template re-exports all three classes unconditionally, so
-  // .open-next/worker.js already has them (see the `export { DOQueueHandler }`
-  // lines in dist/cli/templates/worker.js).
-  //
-  // `storage: "sqlite"` is required for both — DOQueueHandler keeps a `sql`
-  // SqlStorage handle for its revalidation sync table, and BucketCachePurge
-  // uses SQLite-backed alarms for its flush buffer. `state: "created"` marks
-  // them as new classes being introduced by this config.
-  //
-  // DOShardedTagCache is also exported by the worker but deliberately not
-  // declared: it's the alternative to the D1 tag cache configured above, and
-  // the design spec calls for D1 here. Declaring an export the config doesn't
-  // use would provision a DO namespace for nothing.
+  // DOShardedTagCache is exported too, but deliberately not declared here —
+  // it's the alternative to the D1 tag cache above.
   "exports": {
     "DOQueueHandler": {
       "type": "durable-object",

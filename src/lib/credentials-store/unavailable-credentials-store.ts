@@ -6,23 +6,14 @@ import {
   UserRecord,
 } from "@/lib/credentials-store/types";
 
-// Stand-in for any credentials-store driver that was compiled out of this
-// build, shared by every *-driver-loader.unavailable.ts (see next.config.ts's
-// turbopack.resolveAlias for what does the swapping, and why each driver has
-// a dependency that can't be bundled for the other's target).
+// Shared stand-in for any credentials-store driver compiled out of this build
+// (see next.config.ts's turbopack.resolveAlias); each
+// *-driver-loader.unavailable.ts subclasses it to supply the driver name.
 //
-// One implementation covers all of them because CredentialsStore is the only
-// thing a driver has to satisfy — a stub has no driver-specific behavior to
-// vary, just a name to report. Each *-driver-loader.unavailable.ts subclasses
-// this to supply that name (and to export it under the class name its own
-// loader specifier is imported by), so the error says which driver was asked
-// for.
-//
-// Every method throws rather than no-opping: if this is ever actually
-// instantiated, the build-time alias and the runtime driver selection have
-// drifted out of sync, and that should fail loudly rather than silently
-// return "no credentials found" — which reads as "this store isn't
-// installed" and would send a real install into a confusing re-auth loop.
+// Every method throws rather than no-opping: reaching here means the
+// build-time alias and the runtime driver selection have drifted, and a
+// silent "no credentials found" would look like an uninstalled store and send
+// a real install into a re-auth loop.
 export class UnavailableCredentialsStore implements CredentialsStore {
   constructor(private readonly driverName: string) {}
 

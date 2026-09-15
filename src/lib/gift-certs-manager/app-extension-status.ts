@@ -1,12 +1,9 @@
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 
-// Not cached. This reads the credentials store directly rather than going
-// through fetch(), so the fetch-level caching the rest of the app uses (see
-// lib/cache/cache-profiles.ts) has nothing to hook into — the old
-// `use cache` boundary could wrap an arbitrary function, a fetch tag can't.
-// Uncached is the right default here anyway: it's a single indexed lookup,
-// and the banner polls it with cache: "no-store" so a registration retry is
-// reflected immediately.
+// Not cached: this reads the credentials store directly rather than through
+// fetch(), so there's nothing for fetch-level caching to hook into. Fine here
+// — it's a single indexed lookup, and the banner polls it with
+// cache: "no-store" so a registration retry shows up immediately.
 async function fetchStoreExtensionStatus(storeHash: string): Promise<{ isRegistered: boolean }> {
   const extensionId = await getCredentialsStore().getStoreExtension(storeHash);
 

@@ -15,8 +15,12 @@ if (process.env.APP_ORIGIN) {
 }
 
 // Stubs out the Postgres and D1 credentials-store drivers unless
-// CREDENTIALS_STORE_DRIVER actually selects that one. SQLite is never stubbed:
-// it depends only on node:sqlite, which bundles anywhere.
+// CREDENTIALS_STORE_DRIVER selects that one. Each pulls in a dependency that
+// can't be bundled for the other's target (`pg` for Postgres,
+// @opennextjs/cloudflare for D1), and a build-time alias is the only thing
+// that keeps it out of the output — a runtime env check doesn't stop a bundler
+// tracing into a reachable module. SQLite needs no stub; node:sqlite bundles
+// anywhere.
 function buildCredentialsDriverAliases(): Record<string, string> {
   const configuredDriver = process.env.CREDENTIALS_STORE_DRIVER;
   const aliases: Record<string, string> = {};
@@ -34,49 +38,9 @@ function buildCredentialsDriverAliases(): Record<string, string> {
 }
 
 const nextConfig: NextConfig = {
-  // Cache Components (PPR) is off, and every `use cache` boundary plus its
-  // cacheLife/cacheTag calls has been removed alongside it, because the PPR
-  // staged-render path corrupts streamed HTML on Cloudflare Workers via
-  // @opennextjs/cloudflare: chunks of the RSC flight payload are emitted
-  // outside their `<script>` wrapper and render as raw JSON on the page.
-  // Reproducible on `wrangler dev --local` and byte-identical on the edge,
-  // while plain `next start` (Node) is unaffected — see
-  // https://github.com/opennextjs/opennextjs-cloudflare/issues/1225 and
-  // https://github.com/opennextjs/opennextjs-cloudflare/pull/1318.
-  //
-  // Note that dropping only the `remote` qualifier (plain `use cache`) does
-  // NOT avoid this: PPR stays enabled and the corruption is unchanged. The
-  // flag itself has to be off.
-  //
-  // Caching itself is NOT gone — it moved down to the fetches the cached
-  // components used to wrap, keeping the same two lifetime profiles and the
-  // same cache tags. See lib/cache/cache-profiles.ts, and
-  // CACHE_ENABLED still switches it on and off. Reconsider
-  // component-level caching once #1318 ships.
+  // Composable caching not used with Cloudflare Workers
   cacheComponents: false,
   
-  // Swaps each of the two remote credentials-store drivers for a
-  // dependency-free stub unless CREDENTIALS_STORE_DRIVER actually selects it
-  // — see lib/credentials-store/{postgres,d1}-driver-loader.ts and their
-  // .unavailable.ts counterparts.
-  //
-  // This isn't just an unused-code optimization. Each driver has a
-  // dependency that can't be bundled for the *other* driver's deployment
-  // target, so leaving both in the graph breaks whichever build it isn't
-  // meant for:
-  //
-  //   - `pg` (Postgres) does an unconditional `require("pg-cloudflare")`
-  //     internally that fails to resolve when bundled for Cloudflare Workers
-  //     via @opennextjs/cloudflare, even though that branch would never
-  //     execute there.
-  //   - @opennextjs/cloudflare (D1) is the Workers adapter itself; a Node
-  //     host's build has no reason to trace into it for a driver it would
-  //     never select.
-  //
-  // A build-time alias is the only lever that keeps either out of the
-  // compiled output entirely, since neither a runtime env check nor a
-  // dynamic import stops a bundler from tracing into a statically-reachable
-  // module.
   turbopack: {
     resolveAlias: buildCredentialsDriverAliases(),
   },

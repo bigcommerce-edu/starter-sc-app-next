@@ -421,11 +421,10 @@ Mutations call `revalidateTag` on the relevant tags so a change is visible
 immediately rather than waiting out the lifetime.
 
 Detail fetches tag per record (`gift-cert:<id>`, `customer:<id>`); list
-fetches carry only the shared list tag. Unlike a `use cache` boundary,
-fetch tags have to be known *before* the request is issued, so the
-per-record tags a listing would need aren't available to it. Every mutation
-revalidates the relevant list tag alongside the record's own tag, so a
-stale listing still isn't possible.
+fetches carry only the shared list tag, since fetch tags have to be known
+*before* the request is issued and a listing's record ids aren't. Every
+mutation revalidates the relevant list tag alongside the record's own tag,
+so a stale listing still isn't possible.
 
 Note that `cacheComponents` is `false`: Cache Components (PPR) corrupts
 streamed HTML on Cloudflare Workers via `@opennextjs/cloudflare`, so this

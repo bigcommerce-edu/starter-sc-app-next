@@ -13,8 +13,7 @@ const CHANNELS_LIST_TAG = "channels:list";
 
 // Lists every channel on the store; callers needing a subset filter the
 // result themselves. Channels change far less often than gift certificates
-// or customers, so this uses the longer "extended" profile rather than the
-// "standard" lifetime the calling views use for their own data.
+// or customers, so this uses the longer "extended" profile.
 export async function fetchChannels(storeHash: string | undefined): Promise<ChannelsResult> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<Channel>>(CHANNELS_PATH, {

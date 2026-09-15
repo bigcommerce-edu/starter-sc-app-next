@@ -4,10 +4,9 @@ import { CredentialsStore, StoreExtensionRecord, StoreRecord, StoreUserRecord, U
 import { AppError } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
 
-// D1's errors can embed the failing SQL and the binding/database identity,
-// which shouldn't reach a client response — every method routes through this
-// so a raw error is logged and never returned as anything but a generic
-// AppError.
+// D1 errors can embed the failing SQL and database identity, which shouldn't
+// reach a client response — every method routes through this so a raw error is
+// logged and never returned as anything but a generic AppError.
 async function withDatabaseErrorHandling<T>(context: string, run: () => Promise<T>): Promise<T> {
   try {
     return await run();
@@ -25,23 +24,15 @@ interface ExtensionIdRow {
   extension_id: string;
 }
 
-// Cloudflare D1 driver — the MULTITENANT-capable store for Workers
-// deployments, where neither of the other drivers works: SQLite needs a
-// persistent local file the runtime doesn't have, and Postgres needs `pg`,
-// which can't be bundled for workerd at all (see next.config.ts).
+// Cloudflare D1 driver — the MULTITENANT-capable store for Workers, where
+// neither other driver works (SQLite has no persistent file, `pg` can't be
+// bundled for workerd).
 //
-// D1 *is* SQLite, so the SQL here is the same dialect as sqlite-driver's,
-// down to the ON CONFLICT upserts. Two things differ, both from D1 being
-// remote rather than in-process:
-//
-//   - Every call is genuinely async (sqlite-driver's node:sqlite calls are
-//     synchronous under their Promise-returning signatures).
-//   - There is no BEGIN TRANSACTION. D1 rejects explicit transaction control
-//     because it wraps each call in an implicit transaction of its own;
-//     atomicity across statements comes from batch(), which Cloudflare
-//     documents as a real transaction that "aborts or rolls back the entire
-//     sequence" if any statement fails. That constraint is what shapes
-//     deleteStore/deleteUser below.
+// D1 is SQLite, so the SQL matches sqlite-driver's dialect. The one meaningful
+// difference: there is no BEGIN TRANSACTION, since D1 wraps each call in an
+// implicit transaction. Atomicity across statements comes from batch(), which
+// rolls back the whole sequence if any statement fails — that constraint is
+// what shapes deleteStore/deleteUser below.
 export class D1CredentialsStore implements CredentialsStore {
   async setStore(store: StoreRecord): Promise<void> {
     await withDatabaseErrorHandling("setStore", async () => {
@@ -140,26 +131,13 @@ export class D1CredentialsStore implements CredentialsStore {
   // Deletes a store's row, its store-user links, its extension link, and any
   // of those users left with no other store association.
   //
-  // Unlike the other two drivers, the read that finds the affected users
-  // can't sit inside the transaction: batch() takes a fixed list of
-  // statements up front, so a query whose results decide later statements
-  // has to run before it. That's fine here because the cascade doesn't
-  // actually need those ids — see deleteUsersWithNoRemainingStores, which
-  // asks the set-based question directly. So this is a single batch() with
-  // no preceding read at all, which is both atomic and one round trip
-  // instead of two.
+  // One batch() with no preceding read: batch() takes a fixed statement list,
+  // so a query whose results decide later statements would have to run
+  // separately — but the cascade doesn't need the affected ids at all (see
+  // deleteUsersWithNoRemainingStores).
   //
-  // Statements run in order, children before parents. D1 enforces foreign
-  // keys by default (verified: inserting a store_users row for a missing
-  // store fails with SQLITE_CONSTRAINT_FOREIGNKEY), but the schema's
-  // ON DELETE CASCADE means deleting `stores` first would also work — the
-  // child rows would just go with it. Explicit child-first deletes are kept
-  // anyway so this reads the same as the other two drivers' cascades and
-  // doesn't silently depend on the FK actions to be correct.
-  //
-  // The one ordering that IS load-bearing: the orphaned-user cleanup must
-  // come last, since it checks the store_users rows the earlier statements
-  // remove.
+  // The orphaned-user cleanup must come last, since it checks the store_users
+  // rows the earlier statements remove.
   async deleteStore(storeHash: string): Promise<void> {
     await withDatabaseErrorHandling("deleteStore", async () => {
       const db = getDatabase();
@@ -188,22 +166,13 @@ export class D1CredentialsStore implements CredentialsStore {
   }
 }
 
-// Drops every user that no longer has any store_users row, optionally
-// narrowed to one user id. Shared by deleteStore's cascade and deleteUser.
+// Drops every user with no remaining store_users row, optionally narrowed to
+// one id. Callers have already deleted the relevant links earlier in the same
+// batch, so NOT EXISTS answers this without a per-id round trip.
 //
-// Both callers have already deleted the relevant store_users rows earlier in
-// the same batch, so this only needs to ask "does this user still have any
-// row left at all," which NOT EXISTS answers without a per-id round trip.
-// The Postgres driver passes an explicit id array (`user_id = ANY($1)`);
-// SQLite has no array-parameter equivalent, and D1's batch() can't take
-// parameters derived from an earlier statement's results anyway, so
-// deleteStore relies on the unnarrowed form instead.
-//
-// Unnarrowed is safe rather than overbroad: a users row with no store_users
-// row is unreachable by every read path in this app (getStoreToken and
-// isStoreUserLinked both go through a store), so it is already garbage. The
-// only rows this could delete beyond the strict cascade are orphans left by
-// an earlier partial failure, which is a cleanup, not a side effect.
+// deleteStore uses the unnarrowed form, which is safe rather than overbroad: a
+// users row with no store_users row is unreachable by every read path here, so
+// anything extra it removes is an orphan from a prior partial failure.
 function deleteUsersWithNoRemainingStores(db: D1Database, userId?: number): D1PreparedStatement {
   const narrowToUser = userId !== undefined;
 

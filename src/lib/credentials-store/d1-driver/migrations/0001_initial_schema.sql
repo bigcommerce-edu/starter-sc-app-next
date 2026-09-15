@@ -1,20 +1,11 @@
--- Initial credentials-store schema for the D1 driver. D1 is SQLite, so the
--- table shapes match sqlite-driver/schema.ts rather than the Postgres
--- migrations (TEXT/INTEGER, AUTOINCREMENT instead of GENERATED AS IDENTITY).
--- Tables are ordered parent-before-child so this file runs top-to-bottom
--- without forward references.
+-- Initial credentials-store schema for the D1 driver. D1 is SQLite, so table
+-- shapes match sqlite-driver/schema.ts. Ordered parent-before-child.
 --
--- Unlike sqlite-driver/schema.ts, this is NOT re-run on every connection:
--- `wrangler d1 migrations apply` runs each file exactly once and records it
--- in the d1_migrations table, so plain CREATE TABLE is correct here and
--- IF NOT EXISTS would only mask a migration applied out of order.
+-- Plain CREATE TABLE rather than IF NOT EXISTS: `wrangler d1 migrations apply`
+-- runs each file once and records it in d1_migrations.
 --
--- The ON DELETE CASCADE foreign keys mirror the Postgres migrations as a
--- safety net for anything deleting a stores/users row directly. Note that D1
--- enforces foreign keys by default, unlike a bare SQLite connection (where
--- PRAGMA foreign_keys defaults to off) — so unlike sqlite-driver/schema.ts,
--- which declares no foreign keys at all, these constraints are live and a
--- write that violates one fails with SQLITE_CONSTRAINT_FOREIGNKEY.
+-- D1 enforces foreign keys by default (a bare SQLite connection does not), so
+-- unlike sqlite-driver/schema.ts these constraints are live.
 CREATE TABLE users (
   user_id INTEGER PRIMARY KEY,
   email TEXT NOT NULL

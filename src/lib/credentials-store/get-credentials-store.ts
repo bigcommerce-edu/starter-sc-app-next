@@ -1,8 +1,6 @@
-// The Postgres and D1 drivers are imported from their *-driver-loader.ts
-// files, not directly from their implementations — see those files' own
-// comments for why (a build-time alias keeps each driver's untransportable
-// dependency out of builds that don't use it: `pg` for Postgres,
-// @opennextjs/cloudflare for D1).
+// The Postgres and D1 drivers come from their *-driver-loader.ts files rather
+// than directly from their implementations, so a build-time alias can swap in
+// a stub — see those files.
 import { cache } from "react";
 import { D1CredentialsStore } from "@/lib/credentials-store/d1-driver-loader";
 import { PostgresCredentialsStore } from "@/lib/credentials-store/postgres-driver-loader";
@@ -33,14 +31,11 @@ const getCachedCredentialsStore = cache((driver: CredentialsStoreDriver): Creden
   }
 });
 
-// Selects the CredentialsStore implementation to use, based on
-// CREDENTIALS_STORE_DRIVER. SQLite is for local development and
-// single-instance use; the other two are for real multi-instance
-// deployments, where every instance needs one shared remote database rather
-// than a local file, and the choice between them is a hosting decision:
-// POSTGRES (see postgres-driver/) for a Node host such as Vercel + Neon, D1
-// (see d1-driver/) for Cloudflare Workers, where SQLite has no persistent
-// file to write and `pg` cannot be bundled at all.
+// Selects the CredentialsStore implementation, based on
+// CREDENTIALS_STORE_DRIVER. SQLITE is for local development and
+// single-instance use; the other two are for multi-instance deployments, and
+// the choice between them is a hosting decision — POSTGRES for a Node host
+// such as Vercel + Neon, D1 for Cloudflare Workers.
 export function getCredentialsStore(): CredentialsStore {
   return getCachedCredentialsStore(getConfiguredDriver());
 }

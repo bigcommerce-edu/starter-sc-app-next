@@ -53,5 +53,7 @@ next-env.d.ts
 # Cloudflare
 .open-next
 .wrangler
+.dev.vars*
+!.dev.vars*.example
 
 ARTIFACTS/*

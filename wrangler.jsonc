@@ -32,7 +32,7 @@
     //                 .secrets.production.example) — one real store, not multi-user.
     //   MULTITENANT - production: tokens looked up per-user from durable
     //                 storage based on the authenticated session.
-    "DATA_MODE": "STATIC",
+    "DATA_MODE": "MULTITENANT",
     // Simulates network latency on every MOCK-mode request so loading and
     // Suspense states stay visible in a deployed demo — the same reason
     // .env.example sets them for local dev. Each request waits a random

@@ -14,6 +14,32 @@ if (process.env.APP_ORIGIN) {
   allowedOrigins.push(new URL(process.env.APP_ORIGIN).host);
 }
 
+// Stubs out every credentials-store driver except the one
+// CREDENTIALS_STORE_DRIVER selects, by aliasing its *-driver-loader specifier
+// to the .unavailable.ts counterpart (see lib/credentials-store/).
+//
+// This isn't just an unused-code optimization. A driver can carry a dependency
+// that fails to bundle for a deployment target it would never run on — `pg`,
+// for instance, does an unconditional `require("pg-cloudflare")` internally
+// that fails to resolve on some targets even though that branch would never
+// execute. A build-time alias is the only lever that keeps such a dependency
+// out of the compiled output entirely, since neither a runtime env check nor a
+// dynamic import stops a bundler from tracing into a statically-reachable
+// module.
+//
+// SQLite needs no stub: node:sqlite bundles anywhere.
+function buildCredentialsDriverAliases(): Record<string, string> {
+  const configuredDriver = process.env.CREDENTIALS_STORE_DRIVER;
+  const aliases: Record<string, string> = {};
+
+  if (configuredDriver !== "POSTGRES") {
+    aliases["@/lib/credentials-store/postgres-driver-loader"] =
+      "@/lib/credentials-store/postgres-driver-loader.unavailable";
+  }
+
+  return aliases;
+}
+
 const nextConfig: NextConfig = {
   // Cache Components (PPR). The lifetime profiles each `use cache` boundary
   // selects, and the CACHE_ENABLED switch that turns caching on and off, live
@@ -21,25 +47,8 @@ const nextConfig: NextConfig = {
   // here — cacheLife accepts an inline profile object, so keeping them in one
   // module avoids splitting the caching configuration across two places.
   cacheComponents: true,
-  // Swaps the Postgres credentials-store driver for a `pg`-free stub
-  // whenever CREDENTIALS_STORE_DRIVER isn't "POSTGRES" — see
-  // lib/credentials-store/postgres-driver-loader.ts and
-  // postgres-driver-loader.unavailable.ts. This isn't just an unused-code
-  // optimization: `pg` does an unconditional `require("pg-cloudflare")`
-  // internally that fails to resolve when bundled for some deployment
-  // targets (e.g. Cloudflare Workers via @opennextjs/cloudflare), even
-  // though that branch would never actually execute there — a build-time
-  // alias is the only lever that keeps `pg` out of the compiled output
-  // entirely, since neither a runtime env check nor a dynamic import stops
-  // a bundler from tracing into a statically-reachable module.
   turbopack: {
-    resolveAlias:
-      process.env.CREDENTIALS_STORE_DRIVER !== "POSTGRES"
-        ? {
-            "@/lib/credentials-store/postgres-driver-loader":
-              "@/lib/credentials-store/postgres-driver-loader.unavailable",
-          }
-        : {},
+    resolveAlias: buildCredentialsDriverAliases(),
   },
   // Without this, Next's SWC compiler doesn't apply styled-components'
   // displayNameAndId transform, so every styled(...) component (AppLink,

@@ -1,7 +1,6 @@
-// Imported from postgres-driver-loader.ts, not directly from
-// postgres-driver/postgres-credentials-store.ts — see that file's own
-// comment for why (a build-time alias keeps `pg` out of builds that don't
-// use it).
+// Drivers with a target-specific dependency come from their
+// *-driver-loader.ts file rather than directly from the implementation, so a
+// build-time alias can swap in a stub — see those files.
 import { cache } from "react";
 import { PostgresCredentialsStore } from "@/lib/credentials-store/postgres-driver-loader";
 import { SqliteCredentialsStore } from "@/lib/credentials-store/sqlite-driver/sqlite-credentials-store";
@@ -29,11 +28,12 @@ const getCachedCredentialsStore = cache((driver: CredentialsStoreDriver): Creden
   }
 });
 
-// Selects the CredentialsStore implementation to use, based on
-// CREDENTIALS_STORE_DRIVER. SQLite is for local development and
-// single-instance use; POSTGRES (see postgres-driver/) is for any real
-// multi-instance deployment (e.g. Vercel + Neon) — a shared remote database
-// every instance can see, rather than a local file.
+// Selects the CredentialsStore implementation, based on
+// CREDENTIALS_STORE_DRIVER. SQLITE is for local development and
+// single-instance use; any other driver backs a real multi-instance
+// deployment, where every instance needs one shared remote database rather
+// than a local file, and the choice between them is a hosting decision —
+// POSTGRES (see postgres-driver/) for a Node host such as Vercel + Neon.
 export function getCredentialsStore(): CredentialsStore {
   return getCachedCredentialsStore(getConfiguredDriver());
 }

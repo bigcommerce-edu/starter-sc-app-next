@@ -37,6 +37,10 @@ function buildCredentialsDriverAliases(): Record<string, string> {
       "@/lib/credentials-store/postgres-driver-loader.unavailable";
   }
 
+  if (configuredDriver !== "D1") {
+    aliases["@/lib/credentials-store/d1-driver-loader"] = "@/lib/credentials-store/d1-driver-loader.unavailable";
+  }
+
   return aliases;
 }
 

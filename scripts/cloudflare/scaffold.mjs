@@ -36,13 +36,24 @@ const DEV_DEPENDENCIES_TO_ADD = {
   wrangler: "^4.128.0",
 };
 
-// The credentials database name, which the migrate scripts below target, is
-// derived from the app name rather than hardcoded so a renamed app doesn't
-// silently point its migrations at someone else's database. It has to match the
-// `database_name` a developer sets in wrangler.jsonc for the CREDENTIALS_D1
-// binding, which is why wrangler.jsonc.example uses the same derivation.
+// Cloudflare resource names, all derived from the app name rather than
+// hardcoded. The credentials database in particular has to match between the
+// migrate scripts below and wrangler.jsonc's CREDENTIALS_D1 binding, so a
+// renamed app can't silently point its migrations at another database.
+//
+// Only the names are derivable — the D1 `database_id` values are assigned by
+// Cloudflare, so those stay as placeholders for the developer to paste in.
+function resourceNames(appName) {
+  return {
+    APP_NAME: appName,
+    CACHE_BUCKET_NAME: `${appName}-cache`,
+    TAG_CACHE_DB_NAME: `${appName}-cache-tags`,
+    CREDENTIALS_DB_NAME: `${appName}-credentials`,
+  };
+}
+
 function credentialsDatabaseName(appName) {
-  return `${appName}-credentials`;
+  return resourceNames(appName).CREDENTIALS_DB_NAME;
 }
 
 function scriptsToAdd(appName) {
@@ -141,10 +152,9 @@ function writeExampleFiles() {
   }
 }
 
-// The one template needing substitution: the Worker name and its
-// self-reference service binding both have to match this app's name. The
-// resource ids stay as <placeholders> for the developer to fill in from
-// `wrangler r2 bucket create` / `wrangler d1 create` output.
+// The one template needing substitution. Every resource *name* is filled in
+// from the app name; the two D1 `database_id` placeholders are left for the
+// developer to paste in from `wrangler d1 create` output.
 function writeWranglerExample() {
   const destinationPath = path.join(repoRoot, "wrangler.jsonc.example");
 
@@ -153,10 +163,13 @@ function writeWranglerExample() {
     return;
   }
 
-  const appName = readPackageJson().name;
-  const template = readFileSync(path.join(templatesDir, "wrangler.jsonc.example"), "utf8");
+  let contents = readFileSync(path.join(templatesDir, "wrangler.jsonc.example"), "utf8");
 
-  writeFileSync(destinationPath, template.replaceAll("{{APP_NAME}}", appName));
+  for (const [placeholder, value] of Object.entries(resourceNames(readPackageJson().name))) {
+    contents = contents.replaceAll(`{{${placeholder}}}`, value);
+  }
+
+  writeFileSync(destinationPath, contents);
   log("Wrote wrangler.jsonc.example.");
 }
 
@@ -232,8 +245,9 @@ export async function scaffold() {
       "     bucket for the incremental cache, a D1 database for the cache tags, and a\n" +
       `     separate D1 database (${database}) for the credentials store. See\n` +
       "     docs/CLOUDFLARE-DEPLOYMENT.md for the exact commands.\n" +
-      "  3. Copy wrangler.jsonc.example to wrangler.jsonc and fill in the resource\n" +
-      "     names and ids you recorded above.\n" +
+      "  3. Copy wrangler.jsonc.example to wrangler.jsonc and replace the two\n" +
+      "     {{...DB_UUID}} placeholders with the database ids from step 2. The\n" +
+      "     resource names are already filled in.\n" +
       "  4. Copy the var templates and fill in your values:\n" +
       "       cp .secrets.production.example .secrets.production\n" +
       "       cp .env.production.local.example .env.production.local\n" +

@@ -70,7 +70,7 @@
   "r2_buckets": [
     {
       "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "<cache-bucket-name>"
+      "bucket_name": "{{CACHE_BUCKET_NAME}}"
     }
   ],
   // Two deliberately separate databases: high-churn cache bookkeeping, and the
@@ -81,15 +81,15 @@
       // revalidateTag() work. Its `revalidations` table is created for you by
       // the populate-cache step of `opennextjs-cloudflare deploy`/`preview`.
       "binding": "NEXT_TAG_CACHE_D1",
-      "database_name": "<tag-cache-db-name>",
-      "database_id": "<tag-cache-db-uuid>"
+      "database_name": "{{TAG_CACHE_DB_NAME}}",
+      "database_id": "{{TAG_CACHE_DB_UUID}}"
     },
     {
       // Backs the D1 credentials-store driver. This binding name is the app's
       // own, and must match D1_BINDING_NAME in d1-driver/get-database.ts.
       "binding": "CREDENTIALS_D1",
-      "database_name": "<credentials-db-name>",
-      "database_id": "<credentials-db-uuid>",
+      "database_name": "{{CREDENTIALS_DB_NAME}}",
+      "database_id": "{{CREDENTIALS_DB_UUID}}",
       // Keeps schema next to the driver it belongs to, rather than in the
       // default top-level ./migrations.
       "migrations_dir": "src/lib/credentials-store/d1-driver/migrations"

@@ -1,5 +1,8 @@
+// @cache-components-only:start
 import { cacheLife, cacheTag } from "next/cache";
+// @cache-components-only:end
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+// @cache-components-only:drop-specifier cacheProfile
 import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
@@ -29,9 +32,11 @@ async function fetchGiftCertificatesPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
 ): Promise<GiftCertificateWireRecord[]> {
+  // @cache-components-only:start
   "use cache: remote";
   cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(GIFT_CERTIFICATES_LIST_TAG);
+  // @cache-components-only:end
 
   const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
@@ -50,9 +55,11 @@ async function fetchGiftCertificatesPage(
   // matches.
   const records = items ?? [];
 
+  // @cache-components-only:start
   for (const record of records) {
     cacheTag(giftCertificateTag(record.id));
   }
+  // @cache-components-only:end
 
   return records;
 }

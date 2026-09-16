@@ -1,12 +1,18 @@
+// @cache-components-only:start
 import { cacheLife, cacheTag } from "next/cache";
+// @cache-components-only:end
 import { notFound } from "next/navigation";
+// @cache-components-only:start
 import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+// @cache-components-only:end
 import { Box, Flex } from "@bigcommerce/big-design";
 import { ArrowBackIcon } from "@bigcommerce/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
 import { GiftCertificateTabs } from "@/components/gift-certs-manager/gift-certificates/detail/gift-certificate-tabs";
 import { decorateGiftCertificateWithAccounts } from "@/lib/gift-certs-manager/gift-certificates/decorate-with-accounts";
+// @cache-components-only:start
 import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+// @cache-components-only:end
 import { fetchGiftCertificate } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { getAppUrl } from "@/lib/routing/app-url";
 import { AppError } from "@/lib/errors/app-error";
@@ -21,9 +27,11 @@ export async function GiftCertificateView({
   id: string;
   storeHash: string | undefined;
 }) {
+  // @cache-components-only:start
   "use cache: remote";
   cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(giftCertificateTag(id));
+  // @cache-components-only:end
 
   // A missing id is a real 404 from BigCommerce's v2 single-resource
   // endpoint; the translation to notFound() happens here rather than in

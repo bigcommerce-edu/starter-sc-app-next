@@ -50,10 +50,10 @@ export interface CacheOptions {
   tags: string[];
 }
 
-// Translates CacheOptions into the `next` fetch option Next.js reads. With
-// caching disabled, returns `cache: "no-store"` so every request re-fetches —
-// which is why call sites can always pass their tags without checking
-// CACHE_ENABLED themselves.
+// Translates CacheOptions into the `next` fetch option Next.js reads. Returns
+// no options at all when there's nothing to cache or caching is off — fetch
+// caching is opt-in, so an unannotated request isn't cached. That's why call
+// sites can always pass their tags without checking CACHE_ENABLED themselves.
 export function toFetchCacheOptions(cache: CacheOptions | undefined): RequestInit {
   if (!cache || !isCachingEnabled()) {
     return {};

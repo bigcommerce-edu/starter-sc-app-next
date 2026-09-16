@@ -8,7 +8,7 @@
 // CREDENTIALS_STORE_DRIVER from the environment). Add a new profile by
 // dropping a scaffold(): Promise<void> export in scripts/<profile>/scaffold.mjs
 // and registering its name below.
-const PROFILES = ["vercel"];
+const PROFILES = ["vercel", "cloudflare"];
 
 const profile = process.argv[2];
 

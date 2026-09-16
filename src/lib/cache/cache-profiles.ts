@@ -1,10 +1,6 @@
-// The app's cache lifetime profiles and cache-on/off switch, applied at the
-// fetch level (Cache Components is off for the Workers target — see
-// next.config.ts).
+// The app's cache lifetime profiles and cache-on/off switch
 
-// A cache lifetime, in seconds. Only `revalidate` is expressible per-fetch;
-// Next's NextFetchRequestConfig has no equivalent of cacheLife's separate
-// stale/expire bounds.
+// A cache lifetime, in seconds.
 export interface CacheLifetimeProfile {
   revalidate: number;
 

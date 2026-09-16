@@ -273,9 +273,7 @@ export async function transferGiftCertificateBalanceToStoreCredit(
 
   // Both resources were mutated on the success path, so both sets of tags
   // need invalidating: the certificate's own balance/status, and this
-  // customer's store credit balance shown on their detail page. The two list
-  // tags cover the fetches whose tags can't be known before the request —
-  // the listings and the decorators' email lookups.
+  // customer's store credit balance shown on their detail page.
   revalidateTag(giftCertificateTag(id), "max");
   revalidateTag(GIFT_CERTIFICATES_LIST_TAG, "max");
   revalidateTag(customerTag(customer.id), "max");

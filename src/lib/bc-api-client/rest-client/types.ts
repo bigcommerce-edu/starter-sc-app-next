@@ -21,11 +21,11 @@ export interface V3ListResponse<TItem> {
   };
 }
 
-// `cache` opts this GET into fetch-level caching under the given tags and
-// lifetime profile; omitting it leaves the request uncached. See
-// lib/cache/cache-profiles.ts.
 export interface ApiRequestOptions {
   params?: ApiRequestParams;
+
+  // ONLY pass `cache` options to a fetch if `cacheComponents` is not being 
+  // used for the cache implementation! The two are mutually exclusive.
   cache?: CacheOptions;
 }
 

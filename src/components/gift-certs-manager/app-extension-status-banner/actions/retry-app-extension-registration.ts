@@ -40,7 +40,5 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
     };
   }
 
-  // Nothing to revalidate: the banner polls the status route with
-  // cache: "no-store", so its next check reads fresh state directly.
   return { success: true, message: "App extension registration succeeded" };
 }

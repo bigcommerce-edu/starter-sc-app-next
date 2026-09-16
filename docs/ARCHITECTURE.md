@@ -405,13 +405,43 @@ each. `MockRestApiClient` itself never changes either way.
 
 ## Caching
 
-This app caches at the fetch level. Two lifetime profiles are defined in
+Two lifetime profiles are defined in
 `lib/cache/cache-profiles.ts`: `standard` (5 min, most data) and
 `extended` (10 min, slower-changing data like channels).
 
 Caching is controlled by `CACHE_ENABLED`, which `.env.example`
 ships as `TRUE` so the behavior is visible out of the box. The app's own
 fallback when the var is undefined is *off* (see below).
+
+Pagination is stateless (BigCommerce's v2 gift certificates endpoint
+reports no total count anywhere), so "is there a next page" is answered by
+peeking one page ahead with the same page size — that peek uses
+`fetchGiftCertificatesPage` itself, cached the same way, so if the user
+actually clicks "next" the real fetch for that page hits the same cache
+entry the peek already created instead of re-fetching.
+
+Route Handlers that must never be cached by the browser (as opposed to
+Next's own server-side cache) explicitly set `Cache-Control: no-store` — a
+GET Route Handler's response is otherwise eligible for normal HTTP caching,
+which is invisible to and not invalidated.
+
+Two different caching implementations are used in this app:
+
+### Default Implementation
+
+The app uses Next's Cache Components (`cacheComponents: true`). Each `use cache` 
+boundary selects a cache profile by calling `cacheLife(cacheProfile("standard"))`.
+
+ Data-fetching functions that back a page (e.g.
+`fetchGiftCertificatesPage`) are `"use cache: remote"` and tag themselves
+with both a shared list tag and a per-record tag (added after the fetch
+resolves, once record ids are known). Mutations call `updateTag` on the
+relevant tags so a change is visible immediately rather than waiting out
+the `cacheLife`.
+
+### Cloudflare Target
+
+When scaffolded for Cloudflare, caches are done at the fetch level.
 
 Data-fetching functions that back a page (e.g.
 `fetchGiftCertificatesPage`) pass a `cache` option to the REST client
@@ -431,18 +461,6 @@ streamed HTML on Cloudflare Workers via `@opennextjs/cloudflare`, so this
 app caches at the fetch level instead. See the comment on `cacheComponents`
 in `next.config.ts`.
 
-Pagination is stateless (BigCommerce's v2 gift certificates endpoint
-reports no total count anywhere), so "is there a next page" is answered by
-peeking one page ahead with the same page size — that peek uses
-`fetchGiftCertificatesPage` itself, cached the same way, so if the user
-actually clicks "next" the real fetch for that page hits the same cache
-entry the peek already created instead of re-fetching.
-
-Route Handlers that must never be cached by the browser (as opposed to
-Next's own server-side cache) explicitly set `Cache-Control: no-store` — a
-GET Route Handler's response is otherwise eligible for normal HTTP caching,
-which is invisible to and not invalidated by `revalidateTag`.
-
 ### Enabling and disabling caching
 
 Caching is controlled by `CACHE_ENABLED`, and is off unless that
@@ -458,27 +476,8 @@ is explicitly `true`. Two defaults are worth keeping apart:
   when stale reads would get in the way, and decide deliberately for a real
   deployment rather than inheriting the example's choice.
 
-Because the switch only has to change what options a fetch is issued with,
-it can be read at the call site: `toFetchCacheOptions` returns
-`next: { revalidate, tags }` when caching is on and `cache: "no-store"`
-when it's off, so nothing is stored or reused. Call sites always pass their
-profile and tags and never check the variable themselves.
-
-This keeps the caching code paths intact and observable while removing the
-staleness: with `LOG_API_REQUESTS=true`, every page load logs its upstream
-requests when caching is off, versus only the first when it's on — which
-makes the switch a useful way to *see* what the caching is actually doing.
-
-One behavior worth knowing either way: a `notFound()` raised inside a
-`use cache: remote` boundary is itself cached, because Next treats the
-not-found result as a legitimate cached outcome rather than an error. With
-caching on, a record deleted upstream keeps rendering the not-found page for
-the remainder of the cache lifetime, and a record created at a previously
-missing id stays invisible for that long. Disabling caching removes that
-window entirely.
-
 > [!WARNING]
-> Caching is an core architectural pattern to understand.
+> Caching is a core architectural pattern to understand.
 > However, it might
 > not be a desirable trade-off in an admin-targeted app
 > where data should always be up-to-date. Evaluate your

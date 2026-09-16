@@ -29,9 +29,7 @@ function parseCustomer(record: CustomerWireRecord): Customer {
 }
 
 // Looks up registered customer accounts by email — this data isn't returned
-// by the gift certificates endpoint itself. Carries the shared customers list
-// tag, since the emails looked up here aren't known ahead of the request: any
-// customer mutation (e.g. a store credit grant) has to invalidate it.
+// by the gift certificates endpoint itself. 
 export async function fetchCustomersByEmail(
   emails: string[],
   storeHash: string | undefined,

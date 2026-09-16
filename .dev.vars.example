@@ -2,12 +2,9 @@
 #
 #   cp .dev.vars.example .dev.vars
 #
-# Supplies the Worker's runtime env under `pnpm preview` (wrangler dev), which
-# gets no values from .env files. Mirror anything from .secrets.production here
-# to exercise it locally, pointed at development credentials — this is the
-# local stand-in for the secrets a deploy uploads, not for wrangler.jsonc's
-# `vars`, which apply to preview already. See .env.example for what each var
-# does.
+# Supplies the Worker's runtime env under `pnpm preview` (wrangler dev)
+# Mirror anything from .secrets.production here to exercise it locally, 
+# pointed at development credentials
 
 # Selects which .env mode the preview/deploy commands resolve the Worker's env
 # from. Leave as development here; production values belong in
@@ -20,6 +17,5 @@ APP_ORIGIN=
 SESSION_SECRET=
 CREDENTIALS_ENCRYPTION_KEY=
 
-# Only read when DATA_MODE=STATIC. Leave empty otherwise.
 STATIC_STORE_HASH=
 STATIC_STORE_TOKEN=

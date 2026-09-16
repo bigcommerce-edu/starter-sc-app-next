@@ -1,9 +1,5 @@
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 
-// Not cached: this reads the credentials store directly rather than through
-// fetch(), so there's nothing for fetch-level caching to hook into. Fine here
-// — it's a single indexed lookup, and the banner polls it with
-// cache: "no-store" so a registration retry shows up immediately.
 async function fetchStoreExtensionStatus(storeHash: string): Promise<{ isRegistered: boolean }> {
   const extensionId = await getCredentialsStore().getStoreExtension(storeHash);
 

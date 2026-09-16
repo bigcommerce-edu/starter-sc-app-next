@@ -7,10 +7,13 @@
 // stale/expire bounds.
 export interface CacheLifetimeProfile {
   revalidate: number;
+
+  // These two values are used only when `cacheComponents` is the implementation.
+  stale: number;
+  expire: number;
 }
 
-// Opt-in: off unless CACHE_ENABLED is explicitly "true", since stale data in
-// an admin-privileged app is usually the worse trade-off.
+// Caching is opt-in, and off unless CACHE_ENABLED is explicitly "true"
 function isCachingEnabled(): boolean {
   return process.env.CACHE_ENABLED?.toLowerCase() === "true";
 }
@@ -23,11 +26,10 @@ export const CACHE_PROFILE_EXTENDED = "extended";
 // changes made directly in the BigCommerce control panel, or by another
 // admin, shouldn't stay stale for long even where no cache tag invalidates
 // them.
-const STANDARD_PROFILE: CacheLifetimeProfile = { revalidate: 300 };
+const STANDARD_PROFILE: CacheLifetimeProfile = { revalidate: 300, stale: 300, expire: 300 };
 
-// For store configuration (e.g. channels), which changes far less often than
-// transactional data.
-const EXTENDED_PROFILE: CacheLifetimeProfile = { revalidate: 600 };
+// For data that changes very infrequently
+const EXTENDED_PROFILE: CacheLifetimeProfile = { revalidate: 600, stale: 600, expire: 600 };
 
 const PROFILES = {
   [CACHE_PROFILE_STANDARD]: STANDARD_PROFILE,
@@ -36,15 +38,20 @@ const PROFILES = {
 
 export type CacheProfile = keyof typeof PROFILES;
 
+// ======= Cache Components implementation =======
+// A profile with
+// revalidate: 0 makes every entry already-expired by the time the next request
+// reads it, so nothing is ever reused and each request re-fetches. Next
+// requires expire > revalidate, hence 1 rather than 0.
+const CACHE_DISABLED_PROFILE: CacheLifetimeProfile = { revalidate: 0, stale: 0, expire: 1 };
+// ======= End of Cache Components implementation =======
+
+
+// ======= Fetch caching implementation =======
 // Marks a response as cacheable under the given tags and lifetime.
 export interface CacheOptions {
   profile: CacheProfile;
   tags: string[];
-}
-
-// The lifetime a given profile resolves to.
-export function cacheProfile(profile: CacheProfile): CacheLifetimeProfile {
-  return PROFILES[profile];
 }
 
 // Translates CacheOptions into the `next` fetch option Next.js reads. With
@@ -57,4 +64,11 @@ export function toFetchCacheOptions(cache: CacheOptions | undefined): RequestIni
   }
 
   return { next: { revalidate: cacheProfile(cache.profile).revalidate, tags: cache.tags } };
+}
+// ======= End of Fetch caching implementation =======
+
+
+// The lifetime a given profile resolves to.
+export function cacheProfile(profile: CacheProfile): CacheLifetimeProfile {
+  return isCachingEnabled() ? PROFILES[profile] : CACHE_DISABLED_PROFILE;
 }

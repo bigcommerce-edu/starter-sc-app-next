@@ -22,11 +22,6 @@ function parseGiftCertificate(record: GiftCertificateWireRecord): GiftCertificat
   return { ...record, amount: Number(record.amount), balance: Number(record.balance) };
 }
 
-// Cached under the shared list tag, not per-id: fetch tags have to be known
-// before the request, so per-record tags can't be attached here. Any mutation
-// revalidates this tag alongside the record's own — see the actions in
-// app/store/[storeHash]/gift-certs/[id]/actions.ts.
-//
 // Factored out as its own function because resolveHasNextPage below peeks
 // ahead at the next page using it. See docs/ARCHITECTURE.md.
 async function fetchGiftCertificatesPage(
@@ -49,7 +44,9 @@ async function fetchGiftCertificatesPage(
 
   // BigCommerce's v2 endpoint responds 204 (not 200 + []) when nothing
   // matches.
-  return items ?? [];
+  const records = items ?? [];
+
+  return records;
 }
 
 // BigCommerce's v2 endpoint reports no total count anywhere, so the only

@@ -1,6 +1,12 @@
+import { cacheLife, cacheTag } from "next/cache";
+import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/cache/cache-profiles";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 
 async function fetchStoreExtensionStatus(storeHash: string): Promise<{ isRegistered: boolean }> {
+  "use cache: remote";
+  cacheLife(cacheProfile(CACHE_PROFILE_EXTENDED));
+  cacheTag(`app-extension-status:${storeHash}`);
+
   const extensionId = await getCredentialsStore().getStoreExtension(storeHash);
 
   return { isRegistered: Boolean(extensionId) };

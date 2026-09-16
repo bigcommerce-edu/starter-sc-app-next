@@ -1,5 +1,6 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { getGraphqlApiClient } from "@/lib/bc-api-client/get-graphql-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
@@ -39,6 +40,8 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
       message: toSafeMessage(error, "Failed to register the App Extension."),
     };
   }
+
+  updateTag(`app-extension-status:${storeHash}`);
 
   return { success: true, message: "App extension registration succeeded" };
 }

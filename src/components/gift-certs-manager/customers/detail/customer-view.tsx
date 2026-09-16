@@ -1,11 +1,15 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { Box, Flex, Panel } from "@bigcommerce/big-design";
 import { ArrowBackIcon } from "@bigcommerce/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
 import { CustomerInfoPanel } from "@/components/gift-certs-manager/customers/detail/customer-info-panel";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
+import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 import { decorateCustomerWithChannels } from "@/lib/gift-certs-manager/customers/decorate-with-channels";
 import { fetchCustomer } from "@/lib/gift-certs-manager/customers/customers-api";
+import { GIFT_CERTIFICATES_LIST_TAG, giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { parseGiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/query";
 import { getAppUrl } from "@/lib/routing/app-url";
@@ -19,6 +23,11 @@ export async function CustomerView({
   searchParams: Record<string, string | string[] | undefined>;
   storeHash: string | undefined;
 }) {
+  "use cache: remote";
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
+  cacheTag(customerTag(id));
+  cacheTag(GIFT_CERTIFICATES_LIST_TAG);
+
   const rawCustomer = await fetchCustomer(id, storeHash);
 
   // A missing customer isn't a 404 from BigCommerce itself (see
@@ -37,6 +46,10 @@ export async function CustomerView({
     decorateCustomerWithChannels(rawCustomer, storeHash),
     fetchGiftCertificates({ ...query, to_email: rawCustomer.email }, storeHash),
   ]);
+
+  for (const item of items) {
+    cacheTag(giftCertificateTag(item.id));
+  }
 
   // Every row's recipient is this customer, so the account is already known.
   const decoratedItems = items.map((certificate) => ({ ...certificate, recipientAccount: customer }));

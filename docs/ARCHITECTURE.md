@@ -454,7 +454,9 @@ so a stale listing still isn't possible.
 
 The `use cache` boundaries in the components have no fetch-level equivalent,
 so they're removed in that implementation and caching moves down to the
-fetches they wrapped.
+fetches they wrapped. See
+[CACHE-IMPLEMENTATION-SWAP.md](./CACHE-IMPLEMENTATION-SWAP.md) for how that
+conversion is performed and what it expects you to keep up to date.
 
 ### Enabling and disabling caching
 

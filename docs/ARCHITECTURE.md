@@ -422,8 +422,7 @@ entry the peek already created instead of re-fetching.
 
 Route Handlers that must never be cached by the browser (as opposed to
 Next's own server-side cache) explicitly set `Cache-Control: no-store` — a
-GET Route Handler's response is otherwise eligible for normal HTTP caching,
-which is invisible to and not invalidated.
+GET Route Handler's response is otherwise eligible for normal HTTP caching.
 
 Two different caching implementations are used in this app:
 
@@ -456,7 +455,7 @@ fetches carry only the shared list tag, since fetch tags have to be known
 mutation revalidates the relevant list tag alongside the record's own tag,
 so a stale listing still isn't possible.
 
-Note that `cacheComponents` is `false`: Cache Components (PPR) corrupts
+Note that in this implementation, `cacheComponents` is `false`: Cache Components (PPR) corrupts
 streamed HTML on Cloudflare Workers via `@opennextjs/cloudflare`, so this
 app caches at the fetch level instead. See the comment on `cacheComponents`
 in `next.config.ts`.

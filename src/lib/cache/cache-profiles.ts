@@ -60,7 +60,7 @@ export interface CacheOptions {
 // CACHE_ENABLED themselves.
 export function toFetchCacheOptions(cache: CacheOptions | undefined): RequestInit {
   if (!cache || !isCachingEnabled()) {
-    return { cache: "no-store" };
+    return {};
   }
 
   return { next: { revalidate: cacheProfile(cache.profile).revalidate, tags: cache.tags } };

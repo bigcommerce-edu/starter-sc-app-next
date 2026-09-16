@@ -36,17 +36,16 @@ const DEV_DEPENDENCIES_TO_ADD = {
   wrangler: "^4.128.0",
 };
 
-// The credentials database the migrate scripts target. Derived from the app
-// name because a script needs a concrete value, and it has to match the
-// `database_name` the developer sets for the CREDENTIALS_D1 binding in
-// wrangler.jsonc — the next-steps output calls that out.
-function credentialsDatabaseName(appName) {
-  return `${appName}-credentials`;
-}
+// The migrate scripts name the credentials database, which the developer
+// creates and names themselves — so they carry the same
+// {{CREDENTIALS_DB_NAME}} placeholder as wrangler.jsonc.example and have to be
+// edited to match it. Left unreplaced, the migrate step fails rather than
+// migrating the wrong database, though wrangler's message ("No migrations
+// present at ./migrations") doesn't point at the placeholder, so the
+// next-steps output below calls this out explicitly.
+const CREDENTIALS_DB_PLACEHOLDER = "{{CREDENTIALS_DB_NAME}}";
 
-function scriptsToAdd(appName) {
-  const database = credentialsDatabaseName(appName);
-
+function scriptsToAdd() {
   return {
     preview: "pnpm run d1:migrate && opennextjs-cloudflare build && opennextjs-cloudflare preview",
     deploy:
@@ -54,8 +53,8 @@ function scriptsToAdd(appName) {
       "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     upload: "opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "d1:migrate": `wrangler d1 migrations apply ${database} --local`,
-    "d1:migrate:remote": `wrangler d1 migrations apply ${database} --remote`,
+    "d1:migrate": `wrangler d1 migrations apply ${CREDENTIALS_DB_PLACEHOLDER} --local`,
+    "d1:migrate:remote": `wrangler d1 migrations apply ${CREDENTIALS_DB_PLACEHOLDER} --remote`,
   };
 }
 
@@ -110,7 +109,7 @@ function addScripts() {
   const packageJson = readPackageJson();
   let added = false;
 
-  for (const [name, command] of Object.entries(scriptsToAdd(packageJson.name))) {
+  for (const [name, command] of Object.entries(scriptsToAdd())) {
     if (packageJson.scripts[name]) {
       log(`package.json already has a "${name}" script — leaving it as-is.`);
       continue;
@@ -217,8 +216,6 @@ export async function scaffold() {
   addDependencies();
   addScripts();
 
-  const database = credentialsDatabaseName(readPackageJson().name);
-
   console.log(
     `\n${LOG_PREFIX} Done. Next steps:\n` +
       "  1. Install the new dependencies:\n" +
@@ -230,9 +227,9 @@ export async function scaffold() {
       "  3. Copy wrangler.jsonc.example to wrangler.jsonc and replace every\n" +
       "     {{PLACEHOLDER}} with those names and ids.\n" +
       "\n" +
-      "     The d1:migrate scripts target this credentials database name:\n" +
-      `       ${database}\n` +
-      "     Use that name, or edit the scripts to match the name you chose.\n" +
+      "     Then replace {{CREDENTIALS_DB_NAME}} in the d1:migrate and\n" +
+      "     d1:migrate:remote scripts in package.json with the same credentials\n" +
+      "     database name you used in wrangler.jsonc.\n" +
       "  4. Copy the var templates and fill in your values:\n" +
       "       cp .secrets.production.example .secrets.production\n" +
       "       cp .env.production.local.example .env.production.local\n" +

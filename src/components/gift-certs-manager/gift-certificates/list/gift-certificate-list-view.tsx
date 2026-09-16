@@ -1,16 +1,15 @@
-// @cache-components-only:start
-import { cacheLife, cacheTag } from "next/cache";
-import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
-// @cache-components-only:end
 import { Box, Panel } from "@bigcommerce/big-design";
 import { ControlPanelLink } from "@/components/ui/control-panel-link";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
 import { decorateGiftCertificatesWithRecipientAccounts } from "@/lib/gift-certs-manager/gift-certificates/decorate-with-accounts";
-// @cache-components-only:start
-import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
-// @cache-components-only:end
 import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { parseGiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/query";
+
+// @cache-components-only:start
+import { cacheLife, cacheTag } from "next/cache";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+// @cache-components-only:end
 
 // Beyond the shared list tag, this also tags the cache entry with every
 // certificate id in the result set (added after the fetch resolves, once

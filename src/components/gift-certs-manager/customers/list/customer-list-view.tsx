@@ -1,17 +1,16 @@
-// @cache-components-only:start
-import { cacheLife, cacheTag } from "next/cache";
-import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
-// @cache-components-only:end
 import { Box, Panel } from "@bigcommerce/big-design";
 import { ControlPanelLink } from "@/components/ui/control-panel-link";
 import { CustomerTable } from "@/components/gift-certs-manager/customers/list/customer-table";
 import { fetchChannels } from "@/lib/gift-certs-manager/channels/channels-api";
-// @cache-components-only:start
-import { customerTag, CUSTOMERS_LIST_TAG } from "@/lib/gift-certs-manager/customers/cache-tags";
-// @cache-components-only:end
 import { decorateCustomersWithChannels } from "@/lib/gift-certs-manager/customers/decorate-with-channels";
 import { fetchCustomers } from "@/lib/gift-certs-manager/customers/customers-api";
 import { parseCustomersQuery } from "@/lib/gift-certs-manager/customers/query";
+
+// @cache-components-only:start
+import { cacheLife, cacheTag } from "next/cache";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+import { customerTag, CUSTOMERS_LIST_TAG } from "@/lib/gift-certs-manager/customers/cache-tags";
+// @cache-components-only:end
 
 export async function CustomerListView({
   searchParams,

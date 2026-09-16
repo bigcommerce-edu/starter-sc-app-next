@@ -1,9 +1,4 @@
-// @cache-components-only:start
-import { cacheLife, cacheTag } from "next/cache";
-// @cache-components-only:end
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
-// @cache-components-only:drop-specifier cacheProfile
-import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   GIFT_CERTIFICATES_PATH,
@@ -13,6 +8,13 @@ import {
   GiftCertificateStatus,
   getGiftCertificatePath,
 } from "@/lib/gift-certs-manager/gift-certificates/types";
+
+// @cache-components-only:drop-specifier cacheProfile
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+
+// @cache-components-only:start
+import { cacheLife, cacheTag } from "next/cache";
+// @cache-components-only:end
 
 // BigCommerce returns amount/balance as decimal strings on the wire; every
 // other numeric-looking field is already a number. This is the only

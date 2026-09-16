@@ -1,26 +1,21 @@
-// @cache-components-only:start
-import { cacheLife, cacheTag } from "next/cache";
-// @cache-components-only:end
 import { notFound } from "next/navigation";
-// @cache-components-only:start
-import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
-// @cache-components-only:end
 import { Box, Flex, Panel } from "@bigcommerce/big-design";
 import { ArrowBackIcon } from "@bigcommerce/big-design-icons";
 import { AppLink } from "@/components/ui/app-link";
 import { CustomerInfoPanel } from "@/components/gift-certs-manager/customers/detail/customer-info-panel";
 import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certificates/list/gift-certificate-table";
-// @cache-components-only:start
-import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
-// @cache-components-only:end
 import { decorateCustomerWithChannels } from "@/lib/gift-certs-manager/customers/decorate-with-channels";
 import { fetchCustomer } from "@/lib/gift-certs-manager/customers/customers-api";
-// @cache-components-only:start
-import { GIFT_CERTIFICATES_LIST_TAG, giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
-// @cache-components-only:end
 import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { parseGiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/query";
 import { getAppUrl } from "@/lib/routing/app-url";
+
+// @cache-components-only:start
+import { cacheLife, cacheTag } from "next/cache";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
+import { GIFT_CERTIFICATES_LIST_TAG, giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+// @cache-components-only:end
 
 export async function CustomerView({
   id,

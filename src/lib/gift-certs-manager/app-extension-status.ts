@@ -1,8 +1,9 @@
+import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
+
 // @cache-components-only:start
 import { cacheLife, cacheTag } from "next/cache";
 import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/cache/cache-profiles";
 // @cache-components-only:end
-import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 
 async function fetchStoreExtensionStatus(storeHash: string): Promise<{ isRegistered: boolean }> {
   // @cache-components-only:start

@@ -1,11 +1,13 @@
+import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
+import { CHANNELS_PATH, Channel } from "@/lib/gift-certs-manager/channels/types";
+
+// @cache-components-only:drop-specifier cacheProfile
+import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/cache/cache-profiles";
+
 // @cache-components-only:start
 import { cacheLife, cacheTag } from "next/cache";
 // @cache-components-only:end
-import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
-import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
-// @cache-components-only:drop-specifier cacheProfile
-import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/cache/cache-profiles";
-import { CHANNELS_PATH, Channel } from "@/lib/gift-certs-manager/channels/types";
 
 export interface ChannelsResult {
   items: Channel[];

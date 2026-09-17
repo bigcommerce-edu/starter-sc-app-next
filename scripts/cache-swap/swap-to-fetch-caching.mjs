@@ -363,6 +363,32 @@ function applyInvalidations(source, entry) {
   return updated;
 }
 
+// ===== Pass 4: leftover check =====
+
+// Nothing that only works under Cache Components may survive the swap. This
+// catches the failure mode markers can't: a construct nobody wrapped, which
+// would otherwise be left behind silently and only surface as a runtime error
+// (or, worse, as caching that quietly does nothing).
+const CACHE_COMPONENTS_ONLY_API = ['"use cache', "cacheLife(", "cacheTag(", "updateTag("];
+
+function findLeftovers(files) {
+  const leftovers = [];
+
+  for (const relativePath of files) {
+    const lines = readFileSync(path.join(repoRoot, relativePath), "utf8").split("\n");
+
+    for (const [index, line] of lines.entries()) {
+      for (const api of CACHE_COMPONENTS_ONLY_API) {
+        if (line.includes(api)) {
+          leftovers.push(`${relativePath}:${index + 1} ${line.trim()}`);
+        }
+      }
+    }
+  }
+
+  return leftovers;
+}
+
 // ===== Entry point =====
 
 export function swapToFetchCaching() {
@@ -442,6 +468,16 @@ export function swapToFetchCaching() {
       writeFileSync(absolute, updated);
       log(`Rewrote tag invalidation in ${entry.file}.`);
     }
+  }
+
+  // --- Pass 4: nothing Cache Components-only may survive ---
+  const leftovers = findLeftovers(files);
+
+  if (leftovers.length > 0) {
+    fail(
+      `Cache Components code survived the swap:\n  ${leftovers.join("\n  ")}\n` +
+        "Wrap it in @cache-components-only markers so the swap removes it.",
+    );
   }
 
   return { filesChanged, optionsAdded };

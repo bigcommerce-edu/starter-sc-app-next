@@ -14,7 +14,7 @@
 // Deliberately does not create wrangler.jsonc either. That file carries
 // account-specific resource ids, so the developer copies the generated
 // wrangler.jsonc.example and fills them in — see docs/CLOUDFLARE-DEPLOYMENT.md.
-import { readFileSync, writeFileSync, existsSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, copyFileSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { swapToFetchCaching } from "../cache-swap/swap-to-fetch-caching.mjs";
@@ -183,6 +183,43 @@ function installD1DriverLoader() {
   log(`Installed the Cloudflare D1 loader over ${destination}.`);
 }
 
+// Renames src/proxy.ts to src/middleware.ts, and its exported function to
+// match.
+//
+// `proxy` is Next 16's current convention and `middleware` is deprecated, so
+// the core app uses the former. But Next only records a middleware entry in
+// .next/server/middleware-manifest.json for the `middleware` filename — with
+// proxy.ts the manifest's `middleware` array is empty, even though the code is
+// compiled to .next/server/middleware.js. OpenNext reads that manifest to
+// decide whether there is middleware to bundle, so on the Workers target
+// proxy.ts means the authorization gate is silently dropped from the deployed
+// Worker. Renaming is what keeps it.
+function renameProxyToMiddleware() {
+  const proxyPath = path.join(repoRoot, "src/proxy.ts");
+  const middlewarePath = path.join(repoRoot, "src/middleware.ts");
+
+  if (existsSync(middlewarePath)) {
+    log("src/middleware.ts already exists — leaving it as-is.");
+    return;
+  }
+
+  if (!existsSync(proxyPath)) {
+    log("WARNING: neither src/proxy.ts nor src/middleware.ts found. Skipping the middleware rename.");
+    return;
+  }
+
+  const source = readFileSync(proxyPath, "utf8");
+  const renamed = source.replace(/\bexport async function proxy\b/, "export async function middleware");
+
+  if (renamed === source) {
+    log("WARNING: src/proxy.ts has no `export async function proxy` to rename. Renaming the file only.");
+  }
+
+  writeFileSync(middlewarePath, renamed);
+  rmSync(proxyPath);
+  log("Renamed src/proxy.ts to src/middleware.ts (Next records middleware only under that name).");
+}
+
 // Cache Components (PPR) corrupts streamed HTML on Workers via
 // @opennextjs/cloudflare, so the Cloudflare target runs with it off and caches
 // at the fetch level instead (see the cache swap).
@@ -209,6 +246,7 @@ function disableCacheComponents() {
 export async function scaffold() {
   swapToFetchCaching();
   disableCacheComponents();
+  renameProxyToMiddleware();
   installD1DriverLoader();
   writeOpenNextConfig();
   writeExampleFiles();

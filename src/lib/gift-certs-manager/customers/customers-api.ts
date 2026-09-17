@@ -2,6 +2,8 @@ import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
 import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
 import { CUSTOMERS_PATH, Customer, CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
 import { AppError } from "@/lib/errors/app-error";
+import { CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+import { CUSTOMERS_LIST_TAG, customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
 
 export interface CustomersResult {
   items: Customer[];
@@ -40,6 +42,7 @@ export async function fetchCustomersByEmail(
 
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    cache: { profile: CACHE_PROFILE_STANDARD, tags: [CUSTOMERS_LIST_TAG] },
     params: {
       "email:in": uniqueEmails.join(","),
       include: "storecredit",
@@ -79,6 +82,7 @@ export async function fetchCustomers(
 ): Promise<CustomersListResult> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    cache: { profile: CACHE_PROFILE_STANDARD, tags: [CUSTOMERS_LIST_TAG] },
     params: {
       ... (query.name && { "name:like": query.name }),
       ... (query.email && { "email:in": query.email }),
@@ -102,6 +106,7 @@ export async function fetchCustomers(
 export async function fetchCustomer(id: number | string, storeHash: string | undefined): Promise<Customer | undefined> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    cache: { profile: CACHE_PROFILE_STANDARD, tags: [customerTag(id)] },
     params: { "id:in": id, include: "storecredit" },
   });
 

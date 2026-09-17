@@ -1,8 +1,5 @@
 "use server";
 
-// @cache-components-only:start
-import { updateTag } from "next/cache";
-// @cache-components-only:end
 import { getGraphqlApiClient } from "@/lib/bc-api-client/get-graphql-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
@@ -10,6 +7,10 @@ import { findOrCreateAppExtension } from "@/lib/gift-certs-manager/register-app-
 import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/session/is-authorized-for-store";
 import { toSafeMessage } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
+
+// @cache-components-only:start
+import { updateTag } from "next/cache";
+// @cache-components-only:end
 
 // User-triggered retry for a failed install-time registration, colocated
 // with AppExtensionStatusBanner rather than in lib/. Shares

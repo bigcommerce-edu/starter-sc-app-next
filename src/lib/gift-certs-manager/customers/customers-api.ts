@@ -27,7 +27,8 @@ function parseCustomer(record: CustomerWireRecord): Customer {
 }
 
 // Looks up registered customer accounts by email — this data isn't returned
-// by the gift certificates endpoint itself. 
+// by the gift certificates endpoint itself. Caching lives in the calling
+// *View component, not here.
 export async function fetchCustomersByEmail(
   emails: string[],
   storeHash: string | undefined,

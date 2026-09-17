@@ -136,8 +136,10 @@ component as a *named prop* (rather than as `children`) from a Server
 Component can produce hydration mismatches. Prefer `children` where the API
 allows it.
 
-A patch is applied to BigDesign's `Modal` to guard its unmount cleanup — see
-[big-design-modal-removechild-patch.md](./big-design-modal-removechild-patch.md).
+Note that BigDesign does not officially support React 19, which this app
+requires — see
+[BigDesign and React 19](../README.md#bigdesign-and-react-19) in the README
+for the peer dependency override and Modal patch that work around it.
 
 ## Install and session flow
 
@@ -403,9 +405,22 @@ each. `MockRestApiClient` itself never changes either way.
 
 ## Caching
 
-Two lifetime profiles are defined in
-`lib/cache/cache-profiles.ts`: `standard` (5 min, most data) and
-`extended` (10 min, slower-changing data like channels).
+This app uses Next's Cache Components (`cacheComponents: true`). Two
+lifetime profiles are defined in `lib/cache/cache-profiles.ts`:
+`standard` (5 min, most data) and `extended` (10 min, slower-changing data
+like channels). Each `use cache` boundary selects one by calling
+`cacheLife(cacheProfile("standard"))`.
+
+Caching is controlled by `CACHE_ENABLED`, which `.env.example`
+ships as `TRUE` so the behavior is visible out of the box. The app's own
+fallback when the var is undefined is *off* (see below).
+
+Data-fetching functions that back a page (e.g.
+`fetchGiftCertificatesPage`) are `"use cache: remote"` and tag themselves
+with both a shared list tag and a per-record tag (added after the fetch
+resolves, once record ids are known). Mutations call `updateTag` on the
+relevant tags so a change is visible immediately rather than waiting out
+the `cacheLife`.
 
 Pagination is stateless (BigCommerce's v2 gift certificates endpoint
 reports no total count anywhere), so "is there a next page" is answered by
@@ -416,45 +431,8 @@ entry the peek already created instead of re-fetching.
 
 Route Handlers that must never be cached by the browser (as opposed to
 Next's own server-side cache) explicitly set `Cache-Control: no-store` — a
-GET Route Handler's response is otherwise eligible for normal HTTP caching.
-
-Two different caching implementations are used in this app:
-
-### Default Implementation
-
-The app uses Next's Cache Components (`cacheComponents: true`). Each `use cache` 
-boundary selects a cache profile by calling `cacheLife(cacheProfile("standard"))`.
-
-Data-fetching functions that back a page (e.g.
-`fetchGiftCertificatesPage`) are `"use cache: remote"` and tag themselves
-with both a shared list tag and a per-record tag (added after the fetch
-resolves, once record ids are known). Mutations call `updateTag` on the
-relevant tags so a change is visible immediately rather than waiting out
-the `cacheLife`.
-
-### Cloudflare Target
-
-Scaffolding the app for Cloudflare switches it to fetch-level caching and
-sets `cacheComponents` to `false`. That's necessary because Cache Components
-(PPR) corrupts streamed HTML on Cloudflare Workers via
-`@opennextjs/cloudflare`.
-
-In that implementation, data-fetching functions pass a `cache` option to the
-REST client naming a profile and the tags the response should be stored
-under, and the client turns that into Next's `next: { revalidate, tags }`
-fetch option. Mutations call `revalidateTag` rather than `updateTag`.
-
-Detail fetches tag per record (`gift-cert:<id>`, `customer:<id>`); list
-fetches carry only the shared list tag, since fetch tags have to be known
-*before* the request is issued and a listing's record ids aren't. Every
-mutation revalidates the relevant list tag alongside the record's own tag,
-so a stale listing still isn't possible.
-
-The `use cache` boundaries in the components have no fetch-level equivalent,
-so they're removed in that implementation and caching moves down to the
-fetches they wrapped. See
-[CACHE-IMPLEMENTATION-SWAP.md](./CACHE-IMPLEMENTATION-SWAP.md) for how that
-conversion is performed and what it expects you to keep up to date.
+GET Route Handler's response is otherwise eligible for normal HTTP caching,
+which is invisible to and not invalidated by `cacheTag`/`updateTag`.
 
 ### Enabling and disabling caching
 
@@ -471,8 +449,36 @@ is explicitly `true`. Two defaults are worth keeping apart:
   when stale reads would get in the way, and decide deliberately for a real
   deployment rather than inheriting the example's choice.
 
+What the switch does *not* do is turn off Cache Components. `cacheComponents`
+stays `true` either way, because the `use cache` directives and
+`cacheTag`/`updateTag` calls throughout the app are compile-time constructs:
+they can't be wrapped in a runtime condition (a directive nested inside an
+`if` is silently ignored rather than honored), and disabling
+`cacheComponents` outright would stop the app compiling at all.
+
+Instead, `cacheProfile()` returns a zero-second profile
+(`{ stale: 0, revalidate: 0, expire: 1 }` — Next requires `expire` to
+exceed `revalidate`, so `1` is the floor). A `revalidate` of `0` means every
+entry is already expired by the time the next request tries to read it, so
+nothing is ever reused and each request re-fetches. Because every cached
+boundary selects its profile through `cacheProfile()`, the switch covers all
+of them, and call sites never have to check the variable themselves.
+
+This keeps the caching code paths intact and observable while removing the
+staleness: with `LOG_API_REQUESTS=true`, every page load logs its upstream
+requests when caching is off, versus only the first when it's on — which
+makes the switch a useful way to *see* what the caching is actually doing.
+
+One behavior worth knowing either way: a `notFound()` raised inside a
+`use cache: remote` boundary is itself cached, because Next treats the
+not-found result as a legitimate cached outcome rather than an error. With
+caching on, a record deleted upstream keeps rendering the not-found page for
+the remainder of the cache lifetime, and a record created at a previously
+missing id stays invisible for that long. Disabling caching removes that
+window entirely.
+
 > [!WARNING]
-> Caching is a core architectural pattern to understand.
+> Caching is an core architectural pattern to understand.
 > However, it might
 > not be a desirable trade-off in an admin-targeted app
 > where data should always be up-to-date. Evaluate your

@@ -136,10 +136,8 @@ component as a *named prop* (rather than as `children`) from a Server
 Component can produce hydration mismatches. Prefer `children` where the API
 allows it.
 
-Note that BigDesign does not officially support React 19, which this app
-requires — see
-[BigDesign and React 19](../README.md#bigdesign-and-react-19) in the README
-for the peer dependency override and Modal patch that work around it.
+A patch is applied to BigDesign's `Modal` to guard its unmount cleanup — see
+[big-design-modal-removechild-patch.md](./big-design-modal-removechild-patch.md).
 
 ## Install and session flow
 

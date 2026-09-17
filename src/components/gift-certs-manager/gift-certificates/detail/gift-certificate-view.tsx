@@ -8,6 +8,12 @@ import { fetchGiftCertificate } from "@/lib/gift-certs-manager/gift-certificates
 import { getAppUrl } from "@/lib/routing/app-url";
 import { AppError } from "@/lib/errors/app-error";
 
+// @cache-components-only:start
+import { cacheLife, cacheTag } from "next/cache";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+// @cache-components-only:end
+
 // Tagged per-id (rather than the shared list tag) so a mutation to this
 // certificate updates the detail view immediately without invalidating
 // every other certificate's cached detail view.
@@ -18,6 +24,12 @@ export async function GiftCertificateView({
   id: string;
   storeHash: string | undefined;
 }) {
+  // @cache-components-only:start
+  "use cache: remote";
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
+  cacheTag(giftCertificateTag(id));
+  // @cache-components-only:end
+
   // A missing id is a real 404 from BigCommerce's v2 single-resource
   // endpoint; the translation to notFound() happens here rather than in
   // fetchGiftCertificate, which is also called from Server Actions where a

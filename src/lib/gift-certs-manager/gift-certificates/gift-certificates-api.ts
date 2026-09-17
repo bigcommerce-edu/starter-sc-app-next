@@ -1,5 +1,4 @@
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
-import { CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
   GIFT_CERTIFICATES_PATH,
@@ -9,6 +8,13 @@ import {
   GiftCertificateStatus,
   getGiftCertificatePath,
 } from "@/lib/gift-certs-manager/gift-certificates/types";
+
+// @cache-components-only:drop-specifier cacheProfile
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+
+// @cache-components-only:start
+import { cacheLife, cacheTag } from "next/cache";
+// @cache-components-only:end
 
 // BigCommerce returns amount/balance as decimal strings on the wire; every
 // other numeric-looking field is already a number. This is the only
@@ -28,9 +34,14 @@ async function fetchGiftCertificatesPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
 ): Promise<GiftCertificateWireRecord[]> {
+  // @cache-components-only:start
+  "use cache: remote";
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
+  cacheTag(GIFT_CERTIFICATES_LIST_TAG);
+  // @cache-components-only:end
+
   const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
-    cache: { profile: CACHE_PROFILE_STANDARD, tags: [GIFT_CERTIFICATES_LIST_TAG] },
     params: {
       ... (query.code && { "code": query.code }),
       ... (query.to_name && { "to_name": query.to_name }),
@@ -45,6 +56,12 @@ async function fetchGiftCertificatesPage(
   // BigCommerce's v2 endpoint responds 204 (not 200 + []) when nothing
   // matches.
   const records = items ?? [];
+
+  // @cache-components-only:start
+  for (const record of records) {
+    cacheTag(giftCertificateTag(record.id));
+  }
+  // @cache-components-only:end
 
   return records;
 }
@@ -88,7 +105,6 @@ export async function fetchGiftCertificate(
 ): Promise<GiftCertificate> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id), {
-    cache: { profile: CACHE_PROFILE_STANDARD, tags: [giftCertificateTag(id)] },
   });
 
   return parseGiftCertificate(record);

@@ -409,10 +409,6 @@ Two lifetime profiles are defined in
 `lib/cache/cache-profiles.ts`: `standard` (5 min, most data) and
 `extended` (10 min, slower-changing data like channels).
 
-Caching is controlled by `CACHE_ENABLED`, which `.env.example`
-ships as `TRUE` so the behavior is visible out of the box. The app's own
-fallback when the var is undefined is *off* (see below).
-
 Pagination is stateless (BigCommerce's v2 gift certificates endpoint
 reports no total count anywhere), so "is there a next page" is answered by
 peeking one page ahead with the same page size — that peek uses
@@ -431,7 +427,7 @@ Two different caching implementations are used in this app:
 The app uses Next's Cache Components (`cacheComponents: true`). Each `use cache` 
 boundary selects a cache profile by calling `cacheLife(cacheProfile("standard"))`.
 
- Data-fetching functions that back a page (e.g.
+Data-fetching functions that back a page (e.g.
 `fetchGiftCertificatesPage`) are `"use cache: remote"` and tag themselves
 with both a shared list tag and a per-record tag (added after the fetch
 resolves, once record ids are known). Mutations call `updateTag` on the
@@ -440,14 +436,15 @@ the `cacheLife`.
 
 ### Cloudflare Target
 
-When scaffolded for Cloudflare, caches are done at the fetch level.
+Scaffolding the app for Cloudflare switches it to fetch-level caching and
+sets `cacheComponents` to `false`. That's necessary because Cache Components
+(PPR) corrupts streamed HTML on Cloudflare Workers via
+`@opennextjs/cloudflare`.
 
-Data-fetching functions that back a page (e.g.
-`fetchGiftCertificatesPage`) pass a `cache` option to the REST client
-naming a profile and the tags the response should be stored under; the
-client turns that into Next's `next: { revalidate, tags }` fetch option.
-Mutations call `revalidateTag` on the relevant tags so a change is visible
-immediately rather than waiting out the lifetime.
+In that implementation, data-fetching functions pass a `cache` option to the
+REST client naming a profile and the tags the response should be stored
+under, and the client turns that into Next's `next: { revalidate, tags }`
+fetch option. Mutations call `revalidateTag` rather than `updateTag`.
 
 Detail fetches tag per record (`gift-cert:<id>`, `customer:<id>`); list
 fetches carry only the shared list tag, since fetch tags have to be known
@@ -455,10 +452,11 @@ fetches carry only the shared list tag, since fetch tags have to be known
 mutation revalidates the relevant list tag alongside the record's own tag,
 so a stale listing still isn't possible.
 
-Note that in this implementation, `cacheComponents` is `false`: Cache Components (PPR) corrupts
-streamed HTML on Cloudflare Workers via `@opennextjs/cloudflare`, so this
-app caches at the fetch level instead. See the comment on `cacheComponents`
-in `next.config.ts`.
+The `use cache` boundaries in the components have no fetch-level equivalent,
+so they're removed in that implementation and caching moves down to the
+fetches they wrapped. See
+[CACHE-IMPLEMENTATION-SWAP.md](./CACHE-IMPLEMENTATION-SWAP.md) for how that
+conversion is performed and what it expects you to keep up to date.
 
 ### Enabling and disabling caching
 

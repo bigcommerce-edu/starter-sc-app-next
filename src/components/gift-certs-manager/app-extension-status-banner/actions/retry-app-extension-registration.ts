@@ -1,5 +1,8 @@
 "use server";
 
+// @cache-components-only:start
+import { updateTag } from "next/cache";
+// @cache-components-only:end
 import { getGraphqlApiClient } from "@/lib/bc-api-client/get-graphql-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
@@ -39,6 +42,10 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
       message: toSafeMessage(error, "Failed to register the App Extension."),
     };
   }
+
+  // @cache-components-only:start
+  updateTag(`app-extension-status:${storeHash}`);
+  // @cache-components-only:end
 
   return { success: true, message: "App extension registration succeeded" };
 }

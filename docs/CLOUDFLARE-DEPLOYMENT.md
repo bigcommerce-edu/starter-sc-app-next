@@ -76,6 +76,15 @@ This is the only step that changes the app's own code. It:
   `src/lib/credentials-store/d1-driver-loader.ts`. The core version throws,
   because obtaining a D1 binding is Workers-specific; the installed one reads
   it off the Worker env.
+* **Renames `src/proxy.ts` to `src/middleware.ts`**, and its exported function
+  to match. `proxy` is Next 16's current convention, and `middleware` is
+  deprecated, which is why the app ships with `proxy.ts` — but Next only
+  records a middleware entry in `.next/server/middleware-manifest.json` under
+  the `middleware` name. OpenNext reads that manifest to decide whether there
+  is middleware to bundle, so without the rename the authorization gate in
+  that file is silently missing from the deployed Worker. Expect a
+  deprecation warning on every build afterwards; it's the cost of being
+  bundled at all.
 * **Adds `@opennextjs/cloudflare` and `wrangler`** to `package.json`, along
   with the `preview`, `deploy`, `upload`, `cf-typegen`, `d1:migrate`, and
   `d1:migrate:remote` scripts.

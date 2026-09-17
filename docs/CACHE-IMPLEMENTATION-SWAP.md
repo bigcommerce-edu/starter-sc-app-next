@@ -77,6 +77,24 @@ the same function that issues them. For the rest, the mapping is real
 knowledge that has to be written down, which is what
 `scripts/cache-swap/fetch-cache-manifest.json` is for.
 
+### Nothing Cache Components-Only May Survive
+
+After both halves run, the swap scans `searchDirs` again and fails if it finds
+any API that only works under Cache Components — `"use cache"`, `cacheLife()`,
+`cacheTag()`, or `updateTag()`:
+
+```
+[cache-swap] Cache Components code survived the swap:
+  src/.../retry-app-extension-registration.ts:44 updateTag(`app-extension-status:${storeHash}`);
+Wrap it in @cache-components-only markers so the swap removes it.
+```
+
+This catches the one thing markers can't: a construct nobody wrapped. Left
+behind, it would still compile — `updateTag` is a real import either way — and
+the only symptom would be caching that quietly does nothing, or a runtime
+error long after the deploy. Failing the swap turns that into a message naming
+the file and line.
+
 ## The Manifest
 
 ### `searchDirs`
@@ -150,6 +168,10 @@ them. The component simply won't be cached on a fetch-level target, which is
 the correct outcome if the data it renders isn't fetched through the REST
 client.
 
+Forget the markers and the swap fails with the leftover check rather than
+producing a broken app, so this is hard to get wrong quietly. The same applies
+to an `updateTag()` call added anywhere under `searchDirs`.
+
 ### Making a New Fetch Cacheable
 
 Two steps, because the two implementations need different things:
@@ -158,8 +180,9 @@ Two steps, because the two implementations need different things:
 2. Add a `fetchCaching` entry naming that function, its profile, and its tags.
 
 Skipping the second step means the fetch is cached under Cache Components but
-not on fetch-level targets. That's a silent difference, so it's worth checking
-the manifest whenever you add a cache tag.
+not on fetch-level targets. Unlike a missing marker, nothing detects this —
+the app builds and runs, just without that cache entry on Cloudflare — so it's
+worth checking the manifest whenever you add a cache tag.
 
 ### Renaming a Cached Function
 
@@ -213,9 +236,10 @@ Two things it does **not** do:
   regenerating the markers and boundaries the manifest can't describe. Use
   version control to go back.
 
-Afterwards, run `pnpm lint` and a typecheck. Between them they catch the
-realistic failure modes: an import left unused after a removal, or one missing
-after an addition.
+The swap's own leftover check (above) catches unwrapped Cache Components code.
+Afterwards, run `pnpm lint` and a typecheck too — between them they catch the
+rest: an import left unused after a removal, or one missing after an
+addition.
 
 ## Reference
 

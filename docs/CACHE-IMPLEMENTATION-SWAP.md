@@ -157,8 +157,9 @@ addition.
 
 ## Checklist: Adding Caching Without Breaking the Swap
 
-Every cache you add has to work under both implementations, and the tooling
-can only infer half of that. Work through whichever case applies.
+In your own custom apps, if you're using caching and also
+want to preserve the ability to swap it to the fetch implementation, 
+follow the guidelines below.
 
 ### Caching a Component
 
@@ -239,12 +240,6 @@ can only infer half of that. Work through whichever case applies.
   nowhere else.
 * `git checkout` to throw the swap away. It's one-directional, so never commit
   its output to a branch that also carries the Cache Components version.
-
-The two halves fail very differently, which is worth internalizing. Forget a
-marker and the leftover check fails the swap, naming the file and line.
-Forget the manifest entry and nothing complains: the app builds, lint and
-typecheck are clean, and the fetch is simply never cached on Cloudflare.
-That's the one mistake here you have to catch by reading.
 
 ## Reference
 

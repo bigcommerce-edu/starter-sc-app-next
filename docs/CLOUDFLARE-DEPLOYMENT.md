@@ -13,17 +13,6 @@ recommended but not required — the concepts (`MULTITENANT` mode,
 `APP_ORIGIN`, the developer portal callbacks) are the same, with a real host
 and a real database in place of a tunnel and a SQLite file.
 
-## Why D1 Is Required
-
-Cloudflare runs your app as a Worker: many short-lived isolates with no
-persistent filesystem at all. The SQLite driver used for local development
-writes to a local file, which a Worker has nowhere to put. The Postgres
-driver isn't an option either — `pg` reaches `pg-cloudflare` through a bare
-`require()` that can't be bundled for workerd. D1
-(`src/lib/credentials-store/d1-driver/`) is the multi-instance counterpart
-that does work here: one shared SQLite-compatible database every isolate can
-see.
-
 ## Supported Infrastructure
 
 Next.js caching on Workers is assembled from several separate pieces, because
@@ -129,16 +118,13 @@ This is the only step that changes the app's own code. It:
   `wrangler.jsonc.example`, `.secrets.production.example`,
   `.env.production.local.example`, and `.dev.vars.example`.
 
-It does not run `pnpm install`, so do that next:
+After the scaffold, install dependencies:
 
 ```shell
 pnpm install
 ```
 
-The script is idempotent — re-running it after pulling upstream changes only
-adds what's missing, and never overwrites a file you've edited.
-
-### It Does Not Create `wrangler.jsonc`
+### Create `wrangler.jsonc`
 
 Every resource name and id in that file is specific to your Cloudflare
 account, so the script writes `wrangler.jsonc.example` with placeholders and
@@ -149,27 +135,6 @@ next few steps:
 cp wrangler.jsonc.example wrangler.jsonc
 ```
 
-Then replace each placeholder:
-
-| Placeholder | Value | Where it comes from |
-| ----------- | ----- | ------------------- |
-| `{{APP_NAME}}` | Your Worker's name (appears twice) | Your choice; conventionally `package.json`'s `name` |
-| `{{CACHE_BUCKET_NAME}}` | R2 bucket name | The name you pass to `r2 bucket create` (step 2) |
-| `{{TAG_CACHE_DB_NAME}}` | Cache-tag database name | The name you pass to `d1 create` (step 3) |
-| `{{TAG_CACHE_DB_UUID}}` | Cache-tag `database_id` | Printed by `d1 create` (step 3) |
-| `{{CREDENTIALS_DB_NAME}}` | Credentials database name | The name you pass to `d1 create` (step 4) |
-| `{{CREDENTIALS_DB_UUID}}` | Credentials `database_id` | Printed by `d1 create` (step 4) |
-
-`{{CREDENTIALS_DB_NAME}}` also appears in the `d1:migrate` and
-`d1:migrate:remote` scripts in `package.json`. Replace it in both places with
-the same name.
-
-If you miss the ones in `package.json`, the migrate step fails with `No
-migrations present at ./migrations` rather than anything mentioning the
-placeholder — Wrangler can't resolve the database, so it falls back to looking
-for a top-level `migrations/` directory that doesn't exist. Nothing is
-migrated, so it's a safe failure, just a confusing one.
-
 ## 2. Create the Cloudflare Resources
 
 Every binding the Worker declares has to exist before it will start, so
@@ -178,12 +143,8 @@ these come before the first deploy. Record each name and id as you go —
 
 ### Create the R2 Bucket
 
-This bucket holds the incremental cache payloads. Name it whatever you like —
-this guide uses `my-app-cache` — and record the name for
-`{{CACHE_BUCKET_NAME}}`:
-
 ```shell
-pnpm wrangler r2 bucket create my-app-cache
+pnpm wrangler r2 bucket create {{APP-NAME}}-cache
 ```
 
 Verify it exists:
@@ -192,21 +153,14 @@ Verify it exists:
 pnpm wrangler r2 bucket list
 ```
 
-The *binding* name (`NEXT_INC_CACHE_R2_BUCKET`) must not change — OpenNext
-looks that up by name. Only the bucket name is yours to choose.
-
 ### Create the Cache Tag D1 Database
 
-This is the separate cache-tag database described above — not the app's own
-data:
-
 ```shell
-pnpm wrangler d1 create my-app-cache-tags
+pnpm wrangler d1 create {{APP-NAME}}-cache-tags
 ```
 
-Record the name for `{{TAG_CACHE_DB_NAME}}`, and the `database_id` the command
-prints for `{{TAG_CACHE_DB_UUID}}`. The config will not deploy until both are
-filled in.
+Record the name and the `database_id` the command
+prints.
 
 Verify it exists:
 
@@ -214,141 +168,40 @@ Verify it exists:
 pnpm wrangler d1 list
 ```
 
-#### The Schema Is Created for You
-
-You do **not** need to run any `CREATE TABLE` statements. The `populate-cache`
-step that runs as part of `opennextjs-cloudflare deploy` and
-`opennextjs-cloudflare preview` issues the `CREATE TABLE IF NOT EXISTS
-revalidations (...)` itself, along with idempotent `ALTER TABLE` statements
-that add the `stale` and `expire` columns used for stale-while-revalidate.
-
-That step throws if the `NEXT_TAG_CACHE_D1` binding is missing, which is the
-other reason the binding name matters.
-
-If you want to inspect the table after a deploy:
-
-```shell
-pnpm wrangler d1 execute my-app-cache-tags --remote \
-  --command "SELECT * FROM revalidations LIMIT 10;"
-```
-
 ### Create the Credentials Store D1 Database
 
-This is the app's own system-of-record database — the one that stores each
-installing store's encrypted API token, its users, and its registered App
-Extension. It is **separate** from the cache-tag database created above, for
-the reasons in "Supported Infrastructure": different churn, different
-durability expectations, and no reason for either to constrain the other.
-
 ```shell
-pnpm wrangler d1 create my-app-credentials
+pnpm wrangler d1 create {{APP-NAME}}-credentials
 ```
 
-Record the name for `{{CREDENTIALS_DB_NAME}}` and the printed `database_id`
-for `{{CREDENTIALS_DB_UUID}}`. Remember that this name also has to go into the
-`d1:migrate` and `d1:migrate:remote` scripts in `package.json`.
+Record the name and the printed `database_id`.
 
-Unlike the OpenNext cache bindings, `CREDENTIALS_D1` is this app's own name
-rather than one the adapter looks up. If you change it, change
-`D1_BINDING_NAME` in `src/lib/credentials-store/d1-driver/get-database.ts` to
-match.
-
-#### Apply the Schema Migrations
-
-Unlike the cache-tag database, this one's schema isn't created by OpenNext —
-it comes from the migrations in
-`src/lib/credentials-store/d1-driver/migrations/`.
-
-The scaffolded scripts run them for you: `pnpm preview` runs `d1:migrate`
-against the local database first, and `pnpm deploy` runs `d1:migrate:remote`
-against the deployed one. Both stop if the migration fails, so a deploy can't
-get ahead of its schema.
-
-To apply them by hand:
+Verify it exists:
 
 ```shell
-pnpm wrangler d1 migrations apply my-app-credentials --remote
+pnpm wrangler d1 list
 ```
 
-The `--remote` flag is what distinguishes the deployed database from the local
-one `wrangler dev` uses. The two are entirely separate, and a fresh checkout
-needs both.
+### Fill in Resource Details in Config
 
-Migrations live in `src/lib/credentials-store/d1-driver/migrations/`, next to
-the driver they belong to, rather than in a top-level `migrations/` folder.
-That's the `migrations_dir` setting on the `CREDENTIALS_D1` binding in
-`wrangler.jsonc` — it mirrors how the Postgres driver keeps its own
-migrations under `postgres-driver/migrations/`.
+Replace placeholders in `wrangler.jsonc` with the appropriate values:
 
-To add a migration later, let Wrangler generate the correctly-numbered file
-rather than hand-naming it:
+| Placeholder | Value | Where it comes from |
+| ----------- | ----- | ------------------- |
+| `{{APP_NAME}}` | Your Worker's name (appears twice) | Your choice; conventionally `package.json`'s `name` |
+| `{{CACHE_BUCKET_NAME}}` | R2 bucket name | The name you passed to `r2 bucket create` |
+| `{{TAG_CACHE_DB_NAME}}` | Cache-tag database name | The name you passed to `d1 create` |
+| `{{TAG_CACHE_DB_UUID}}` | Cache-tag `database_id` | Printed by `d1 create` |
+| `{{CREDENTIALS_DB_NAME}}` | Credentials database name | The name you passed to `d1 create` |
+| `{{CREDENTIALS_DB_UUID}}` | Credentials `database_id` | Printed by `d1 create` |
 
-```shell
-pnpm wrangler d1 migrations create my-app-credentials add_some_table
-```
+Find the `{{CREDENTIALS_DB_NAME}}` placeholder in the 
+`d1:migrate` and `d1:migrate:remote` scripts in `package.json`. Replace it in both places with
+the name of the credentials database.
 
-Check what has and hasn't been applied:
+### Generate Cloudflare Types
 
-```shell
-pnpm wrangler d1 migrations list my-app-credentials --remote
-```
-
-### Durable Objects Need No Provisioning Step
-
-There's no `wrangler ... create` command for the two Durable Objects. They're
-provisioned automatically on first deploy, from the `exports` block in
-`wrangler.jsonc`:
-
-* `DOQueueHandler` — the revalidation queue.
-* `BucketCachePurge` — the cache purge buffer.
-
-Both are declared with `storage: "sqlite"`, which they require. Both class
-names resolve against the built Worker's own exports — the OpenNext worker
-template re-exports them unconditionally, so `.open-next/worker.js` already
-provides them and there's nothing to import yourself.
-
-Note that `DOQueueHandler` calls back into this Worker through the
-`WORKER_SELF_REFERENCE` service binding. That binding already exists in
-`wrangler.jsonc` and its `service` value must stay equal to the Worker's
-`name`, or revalidation will fail at runtime while everything else appears
-healthy.
-
-### The Cache Overrides
-
-Creating the resources and declaring the bindings is not enough on its own —
-`open-next.config.ts` is what activates them. Every override defaults to
-`"dummy"` (a no-op) when omitted, so an unreferenced binding changes nothing.
-
-That file is now wired up with four overrides:
-
-* `incrementalCache: r2IncrementalCache` — payloads to R2.
-* `tagCache: d1NextTagCache` — tag revalidation timestamps to D1.
-* `queue: doQueue` — revalidations through the `DOQueueHandler` Durable Object.
-* `cachePurge: purgeCache({ type: "durableObject" })` — edge CDN purges
-  buffered through `BucketCachePurge`.
-
-#### Cache Purging Needs a Zone
-
-The `cachePurge` layer is the one piece that does **not** work on a plain
-`*.workers.dev` deploy. It ultimately calls the Cloudflare zone purge API,
-which needs two additional environment values:
-
-* `CACHE_PURGE_ZONE_ID`
-* `CACHE_PURGE_API_TOKEN`
-
-Without both, it logs `No cache zone ID or API token provided. Skipping cache
-purge.` and returns. That's a no-op, not an error — the R2, D1, and queue
-layers are unaffected and work fine without a zone.
-
-Setting those up requires a custom domain attached to a Cloudflare zone you
-control. Until then, expect that log line on every path invalidation and treat
-it as informational. When you do add a zone, `CACHE_PURGE_API_TOKEN` is a
-credential and belongs in `.secrets.production`, not in `wrangler.jsonc`.
-
-### Validate the Configuration
-
-With every placeholder in `wrangler.jsonc` filled in, check that the config
-itself is valid:
+With every placeholder in `wrangler.jsonc` filled in, run the following:
 
 ```shell
 pnpm cf-typegen
@@ -357,22 +210,10 @@ pnpm cf-typegen
 That regenerates `cloudflare-env.d.ts` and fails on a malformed config. Every
 binding you declared should appear in the generated `CloudflareEnv` interface.
 
-You can also build and run against the Workers runtime locally before
-deploying:
-
-```shell
-pnpm preview
-```
-
-That applies the migrations to the *local* D1 database, so a fresh checkout
-needs it once before previewing.
-
 ## 3. Deploy in MOCK Mode
 
 Set `DATA_MODE` to `MOCK` in `wrangler.jsonc`'s `vars` for this first
-deploy — the scaffolded example ships `MULTITENANT`, which is where you'll
-end up, but `MOCK` needs no BigCommerce credentials and no stored
-credentials:
+deploy:
 
 ```jsonc
 "vars": {
@@ -458,12 +299,27 @@ for more detail on the app profile and what each scope is for.
 
 ## 6. Set the Remaining Configuration
 
-Cloudflare splits this across two files, by sensitivity. Non-sensitive
-settings live in `wrangler.jsonc`'s `vars`, which is committed; anything
-sensitive or environment-specific goes in `.secrets.production`, which is
-gitignored and uploaded by `pnpm deploy`.
+Copy the remaining config file templates:
 
-In `wrangler.jsonc`, under `vars`:
+```shell
+cp .dev.vars.example .dev.vars
+cp .env.production.local.example .env.production.local
+```
+
+You should already have `.secrets.production`.
+
+Env vars are set in files appropriate to their purpose:
+- `wrangler.jsonc`: Set values that are non-sensitive and not
+environment-specific in `vars`. Under version control.
+- `.secrets.production`: Set values that are sensitive or environment-specific. Excluded from version control.
+- `.env.production.local`: This file overrides other `.env` files for the _build_ step of a deploy. Any vars the production
+requires during build must be duplicated here. Excluded from 
+version control.
+- `.dev.vars`: Values used when running a Cloudflare preview
+with `pnpm run preview`. This is a core Cloudflare/Wrangler
+convention. Excluded from version control.
+
+In `wrangler.jsonc`, set in `vars`:
 
 | Variable | Value |
 | --- | --- |
@@ -471,8 +327,16 @@ In `wrangler.jsonc`, under `vars`:
 | `CREDENTIALS_STORE_DRIVER` | `D1` |
 | `CACHE_ENABLED` | `TRUE` or `FALSE` |
 | `DEVELOPER_NAME`, `SUPPORT_EMAIL`, `SUPPORT_URL`, `SUPPORT_PHONE`, `DEVELOPER_LOGO_FILENAME` | Your own branding, shown in the app shell |
+| `LOG_API_REQUESTS` | `TRUE` or `FALSE` |
+| `ERROR_LOGGING_ENABLED` | `TRUE` or `FALSE` |
 
-In `.secrets.production` (see `.secrets.production.example`):
+In `.env.production.local`, set (matching `wrangler.jsonc`):
+
+| Variable | Value |
+| --- | --- |
+| `CREDENTIALS_STORE_DRIVER` | `D1` |
+
+In `.secrets.production`, set:
 
 | Variable | Value |
 | --- | --- |
@@ -499,31 +363,8 @@ callback URL. It's the source of truth for the OAuth `redirect_uri` and is
 never derived from the incoming request, since behind Cloudflare's proxy the
 observed host isn't guaranteed to match the public origin BigCommerce called.
 
-### Select the D1 Driver
-
-Creating the database isn't enough on its own — the app has three
-credentials-store drivers and has to be told to use this one. That takes two
-settings, in two different places, because they're read at two different
-times:
-
-* `CREDENTIALS_STORE_DRIVER` in `wrangler.jsonc`'s `vars` — read at
-  **runtime** by the deployed Worker, and what actually selects the driver.
-* `CREDENTIALS_STORE_DRIVER` in `.env.production.local` — read at **build**
-  time by `next.config.ts`, which stubs out every driver except the one named
-  there. `wrangler.jsonc` can't reach this: its `vars` populate the Worker's
-  runtime env, long after `next build` has finished.
-
-Both must be `D1`. Nothing enforces that they agree, and disagreement gives
-you a bundle built for one driver and a runtime asking for another. See
-`.env.production.local.example` for the copy-and-edit template.
-
-D1 is the only driver that works on Workers. `SQLITE` writes to a local file
-the runtime has no persistent equivalent of, and `POSTGRES` pulls in `pg`,
-which cannot be bundled for workerd at all.
-
-Note that the driver is only actually exercised in `DATA_MODE=MULTITENANT` —
-`MOCK` and `STATIC` never look up a stored credential, so a deploy in either
-of those modes will appear healthy whether or not this database exists.
+To use `pnpm run preview`, set the same vars from `.secrets.production`
+in `.dev.vars`, using different values as appropriate.
 
 ## 7. Redeploy and Install
 
@@ -606,6 +447,52 @@ aware only one can be `APP_ORIGIN`. Requests arriving on the other will still
 render, but redirects and the OAuth `redirect_uri` will point at
 `APP_ORIGIN` — which is why installs must be done against the canonical
 domain.
+
+## Further Info
+
+### Credentials DB Migrations
+
+Migrations with the schema for the credentials storage are in
+`src/lib/credentials-store/d1-driver/migrations/`.
+
+The scaffolded scripts run them for you: `pnpm preview` runs `d1:migrate`
+against the local database, and `pnpm deploy` runs `d1:migrate:remote`
+against the deployed one. Both stop if the migration fails, so a deploy can't
+get ahead of its schema.
+
+To apply them by hand:
+
+```shell
+pnpm wrangler d1 migrations apply {{APP-NAME}}-credentials --remote
+```
+
+### The Cache Overrides
+
+`open-next.config.ts` implements the proper overrides for
+caching on Cloudflare infrastructure.
+
+#### Cache Purging Needs a Zone
+
+The `cachePurge` layer is the one piece that does **not** work on a plain
+`*.workers.dev` deploy. It ultimately calls the Cloudflare zone purge API,
+which needs two additional environment values:
+
+* `CACHE_PURGE_ZONE_ID`
+* `CACHE_PURGE_API_TOKEN`
+
+Without both, it logs `No cache zone ID or API token provided. Skipping cache
+purge.` and returns. That's a no-op, not an error — the R2, D1, and queue
+layers are unaffected and work fine without a zone.
+
+Setting those up requires a custom domain attached to a Cloudflare zone you
+control. Until then, expect that log line on every path invalidation and treat
+it as informational. When you do add a zone, `CACHE_PURGE_API_TOKEN` is a
+credential and belongs in `.secrets.production`, not in `wrangler.jsonc`.
+
+
+
+
+
 
 ## Reference
 

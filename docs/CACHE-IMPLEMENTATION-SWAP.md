@@ -9,20 +9,6 @@ This document explains how that conversion works and what you have to keep up
 to date when you change the app's caching. For what the two implementations
 *are*, see the caching section of [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-## Why There Are Two
-
-Cache Components (`cacheComponents: true`) is the implementation this app
-demonstrates: `use cache` boundaries in components and data-access functions,
-each selecting a lifetime profile with `cacheLife()` and tagging itself with
-`cacheTag()`.
-
-That doesn't work on Cloudflare Workers. Cache Components implies Partial
-Prerendering, and the PPR staged-render path corrupts streamed HTML when the
-app is adapted by `@opennextjs/cloudflare` — chunks of the RSC flight payload
-are emitted outside their `<script>` wrapper and render as raw JSON. So the
-Cloudflare target turns the flag off and caches at the `fetch()` level instead,
-passing a profile and tags to the REST client rather than wrapping components.
-
 The caching *strategy* is the same either way: the same two lifetime profiles
 from `lib/cache/cache-profiles.ts`, and the same cache tags.
 
@@ -72,28 +58,13 @@ places:
 * Fetch-level caching attaches that same tag to the `apiClient.get()` call
   inside `fetchCustomers`, in a different file entirely.
 
-Only two of the six cacheable fetches in this app have their tags declared in
-the same function that issues them. For the rest, the mapping is real
-knowledge that has to be written down, which is what
-`scripts/cache-swap/fetch-cache-manifest.json` is for.
+The mapping in `scripts/cache-swap/fetch-cache-manifest.json` expresses the entry points and cache profiles/tags.
 
 ### Nothing Cache Components-Only May Survive
 
 After both halves run, the swap scans `searchDirs` again and fails if it finds
 any API that only works under Cache Components — `"use cache"`, `cacheLife()`,
-`cacheTag()`, or `updateTag()`:
-
-```
-[cache-swap] Cache Components code survived the swap:
-  src/.../retry-app-extension-registration.ts:44 updateTag(`app-extension-status:${storeHash}`);
-Wrap it in @cache-components-only markers so the swap removes it.
-```
-
-This catches the one thing markers can't: a construct nobody wrapped. Left
-behind, it would still compile — `updateTag` is a real import either way — and
-the only symptom would be caching that quietly does nothing, or a runtime
-error long after the deploy. Failing the swap turns that into a message naming
-the file and line.
+`cacheTag()`, or `updateTag()`.
 
 ## The Manifest
 
@@ -158,63 +129,6 @@ per-record ids *after* its fetch resolves, but a fetch tag has to be known
 *before* the request is issued. So under fetch caching a listing carries only
 the shared tag, and every mutation has to revalidate it.
 
-## Changing the App's Caching
-
-### Adding a `use cache` Boundary
-
-Wrap the directive, `cacheLife()`, and `cacheTag()` calls in
-`@cache-components-only` markers. Nothing else to do — the swap will remove
-them. The component simply won't be cached on a fetch-level target, which is
-the correct outcome if the data it renders isn't fetched through the REST
-client.
-
-Forget the markers and the swap fails with the leftover check rather than
-producing a broken app, so this is hard to get wrong quietly. The same applies
-to an `updateTag()` call added anywhere under `searchDirs`.
-
-### Making a New Fetch Cacheable
-
-Two steps, because the two implementations need different things:
-
-1. Add the `use cache` block to the data-access function, inside markers.
-2. Add a `fetchCaching` entry naming that function, its profile, and its tags.
-
-Skipping the second step means the fetch is cached under Cache Components but
-not on fetch-level targets. Unlike a missing marker, nothing detects this —
-the app builds and runs, just without that cache entry on Cloudflare — so it's
-worth checking the manifest whenever you add a cache tag.
-
-### Renaming a Cached Function
-
-Update the `function` field in the manifest. The swap fails loudly if you
-don't:
-
-```
-[cache-swap] src/lib/.../channels-api.ts has no top-level function named
-"fetchChannels". Update scripts/cache-swap/fetch-cache-manifest.json if it was
-renamed or removed.
-```
-
-That's deliberate. An unmatched manifest entry is always an error and never a
-skip, so drift surfaces immediately instead of quietly leaving a fetch
-uncached.
-
-### Keeping the Options Object
-
-Every cacheable `apiClient.get()` call is written with an options object, even
-when it has no other properties:
-
-```ts
-const { data: body } = await apiClient.get<V3ListResponse<Channel>>(CHANNELS_PATH, {
-});
-```
-
-That empty object looks redundant, and it is — under Cache Components. It's
-there so the swap only ever has to *insert a property* into an existing object,
-never synthesize the object and rewrite the call. Don't collapse it to
-`get(CHANNELS_PATH)`; the swap will fail with a message telling you to put it
-back.
-
 ## Running the Swap
 
 Normally a hosting profile's scaffold runs it (see
@@ -240,6 +154,97 @@ The swap's own leftover check (above) catches unwrapped Cache Components code.
 Afterwards, run `pnpm lint` and a typecheck too — between them they catch the
 rest: an import left unused after a removal, or one missing after an
 addition.
+
+## Checklist: Adding Caching Without Breaking the Swap
+
+Every cache you add has to work under both implementations, and the tooling
+can only infer half of that. Work through whichever case applies.
+
+### Caching a Component
+
+1. Wrap the whole Cache Components block in markers — the directive,
+   `cacheLife()`, and every `cacheTag()`:
+
+   ```ts
+   // @cache-components-only:start
+   "use cache: remote";
+   cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
+   cacheTag(CUSTOMERS_LIST_TAG);
+   // @cache-components-only:end
+   ```
+
+2. Wrap the imports it needs in their own marker block. Group them at the end
+   of the import list so the block stays contiguous:
+
+   ```ts
+   // @cache-components-only:start
+   import { cacheLife, cacheTag } from "next/cache";
+   import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+   import { CUSTOMERS_LIST_TAG } from "@/lib/gift-certs-manager/customers/cache-tags";
+   // @cache-components-only:end
+   ```
+
+3. Nothing goes in the manifest. A component boundary has no fetch-level
+   equivalent, so it's simply absent on a fetch-level target — correct, as long
+   as the data it renders is cached at the fetch that supplies it.
+
+### Caching a Data-Access Function
+
+1. Mark the Cache Components block and its imports, as above.
+
+2. Give its `apiClient.get()` call an options object if it doesn't have one,
+   even when empty. The swap inserts a property; it never creates the object:
+
+   ```ts
+   const { data } = await apiClient.get<Thing>(THINGS_PATH, {
+   });
+   ```
+
+3. Add a `fetchCaching` entry to
+   `scripts/cache-swap/fetch-cache-manifest.json`:
+
+   ```jsonc
+   {
+     "file": "src/lib/gift-certs-manager/things/things-api.ts",
+     "function": "fetchThings",
+     "profile": "CACHE_PROFILE_STANDARD",
+     "tags": ["THINGS_LIST_TAG"]
+   }
+   ```
+
+4. Make sure every identifier in `tags` will be in scope after the swap. The
+   `profile` import is added for you; anything else needs
+   `addImportSpecifiers`, or `declareConstants` for a tag constant that only
+   the fetch implementation uses.
+
+5. Check the function holds exactly one `apiClient.get()`. Two is ambiguous and
+   the swap refuses to guess — split the function if you need both cached.
+
+### Invalidating a New Tag
+
+1. Wrap the `updateTag()` call in markers. It has no fetch-level counterpart:
+   the swap rewrites invalidations from the manifest, not from your call.
+
+2. If the mutation should also invalidate a list tag under fetch caching, add
+   the tag function to `companionTags` in the `invalidations` entry. Keying on
+   the function name rather than the full expression means it keeps working
+   when the argument changes.
+
+### Before You Commit
+
+* Run the swap on a scratch branch and read the diff. It's the only way to see
+  what the fetch-level implementation actually becomes.
+* Then run `pnpm lint` and a typecheck **on the swapped tree**. An unused
+  import after a removal or a missing one after an addition shows up there and
+  nowhere else.
+* `git checkout` to throw the swap away. It's one-directional, so never commit
+  its output to a branch that also carries the Cache Components version.
+
+The two halves fail very differently, which is worth internalizing. Forget a
+marker and the leftover check fails the swap, naming the file and line.
+Forget the manifest entry and nothing complains: the app builds, lint and
+typecheck are clean, and the fetch is simply never cached on Cloudflare.
+That's the one mistake here you have to catch by reading.
 
 ## Reference
 

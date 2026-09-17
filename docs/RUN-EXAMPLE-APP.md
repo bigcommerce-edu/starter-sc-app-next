@@ -106,6 +106,6 @@ Two providers have built-in support today: **Vercel**
 (`pnpm scaffold vercel`), paired with Neon Postgres, and **Cloudflare
 Workers** (`pnpm scaffold cloudflare`), paired with D1.
 
-See [VERCEL-DEPLOYMENT.md](./VERCEL-DEPLOYMENT.md) or
-[CLOUDFLARE-DEPLOYMENT.md](./CLOUDFLARE-DEPLOYMENT.md) for the full
-deployment walkthrough.
+See the dedicated deployment guides for full walkthroughs:
+- [VERCEL-DEPLOYMENT.md](./VERCEL-DEPLOYMENT.md)
+- [CLOUDFLARE-DEPLOYMENT.md](./CLOUDFLARE-DEPLOYMENT.md)

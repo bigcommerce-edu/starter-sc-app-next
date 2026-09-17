@@ -12,9 +12,8 @@ import { jsonError } from "@/lib/errors/json-error";
 //
 // Sends Cache-Control: no-store rather than relying solely on the banner's
 // own fetch(url, { cache: "no-store" }) — a GET Route Handler's response is
-// otherwise eligible for the browser's default HTTP caching, a different,
-// browser-level cache from the cacheTag/updateTag machinery in
-// app-extension-status.ts, which only governs the server's own render cache.
+// otherwise eligible for the browser's default HTTP caching, which would
+// keep serving a stale status after a successful registration retry.
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const storeHash = request.nextUrl.searchParams.get("storeHash") ?? undefined;
 

@@ -2,6 +2,7 @@ import { ApiMutationOptions, ApiRequestOptions, ApiResponse, BcRestApiClient } f
 import { StoreApiCredentials } from "@/lib/bc-api-client/types";
 import { API_REQUEST_TIMEOUT_MS } from "@/lib/bc-api-client/request-timeout";
 import { retryOnRateLimit } from "@/lib/bc-api-client/rate-limit";
+import { toFetchCacheOptions } from "@/lib/cache/cache-profiles";
 import { AppError } from "@/lib/errors/app-error";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
@@ -45,10 +46,7 @@ async function parseJsonResponse<TResponse>(response: Response, path: string): P
   }
 }
 
-// Off by default (a developer diagnostic, gated by LOG_API_REQUESTS). Also
-// doubles as a cache-observability signal: a fetch only happens on a
-// `use cache` miss, so a logged request means that cache entry was missing
-// or expired.
+// Off by default (a developer diagnostic, gated by LOG_API_REQUESTS).
 function isApiRequestLoggingEnabled(): boolean {
   return process.env.LOG_API_REQUESTS?.toLowerCase() === "true";
 }
@@ -93,6 +91,7 @@ export class RestApiClient implements BcRestApiClient {
             Accept: "application/json",
           },
           signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS),
+          ...toFetchCacheOptions(options.cache),
         }),
       );
     } catch (error) {

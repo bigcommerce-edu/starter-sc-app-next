@@ -71,52 +71,6 @@ This starter app clearly separates its example use case from core libraries that
 
 If you just want to get started building your own app on this foundation, follow [docs/USING-AS-A-STARTER.md](docs/USING-AS-A-STARTER.md) for a guide on what to remove and update.
 
-## BigDesign and React 19
-
-> [!WARNING]
-> **BigDesign does not officially support React 19.** 
-
-All three BigDesign packages (`@bigcommerce/big-design`,
-`@bigcommerce/big-design-theme`, and `@bigcommerce/big-design-icons`)
-declare a React 18 peer dependency. This app runs **React 19** (required by
-Next 16), so every one of those peer ranges is unsatisfied. Installing
-without intervention fails or emits loud peer warnings, depending on the
-package manager.
-
-Two things in this repo work around that, and **both must stay in place**:
-
-* **The peer dependency override** — `pnpm-workspace.yaml`'s
-  `peerDependencyRules.allowedVersions` declares React 19 acceptable for
-  each of the three packages, which is what lets `pnpm install` resolve
-  cleanly. Removing those entries breaks a fresh install.
-* **A patched Modal** — `patchedDependencies` applies
-  `patches/@bigcommerce__big-design+modal-removechild-detached-node.patch`,
-  which guards `Modal`'s unmount cleanup with a
-  `modalContainer.parentNode === document.body` check before calling
-  `document.body.removeChild`. React 19 changed unmount ordering enough
-  that the container can already be detached by the time that cleanup runs,
-  making the unguarded `removeChild` throw. This is a real React 19
-  incompatibility in shipped BigDesign code, not just a metadata
-  disagreement.
-
-The override is an assertion that the libraries *do* work on React 19, not
-a guarantee — as the patch above shows, the assertion isn't free. Treat
-React-19-specific breakage in BigDesign components (especially around
-mount/unmount lifecycles and portals) as plausible rather than surprising,
-and check whether a newer BigDesign has fixed it upstream before writing a
-new patch.
-
-Practical consequences:
-
-* **Use `pnpm`.** `npm`/`yarn` don't read `pnpm-workspace.yaml`, so they see
-  neither the peer override nor the patch. `npm install` will fail on the
-  peer conflict without `--legacy-peer-deps`, and even when forced through,
-  it silently skips the Modal patch.
-* **Don't hand-edit `pnpm-workspace.yaml` to "clean up" the peer rules.**
-* **Re-check the patch when bumping BigDesign.** A version that fixes the
-  Modal bug upstream makes the patch fail to apply, which surfaces as an
-  install error rather than a silent no-op.
-
 ## The Gift Certificates Manager Example
 
 The included feature is a working admin UI for a store's gift certificates,
@@ -157,3 +111,11 @@ mirror the real API's quirks, and per-request memoization.
 
 [ARCHITECTURE.md](docs/ARCHITECTURE.md) covers the non-obvious decisions in
 this feature in detail.
+
+## Hosting Provider Support
+
+The app comes with built-in scaffolding supporting multiple
+hosting providers. See the dedicated guides:
+
+- [Vercel Deployment Guide](./docs/VERCEL-DEPLOYMENT.md)
+- [Cloudflare Deployment Guide](./docs/CLOUDFLARE-DEPLOYMENT.md)

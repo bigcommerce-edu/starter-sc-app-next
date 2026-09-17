@@ -233,8 +233,11 @@ the driver creates its tables on demand.
 
 SQLite is a local-development choice only. It's a single file on one
 machine's disk, so it can't be shared across the multiple instances a real
-deployment runs. Switching to Postgres for a hosted environment is covered
-in the [Vercel deployment guide](./VERCEL-DEPLOYMENT.md).
+deployment runs. 
+
+Switching to a production DB provider for a hosted environment is covered in:
+- [Vercel deployment guide](./VERCEL-DEPLOYMENT.md)
+- [Cloudflare deployment guide](./CLOUDFLARE-DEPLOYMENT.md)
 
 Stored access tokens are encrypted with `CREDENTIALS_ENCRYPTION_KEY`. If you
 change that value, previously stored tokens can no longer be decrypted —

@@ -3,8 +3,8 @@
 import { updateTag } from "next/cache";
 import { ActionResult } from "@/lib/actions/action-result";
 import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
-import { addToCustomerStoreCredit, fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";
 import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+import { addToCustomerStoreCredit, fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";
 import {
   addToGiftCertificateBalance as addToGiftCertificateBalanceRequest,
   debitGiftCertificateForTransfer,
@@ -266,9 +266,9 @@ export async function transferGiftCertificateBalanceToStoreCredit(
     };
   }
 
-  // Both resources were mutated on the success path, so both tags need
-  // invalidating: the certificate's own balance/status, and this customer's
-  // store credit balance shown on their detail page.
+  // Both resources were mutated on the success path, so both sets of tags
+  // need invalidating: the certificate's own balance/status, and this
+  // customer's store credit balance shown on their detail page.
   updateTag(giftCertificateTag(id));
   updateTag(customerTag(customer.id));
 

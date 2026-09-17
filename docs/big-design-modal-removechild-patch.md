@@ -47,9 +47,12 @@ This app's navigation pattern (`AppLink`s that push a new route rather than
 `router.back()`) means "back" navigation mounts a genuinely new instance of
 the list page's component tree on every visit, so a fresh
 `GiftCertificateFilters`/`Modal` pairing mounts and unmounts each time.
-Combined with React 19's rendering/commit timing, an old `Modal` instance's
-cleanup can fire after its container node has already been detached some
-other way, and the unconditional `removeChild` throws.
+Combined with React 19's rendering/commit timing (this app runs React 19
+against BigDesign's declared React 18 peer dependency — see the
+`peerDependencyRules.allowedVersions` override in `pnpm-workspace.yaml`),
+an old `Modal` instance's cleanup can fire after its container node has
+already been detached some other way, and the unconditional
+`removeChild` throws.
 
 ## Fix
 
@@ -70,16 +73,6 @@ Managed via `pnpm patch` / `pnpm patch-commit`, and registered in
 `pnpm-workspace.yaml` under `patchedDependencies`, so it's re-applied
 automatically on every `pnpm install` — no manual step is needed to keep it
 in place.
-
-Two consequences worth knowing:
-
-* **Install with `pnpm`.** `npm` and `yarn` don't read
-  `pnpm-workspace.yaml`, so they install BigDesign unpatched and the crash
-  comes back. `package.json`'s `packageManager` field declares the
-  expectation, but only Corepack-aware tooling enforces it.
-* **Re-check the patch when bumping BigDesign.** A version that fixes this
-  upstream makes the patch fail to apply, which surfaces as an install error
-  rather than a silent no-op — so you'll know to drop it.
 
 ## Alongside this patch
 

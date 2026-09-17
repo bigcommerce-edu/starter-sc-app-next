@@ -1,16 +1,14 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { getGraphqlApiClient } from "@/lib/bc-api-client/get-graphql-api-client";
 import { ActionResult } from "@/lib/actions/action-result";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
+import { appExtensionStatusTag } from "@/lib/gift-certs-manager/app-extension-status";
 import { findOrCreateAppExtension } from "@/lib/gift-certs-manager/register-app-extension";
 import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/session/is-authorized-for-store";
 import { toSafeMessage } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
-
-// @cache-components-only:start
-import { updateTag } from "next/cache";
-// @cache-components-only:end
 
 // User-triggered retry for a failed install-time registration, colocated
 // with AppExtensionStatusBanner rather than in lib/. Shares
@@ -44,9 +42,7 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
     };
   }
 
-  // @cache-components-only:start
-  updateTag(`app-extension-status:${storeHash}`);
-  // @cache-components-only:end
+  updateTag(appExtensionStatusTag(storeHash));
 
   return { success: true, message: "App extension registration succeeded" };
 }

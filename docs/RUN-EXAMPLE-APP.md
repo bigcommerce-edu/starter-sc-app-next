@@ -102,10 +102,9 @@ see, which is what the Postgres driver
 Hosting-specific tooling is opt-in via `pnpm scaffold <profile>` rather than
 baked into the app, a strategy that supports your ability to target any hosting provider you choose.
 
-Two providers have built-in support today: **Vercel**
-(`pnpm scaffold vercel`), paired with Neon Postgres, and **Cloudflare
-Workers** (`pnpm scaffold cloudflare`), paired with D1.
+**Vercel** is
+the provider with built-in support today (`pnpm scaffold vercel`), paired
+with Neon Postgres.
 
-See the dedicated deployment guides for full walkthroughs:
-- [VERCEL-DEPLOYMENT.md](./VERCEL-DEPLOYMENT.md)
-- [CLOUDFLARE-DEPLOYMENT.md](./CLOUDFLARE-DEPLOYMENT.md)
+See [VERCEL-DEPLOYMENT.md](./VERCEL-DEPLOYMENT.md) for the full
+deployment walkthrough.

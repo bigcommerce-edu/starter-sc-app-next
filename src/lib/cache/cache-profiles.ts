@@ -1,11 +1,20 @@
-// The app's cache lifetime profiles and cache-on/off switch
+// The app's cache lifetime profiles, and the switch that turns caching on and
+// off. Every `use cache` boundary selects one by calling
+// `cacheLife(cacheProfile(CACHE_PROFILE_STANDARD))`.
 
-// A cache lifetime, in seconds.
+// A cache lifetime, in seconds. Structurally compatible with Next's own
+// CacheLife type, but all three fields are required: every profile here sets
+// all of them, and leaving one implicit would silently inherit Next's default
+// rather than this app's intent.
+//
+// - stale: how long a client may serve its own cached copy without rechecking.
+// - revalidate: how long before the server refreshes the entry in the
+//   background.
+// - expire: how long before the entry is treated as unusable and a read has to
+//   wait for fresh data. Next requires this to exceed revalidate.
 export interface CacheLifetimeProfile {
-  revalidate: number;
-
-  // These two values are used only when `cacheComponents` is the implementation.
   stale: number;
+  revalidate: number;
   expire: number;
 }
 
@@ -14,18 +23,27 @@ function isCachingEnabled(): boolean {
   return process.env.CACHE_ENABLED?.toLowerCase() === "true";
 }
 
+// Cache Components stays enabled either way — the `use cache` directives and
+// cacheTag/updateTag calls throughout the app are compile-time constructs that
+// can't be conditionally applied (a directive nested in an `if` is silently
+// ignored, not honored), and turning cacheComponents off entirely would stop
+// the app compiling. The lever that does work is the lifetime: a profile with
+// revalidate: 0 makes every entry already-expired by the time the next request
+// reads it, so nothing is ever reused and each request re-fetches. Next
+// requires expire > revalidate, hence 1 rather than 0.
+const CACHE_DISABLED_PROFILE: CacheLifetimeProfile = { stale: 0, revalidate: 0, expire: 1 };
+
 // Profile names
 export const CACHE_PROFILE_STANDARD = "standard";
 export const CACHE_PROFILE_EXTENDED = "extended";
 
 // This is an admin-privileged app, so most fetches use a short lifetime —
-// changes made directly in the BigCommerce control panel, or by another
-// admin, shouldn't stay stale for long even where no cache tag invalidates
-// them.
-const STANDARD_PROFILE: CacheLifetimeProfile = { revalidate: 300, stale: 300, expire: 300 };
+// changes made directly in the BigCommerce control panel, or by another admin,
+// shouldn't stay stale for long even where no cache tag invalidates them.
+const STANDARD_PROFILE: CacheLifetimeProfile = { stale: 300, revalidate: 300, expire: 300 };
 
 // For data that changes very infrequently
-const EXTENDED_PROFILE: CacheLifetimeProfile = { revalidate: 600, stale: 600, expire: 600 };
+const EXTENDED_PROFILE: CacheLifetimeProfile = { stale: 600, revalidate: 600, expire: 600 };
 
 const PROFILES = {
   [CACHE_PROFILE_STANDARD]: STANDARD_PROFILE,
@@ -34,37 +52,7 @@ const PROFILES = {
 
 export type CacheProfile = keyof typeof PROFILES;
 
-// ======= Cache Components implementation =======
-// A profile with
-// revalidate: 0 makes every entry already-expired by the time the next request
-// reads it, so nothing is ever reused and each request re-fetches. Next
-// requires expire > revalidate, hence 1 rather than 0.
-const CACHE_DISABLED_PROFILE: CacheLifetimeProfile = { revalidate: 0, stale: 0, expire: 1 };
-// ======= End of Cache Components implementation =======
-
-
-// ======= Fetch caching implementation =======
-// Marks a response as cacheable under the given tags and lifetime.
-export interface CacheOptions {
-  profile: CacheProfile;
-  tags: string[];
-}
-
-// Translates CacheOptions into the `next` fetch option Next.js reads. Returns
-// no options at all when there's nothing to cache or caching is off — fetch
-// caching is opt-in, so an unannotated request isn't cached. That's why call
-// sites can always pass their tags without checking CACHE_ENABLED themselves.
-export function toFetchCacheOptions(cache: CacheOptions | undefined): RequestInit {
-  if (!cache || !isCachingEnabled()) {
-    return {};
-  }
-
-  return { next: { revalidate: cacheProfile(cache.profile).revalidate, tags: cache.tags } };
-}
-// ======= End of Fetch caching implementation =======
-
-
-// The lifetime a given profile resolves to.
+// What every `use cache` boundary passes to cacheLife
 export function cacheProfile(profile: CacheProfile): CacheLifetimeProfile {
   return isCachingEnabled() ? PROFILES[profile] : CACHE_DISABLED_PROFILE;
 }

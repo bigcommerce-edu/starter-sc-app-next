@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.1.3
+
+_Based on Next.js 16.2.9_
+
+### Summary
+
+Two non-structural fixes carried over from `main`: a performance fix to
+credential encryption/decryption, and a README cleanup. No lab or
+enhancement was added, removed, or renumbered, and no dependency versions
+changed.
+
+### Changes
+
+- Replaced `scrypt` with a cached SHA-256 key derivation in
+  `src/lib/credentials-store/encryption.ts` (part of the boilerplate, not a
+  lab step). `scrypt` is deliberately slow, which bought no security against
+  a machine-generated secret while costing real per-call latency; `decrypt`
+  falls back to the old `scrypt`-derived key so credentials written before
+  the switch stay readable.
+- Removed the "BigDesign and React 19" warning section from the project
+  README, which was addressing incompatibility concerns that no longer
+  apply.
+
 ## 1.1.2
 
 _Based on Next.js 16.2.9_

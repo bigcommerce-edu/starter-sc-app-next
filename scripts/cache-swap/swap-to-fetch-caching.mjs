@@ -328,7 +328,7 @@ function applyInvalidations(source, entry) {
   const lines = updated.split("\n");
   const result = [];
 
-  for (const line of lines) {
+  for (const [index, line] of lines.entries()) {
     const call = line.match(new RegExp(`^(\\s*)${to}\\((.+)\\);\\s*$`));
 
     if (!call) {
@@ -338,8 +338,9 @@ function applyInvalidations(source, entry) {
 
     const [, indent, argument] = call;
 
-    // Skip a call that already carries the extra argument (idempotence).
-    if (extraArgs.some((extra) => argument.endsWith(extra))) {
+    // Skip a call that already carries the extra argument, when there is one
+    // to carry (idempotence).
+    if (extraArgs.length > 0 && extraArgs.some((extra) => argument.endsWith(extra))) {
       result.push(line);
       continue;
     }
@@ -349,8 +350,18 @@ function applyInvalidations(source, entry) {
     const tagFunction = argument.match(/^(\w+)\(/)?.[1];
     const companion = entry.companionTags?.[tagFunction];
 
-    if (companion) {
-      result.push(`${indent}${to}(${companion}${suffix});`);
+    if (!companion) {
+      continue;
+    }
+
+    // Only append the companion if the next line isn't already it. Without
+    // this the rewrite is not idempotent when `to` matches `from` and there
+    // are no extraArgs to detect an already-processed call by — a second run
+    // would add a duplicate companion after every record-tag call.
+    const companionCall = `${indent}${to}(${companion}${suffix});`;
+
+    if (lines[index + 1]?.trimEnd() !== companionCall.trimEnd()) {
+      result.push(companionCall);
     }
   }
 
@@ -369,7 +380,10 @@ function applyInvalidations(source, entry) {
 // catches the failure mode markers can't: a construct nobody wrapped, which
 // would otherwise be left behind silently and only surface as a runtime error
 // (or, worse, as caching that quietly does nothing).
-const CACHE_COMPONENTS_ONLY_API = ['"use cache', "cacheLife(", "cacheTag(", "updateTag("];
+// `updateTag` is deliberately absent: both implementations invalidate with it.
+// It reaches fetch-cached entries through Next's incremental cache, not only
+// through `use cache` boundaries, so it is valid on either side of the swap.
+const CACHE_COMPONENTS_ONLY_API = ['"use cache', "cacheLife(", "cacheTag("];
 
 function findLeftovers(files) {
   const leftovers = [];

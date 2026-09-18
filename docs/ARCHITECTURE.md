@@ -442,7 +442,7 @@ sets `cacheComponents` to `false`. That's necessary because Cache Components
 In that implementation, data-fetching functions pass a `cache` option to the
 REST client naming a profile and the tags the response should be stored
 under, and the client turns that into Next's `next: { revalidate, tags }`
-fetch option. Mutations call `revalidateTag` rather than `updateTag`.
+fetch option.
 
 Detail fetches tag per record (`gift-cert:<id>`, `customer:<id>`); list
 fetches carry only the shared list tag, since fetch tags have to be known

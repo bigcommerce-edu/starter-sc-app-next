@@ -106,13 +106,13 @@ would be ambiguous, and the swap fails rather than guessing which one to cache.
 
 ### `invalidations`
 
-Cache Components invalidates with `updateTag()`; fetch caching uses
-`revalidateTag()` with an explicit profile. This section rewrites those calls
-and adds the list-tag invalidations that only fetch caching needs:
+Both implementations invalidate with `updateTag()`, so the call itself is left
+alone. What this section adds is the list-tag invalidations that only fetch
+caching needs:
 
 ```jsonc
 {
-  "rewriteCalls": { "from": "updateTag", "to": "revalidateTag", "extraArgs": ["\"max\""] },
+  "rewriteCalls": { "from": "updateTag", "to": "updateTag" },
   "companionTags": {
     "giftCertificateTag": "GIFT_CERTIFICATES_LIST_TAG",
     "customerTag": "CUSTOMERS_LIST_TAG"
@@ -120,9 +120,20 @@ and adds the list-tag invalidations that only fetch caching needs:
 }
 ```
 
+`rewriteCalls` is a no-op here, kept only because `applyInvalidations` reads it
+unconditionally. It stays in the manifest so a future divergence between the
+two implementations has somewhere to go.
+
 `companionTags` keys on the *tag function name*, so it survives changes to the
-argument expression. Every `revalidateTag(giftCertificateTag(anything))` gets a
-`revalidateTag(GIFT_CERTIFICATES_LIST_TAG)` after it.
+argument expression. Every `updateTag(giftCertificateTag(anything))` gets an
+`updateTag(GIFT_CERTIFICATES_LIST_TAG)` after it.
+
+Do not reintroduce a rewrite to `revalidateTag(tag, "max")` here. `"max"` sets
+the tag's cache lifetime to its maximum, so the row written to the tag cache
+carries an `expire` a year in the future — and the Cloudflare D1 tag cache
+tests `expire <= now` before it ever compares `revalidatedAt`, so such a row
+never counts as revalidated and every read keeps serving the stale payload.
+`updateTag` passes no profile, which writes `expire: now`.
 
 Those companions exist because a `use cache` boundary can tag itself with
 per-record ids *after* its fetch resolves, but a fetch tag has to be known

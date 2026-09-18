@@ -87,18 +87,17 @@
     {
       "file": "src/app/store/[storeHash]/gift-certs/[id]/actions.ts",
       "//": [
-        "Cache Components uses updateTag; fetch caching uses revalidateTag with an",
-        "explicit profile. The list tags have no Cache Components counterpart: a",
-        "`use cache` boundary can tag itself with per-record ids after its fetch",
-        "resolves, but a fetch tag has to be known before the request is issued, so",
-        "listings carry only the shared tag and every mutation has to revalidate it."
+        "Both implementations invalidate with updateTag, so rewriteCalls is a",
+        "no-op kept only because applyInvalidations reads it unconditionally —",
+        "the real work here is companionTags below. The list tags have no Cache",
+        "Components counterpart: a `use cache` boundary can tag itself with",
+        "per-record ids after its fetch resolves, but a fetch tag has to be known",
+        "before the request is issued, so listings carry only the shared tag and",
+        "every mutation has to invalidate it explicitly."
       ],
       "rewriteCalls": {
         "from": "updateTag",
-        "to": "revalidateTag",
-        "extraArgs": [
-          "\"max\""
-        ]
+        "to": "updateTag"
       },
       "companionTags": {
         "giftCertificateTag": "GIFT_CERTIFICATES_LIST_TAG",

@@ -16,8 +16,8 @@
     "deploy": "pnpm run d1:migrate:remote && wrangler secret bulk .secrets.production && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "d1:migrate": "wrangler d1 migrations apply {{CREDENTIALS_DB_NAME}} --local",
-    "d1:migrate:remote": "wrangler d1 migrations apply {{CREDENTIALS_DB_NAME}} --remote"
+    "d1:migrate": "wrangler d1 migrations apply starter-sc-app-next-credentials --local",
+    "d1:migrate:remote": "wrangler d1 migrations apply starter-sc-app-next-credentials --remote"
   },
   "dependencies": {
     "@bigcommerce/big-design": "5.0.0",

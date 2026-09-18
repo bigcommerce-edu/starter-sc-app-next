@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "{{APP_NAME}}",
+  "name": "starter-sc-app-next",
   "compatibility_date": "2024-12-30",
   "compatibility_flags": [
     // Enable Node.js API
@@ -53,7 +53,7 @@
     {
       "binding": "WORKER_SELF_REFERENCE",
       // The service should match the "name" of your worker
-      "service": "{{APP_NAME}}"
+      "service": "starter-sc-app-next"
     }
   ],
   // ===== OPENNEXT CACHE INFRASTRUCTURE =====
@@ -70,7 +70,7 @@
   "r2_buckets": [
     {
       "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "{{CACHE_BUCKET_NAME}}"
+      "bucket_name": "starter-sc-app-next-cache"
     }
   ],
   // Two deliberately separate databases: high-churn cache bookkeeping, and the
@@ -81,15 +81,15 @@
       // revalidateTag() work. Its `revalidations` table is created for you by
       // the populate-cache step of `opennextjs-cloudflare deploy`/`preview`.
       "binding": "NEXT_TAG_CACHE_D1",
-      "database_name": "{{TAG_CACHE_DB_NAME}}",
-      "database_id": "{{TAG_CACHE_DB_UUID}}"
+      "database_name": "starter-sc-app-next-cache-tags",
+      "database_id": "3e27582b-5447-4aaf-9a67-a6d49332797e"
     },
     {
       // Backs the D1 credentials-store driver. This binding name is the app's
       // own, and must match D1_BINDING_NAME in d1-driver/get-database.ts.
       "binding": "CREDENTIALS_D1",
-      "database_name": "{{CREDENTIALS_DB_NAME}}",
-      "database_id": "{{CREDENTIALS_DB_UUID}}",
+      "database_name": "starter-sc-app-next-credentials",
+      "database_id": "54f41ff4-ec46-40a5-a3e4-47e3d4248576",
       // Keeps schema next to the driver it belongs to, rather than in the
       // default top-level ./migrations.
       "migrations_dir": "src/lib/credentials-store/d1-driver/migrations"

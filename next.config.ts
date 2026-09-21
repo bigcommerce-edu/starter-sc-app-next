@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
   // in lib/cache/cache-profiles.ts rather than in a `cacheLife` block
   // here — cacheLife accepts an inline profile object, so keeping them in one
   // module avoids splitting the caching configuration across two places.
-  cacheComponents: false,
+  cacheComponents: true,
   turbopack: {
     resolveAlias: buildCredentialsDriverAliases(),
   },

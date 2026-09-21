@@ -79,7 +79,12 @@ export function toFetchCacheOptions(cache: CacheOptions | undefined): RequestIni
 }
 // ======= End of Fetch caching implementation =======
 
-// What every `use cache` boundary passes to cacheLife
+
+// The lifetime a given profile resolves to.
+//
+// CACHE_PROFILE_NONE has no lifetime of its own (its PROFILES entry is null),
+// so it resolves to the disabled profile — the same thing caching being
+// switched off produces.
 export function cacheProfile(profile: CacheProfile): CacheLifetimeProfile {
   if (!isCachingEnabled()) {
     return CACHE_DISABLED_PROFILE;

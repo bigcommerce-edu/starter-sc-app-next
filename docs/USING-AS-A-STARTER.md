@@ -376,8 +376,11 @@ in.
    [Running Locally as a Single-Click App](./LOCAL-SINGLE-CLICK-APP.md).
 4. **`MULTITENANT` deployed** — a real host and a shared database. This is
    where multi-instance concerns, build-time configuration, and
-   deployment-protection quirks surface. See
-   [Deploying to Vercel](./VERCEL-DEPLOYMENT.md).
+   deployment-protection quirks surface. 
+   
+For more information on `MULTITENANT` in deployed environments, see the deployment guides:
+- [Deploying to Vercel](./VERCEL-DEPLOYMENT.md)
+- [Deploying to Cloudflare](./CLOUDFLARE-DEPLOYMENT.md)
 
 Skipping straight to step 4 with a new feature means debugging a UI bug, a
 malformed API request, a session problem, and a build configuration issue all

@@ -1,0 +1,118 @@
+{
+  "//": [
+    "Describes the fetch-level caching this app uses in place of Cache Components",
+    "on targets that can't run PPR. Read by swap-to-fetch-caching.mjs \u2014 see",
+    "docs/CACHE-IMPLEMENTATION-SWAP.md for the field reference and for how to",
+    "register a newly cached fetch.",
+    "",
+    "Removing Cache Components code needs no entry here: that side is driven",
+    "entirely by the @cache-components-only markers in the source."
+  ],
+  "searchDirs": [
+    "src/app/store/[storeHash]",
+    "src/components/gift-certs-manager",
+    "src/lib/gift-certs-manager"
+  ],
+  "fetchCaching": [
+    {
+      "file": "src/lib/gift-certs-manager/channels/channels-api.ts",
+      "function": "fetchChannels",
+      "profile": "CACHE_PROFILE_EXTENDED",
+      "tags": [
+        "CHANNELS_LIST_TAG"
+      ],
+      "declareConstants": [
+        {
+          "name": "CHANNELS_LIST_TAG",
+          "value": "channels:list",
+          "comment": [
+            "Channels have no per-record tag: nothing in this app mutates a channel, so",
+            "the shared tag exists only to make the entry addressable if that changes."
+          ]
+        }
+      ]
+    },
+    {
+      "file": "src/lib/gift-certs-manager/customers/customers-api.ts",
+      "function": "fetchCustomersByEmail",
+      "profile": "CACHE_PROFILE_STANDARD",
+      "tags": [
+        "CUSTOMERS_LIST_TAG"
+      ],
+      "addImportSpecifiers": [
+        {
+          "from": "@/lib/gift-certs-manager/customers/cache-tags",
+          "specifier": "customerTag"
+        },
+        {
+          "from": "@/lib/gift-certs-manager/customers/cache-tags",
+          "specifier": "CUSTOMERS_LIST_TAG"
+        }
+      ]
+    },
+    {
+      "file": "src/lib/gift-certs-manager/customers/customers-api.ts",
+      "function": "fetchCustomers",
+      "profile": "CACHE_PROFILE_STANDARD",
+      "tags": [
+        "CUSTOMERS_LIST_TAG"
+      ]
+    },
+    {
+      "file": "src/lib/gift-certs-manager/customers/customers-api.ts",
+      "function": "fetchCustomer",
+      "profile": "CACHE_PROFILE_STANDARD",
+      "tags": [
+        "customerTag(id)"
+      ]
+    },
+    {
+      "file": "src/lib/gift-certs-manager/gift-certificates/gift-certificates-api.ts",
+      "function": "fetchGiftCertificatesPage",
+      "profile": "CACHE_PROFILE_STANDARD",
+      "tags": [
+        "GIFT_CERTIFICATES_LIST_TAG"
+      ]
+    },
+    {
+      "file": "src/lib/gift-certs-manager/gift-certificates/gift-certificates-api.ts",
+      "function": "fetchGiftCertificate",
+      "profile": "CACHE_PROFILE_STANDARD",
+      "tags": [
+        "giftCertificateTag(id)"
+      ]
+    }
+  ],
+  "invalidations": [
+    {
+      "file": "src/app/store/[storeHash]/gift-certs/[id]/actions.ts",
+      "//": [
+        "Both implementations invalidate with updateTag, so rewriteCalls is a",
+        "no-op kept only because applyInvalidations reads it unconditionally —",
+        "the real work here is companionTags below. The list tags have no Cache",
+        "Components counterpart: a `use cache` boundary can tag itself with",
+        "per-record ids after its fetch resolves, but a fetch tag has to be known",
+        "before the request is issued, so listings carry only the shared tag and",
+        "every mutation has to invalidate it explicitly."
+      ],
+      "rewriteCalls": {
+        "from": "updateTag",
+        "to": "updateTag"
+      },
+      "companionTags": {
+        "giftCertificateTag": "GIFT_CERTIFICATES_LIST_TAG",
+        "customerTag": "CUSTOMERS_LIST_TAG"
+      },
+      "addImportSpecifiers": [
+        {
+          "from": "@/lib/gift-certs-manager/gift-certificates/cache-tags",
+          "specifier": "GIFT_CERTIFICATES_LIST_TAG"
+        },
+        {
+          "from": "@/lib/gift-certs-manager/customers/cache-tags",
+          "specifier": "CUSTOMERS_LIST_TAG"
+        }
+      ]
+    }
+  ]
+}

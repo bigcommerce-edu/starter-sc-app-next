@@ -10,15 +10,6 @@ recommended but not required — the concepts (`MULTITENANT` mode,
 `APP_ORIGIN`, the developer portal callbacks) are the same, with a real host
 and a real database in place of a tunnel and a SQLite file.
 
-## Why Postgres Is Required
-
-Vercel runs your app across multiple short-lived instances with an ephemeral
-filesystem. The SQLite driver used for local development writes to a local
-file, so each instance would get its own database and any of them could
-vanish between requests. The Postgres driver
-(`src/lib/credentials-store/postgres-driver/`) is the multi-instance
-counterpart: one shared remote database every instance can see.
-
 ## Deployment Order
 
 The steps below are ordered around a chicken-and-egg problem: `APP_ORIGIN`

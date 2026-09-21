@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.2.0
+
+_Based on Next.js 16.2.9_
+
+### Summary
+
+Adds a Cloudflare Workers deployment path alongside the existing Vercel one,
+and the cache-implementation swap it depends on. Two new enhancements were
+added and no existing lab or enhancement was renumbered; no dependency
+versions changed.
+
+### Added
+
+- **New enhancement — Enable swapping Cache Components for fetch-level caching
+  (`cache-swap`).** Introduces the swap script and its manifest, the
+  `@cache-components-only` markers that drive it, cache options on the REST
+  client, and the `no-cache` profile. Positioned immediately after the
+  `caching` enhancement; every enhancement after it carries its own markers
+  and manifest entries.
+- **New enhancement — Cloudflare Workers deployment with OpenNext
+  (`cloudflare`).** Builds the Workers deployment directly into the app: the
+  D1 credentials-store driver and its migrations, the OpenNext and Wrangler
+  configuration, the deployment scripts, and the swap to fetch-level caching.
+- **New enhancement — Opt-in Cloudflare deployment scaffolding
+  (`scaffold-cloudflare`).** Strips that implementation back out behind a
+  `pnpm scaffold cloudflare` command, mirroring how the Vercel tooling is
+  introduced and then made opt-in.
+- **Uncached reads for Server Actions.** `fetchGiftCertificateUncached` and
+  `fetchCustomersByEmailUncached` let an action validate against current
+  state rather than a cached copy, using an explicit `no-cache` profile.
+
+### Changed
+
+- The Postgres driver alias in `next.config.ts` is now built by a
+  `buildCredentialsDriverAliases()` helper, introduced with the alias itself
+  rather than extracted later.
+- Cache Components imports are grouped into marker blocks from the commit
+  that first adds them, so the swap has a single region to remove.
+- `pnpm-workspace.yaml` approves the `esbuild` and `workerd` builds.
+
 ## 1.1.3
 
 _Based on Next.js 16.2.9_

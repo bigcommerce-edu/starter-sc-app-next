@@ -9,9 +9,12 @@ import {
   getGiftCertificatePath,
 } from "@/lib/gift-certs-manager/gift-certificates/types";
 
+// @cache-components-only:drop-specifier cacheProfile
 import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 
+// @cache-components-only:start
 import { cacheLife, cacheTag } from "next/cache";
+// @cache-components-only:end
 
 // BigCommerce returns amount/balance as decimal strings on the wire; every
 // other numeric-looking field is already a number. This is the only
@@ -31,9 +34,11 @@ async function fetchGiftCertificatesPage(
   query: GiftCertificatesQuery,
   storeHash: string | undefined,
 ): Promise<GiftCertificateWireRecord[]> {
+  // @cache-components-only:start
   "use cache: remote";
   cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(GIFT_CERTIFICATES_LIST_TAG);
+  // @cache-components-only:end
 
   const apiClient = await getRestApiClient(storeHash);
   const { data: items } = await apiClient.get<GiftCertificateWireRecord[]>(GIFT_CERTIFICATES_PATH, {
@@ -49,12 +54,11 @@ async function fetchGiftCertificatesPage(
   // matches.
   const records = items ?? [];
 
-  // Tag with every certificate id in the result (known only after the
-  // fetch resolves), so a mutation to one invalidates this page/peek
-  // immediately rather than waiting out the cacheLife.
+  // @cache-components-only:start
   for (const record of records) {
     cacheTag(giftCertificateTag(record.id));
   }
+  // @cache-components-only:end
 
   return records;
 }
@@ -97,7 +101,8 @@ export async function fetchGiftCertificate(
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
   const apiClient = await getRestApiClient(storeHash);
-  const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id));
+  const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id), {
+  });
 
   return parseGiftCertificate(record);
 }

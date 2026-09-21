@@ -3,17 +3,16 @@ import { GiftCertificateTable } from "@/components/gift-certs-manager/gift-certi
 import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
 import { parseGiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/query";
 
+// @cache-components-only:start
 import { cacheLife, cacheTag } from "next/cache";
 import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { giftCertificateTag, GIFT_CERTIFICATES_LIST_TAG } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+// @cache-components-only:end
 
 // Beyond the shared list tag, this also tags the cache entry with every
 // certificate id in the result set (added after the fetch resolves, once
 // ids are known) so a mutation updates this page immediately without
 // invalidating every other cached listing.
-//
-// No ControlPanelLink yet either — that stays a stub until the cp-links
-// enhancement.
 export async function GiftCertificateListView({
   searchParams,
   storeHash,
@@ -21,16 +20,20 @@ export async function GiftCertificateListView({
   searchParams: Record<string, string | string[] | undefined>;
   storeHash: string | undefined;
 }) {
+  // @cache-components-only:start
   "use cache: remote";
   cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(GIFT_CERTIFICATES_LIST_TAG);
+  // @cache-components-only:end
 
   const query = parseGiftCertificatesQuery(searchParams);
   const { items, hasNextPage } = await fetchGiftCertificates(query, storeHash);
 
+  // @cache-components-only:start
   for (const item of items) {
     cacheTag(giftCertificateTag(item.id));
   }
+  // @cache-components-only:end
 
   return (
     <Panel header="Gift Certificates">

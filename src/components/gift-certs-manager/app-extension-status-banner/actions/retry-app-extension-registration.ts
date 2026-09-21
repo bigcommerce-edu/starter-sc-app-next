@@ -8,6 +8,10 @@ import { isAuthorizedForStore, NOT_AUTHORIZED_FOR_STORE_MESSAGE } from "@/lib/se
 import { toSafeMessage } from "@/lib/errors/app-error";
 import { logError } from "@/lib/errors/logger";
 
+// @cache-components-only:start
+import { updateTag } from "next/cache";
+// @cache-components-only:end
+
 // User-triggered retry for a failed install-time registration, colocated
 // with AppExtensionStatusBanner rather than in lib/. Shares
 // findOrCreateAppExtension with registerAppExtension so a retry after a
@@ -39,6 +43,10 @@ export async function retryAppExtensionRegistration(storeHash: string | undefine
       message: toSafeMessage(error, "Failed to register the App Extension."),
     };
   }
+
+  // @cache-components-only:start
+  updateTag(`app-extension-status:${storeHash}`);
+  // @cache-components-only:end
 
   return { success: true, message: "App extension registration succeeded" };
 }

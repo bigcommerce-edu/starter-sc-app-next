@@ -10,6 +10,13 @@ import { fetchGiftCertificates } from "@/lib/gift-certs-manager/gift-certificate
 import { parseGiftCertificatesQuery } from "@/lib/gift-certs-manager/gift-certificates/query";
 import { getAppUrl } from "@/lib/routing/app-url";
 
+// @cache-components-only:start
+import { cacheLife, cacheTag } from "next/cache";
+import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
+import { GIFT_CERTIFICATES_LIST_TAG, giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+// @cache-components-only:end
+
 export async function CustomerView({
   id,
   searchParams,
@@ -19,6 +26,13 @@ export async function CustomerView({
   searchParams: Record<string, string | string[] | undefined>;
   storeHash: string | undefined;
 }) {
+  // @cache-components-only:start
+  "use cache: remote";
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
+  cacheTag(customerTag(id));
+  cacheTag(GIFT_CERTIFICATES_LIST_TAG);
+  // @cache-components-only:end
+
   const rawCustomer = await fetchCustomer(id, storeHash);
 
   // A missing customer isn't a 404 from BigCommerce itself (see
@@ -37,6 +51,12 @@ export async function CustomerView({
     decorateCustomerWithChannels(rawCustomer, storeHash),
     fetchGiftCertificates({ ...query, to_email: rawCustomer.email }, storeHash),
   ]);
+
+  // @cache-components-only:start
+  for (const item of items) {
+    cacheTag(giftCertificateTag(item.id));
+  }
+  // @cache-components-only:end
 
   // Every row's recipient is this customer, so the account is already known.
   const decoratedItems = items.map((certificate) => ({ ...certificate, recipientAccount: customer }));

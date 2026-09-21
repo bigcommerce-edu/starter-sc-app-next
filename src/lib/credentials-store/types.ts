@@ -1,3 +1,4 @@
+// TODO: Add the D1 driver to the set of selectable drivers.
 export type CredentialsStoreDriver = "SQLITE" | "POSTGRES";
 
 // A store's OAuth grant. adminUserId is the id of the user who completed

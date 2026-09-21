@@ -111,3 +111,11 @@ mirror the real API's quirks, and per-request memoization.
 
 [ARCHITECTURE.md](docs/ARCHITECTURE.md) covers the non-obvious decisions in
 this feature in detail.
+
+## Hosting Provider Support
+
+The app comes with built-in scaffolding supporting multiple
+hosting providers. See the dedicated guides:
+
+- [Vercel Deployment Guide](./docs/VERCEL-DEPLOYMENT.md)
+- [Cloudflare Deployment Guide](./docs/CLOUDFLARE-DEPLOYMENT.md)

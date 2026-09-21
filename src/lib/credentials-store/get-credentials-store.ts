@@ -1,13 +1,14 @@
-// Imported from postgres-driver-loader.ts, not directly from
-// postgres-driver/postgres-credentials-store.ts — see that file's own
-// comment for why (a build-time alias keeps `pg` out of builds that don't
-// use it).
+// Postgres comes from its *-driver-loader.ts file rather than directly from
+// the implementation, so a build-time alias can swap in a stub. D1 is built by
+// a factory for a different reason: its database handle is supplied by the
+// platform. See both loader files.
 import { cache } from "react";
+import { createD1CredentialsStore } from "@/lib/credentials-store/d1-driver-loader";
 import { PostgresCredentialsStore } from "@/lib/credentials-store/postgres-driver-loader";
 import { SqliteCredentialsStore } from "@/lib/credentials-store/sqlite-driver/sqlite-credentials-store";
 import { CredentialsStore, CredentialsStoreDriver } from "@/lib/credentials-store/types";
 
-const VALID_DRIVERS: CredentialsStoreDriver[] = ["SQLITE", "POSTGRES"];
+const VALID_DRIVERS: CredentialsStoreDriver[] = ["SQLITE", "POSTGRES", "D1"];
 const DEFAULT_DRIVER: CredentialsStoreDriver = "SQLITE";
 
 function getConfiguredDriver(): CredentialsStoreDriver {
@@ -26,14 +27,16 @@ const getCachedCredentialsStore = cache((driver: CredentialsStoreDriver): Creden
       return new SqliteCredentialsStore();
     case "POSTGRES":
       return new PostgresCredentialsStore();
+    case "D1":
+      return createD1CredentialsStore();
   }
 });
 
-// Selects the CredentialsStore implementation to use, based on
-// CREDENTIALS_STORE_DRIVER. SQLite is for local development and
-// single-instance use; POSTGRES (see postgres-driver/) is for any real
-// multi-instance deployment (e.g. Vercel + Neon) — a shared remote database
-// every instance can see, rather than a local file.
+// Selects the CredentialsStore implementation, based on
+// CREDENTIALS_STORE_DRIVER. SQLITE is for local development and
+// single-instance use; the other two are for multi-instance deployments, and
+// the choice between them is a hosting decision — POSTGRES for a Node host
+// such as Vercel + Neon, D1 for Cloudflare Workers.
 export function getCredentialsStore(): CredentialsStore {
   return getCachedCredentialsStore(getConfiguredDriver());
 }

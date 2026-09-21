@@ -3,12 +3,12 @@
 import { updateTag } from "next/cache";
 import { ActionResult } from "@/lib/actions/action-result";
 import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
-import { addToCustomerStoreCredit, fetchCustomersByEmail } from "@/lib/gift-certs-manager/customers/customers-api";
 import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+import { addToCustomerStoreCredit, fetchCustomersByEmailUncached } from "@/lib/gift-certs-manager/customers/customers-api";
 import {
   addToGiftCertificateBalance as addToGiftCertificateBalanceRequest,
   debitGiftCertificateForTransfer,
-  fetchGiftCertificate,
+  fetchGiftCertificateUncached,
   refillGiftCertificateBalance as refillGiftCertificateBalanceRequest,
   restoreGiftCertificateBalance,
   updateGiftCertificateStatus as updateGiftCertificateStatusRequest,
@@ -47,7 +47,7 @@ export async function updateGiftCertificateStatus(
   try {
     // The caller only supplies id/status — every other field comes from this
     // fresh fetch, never from client-supplied data.
-    const giftCertificate = await fetchGiftCertificate(id, storeHash);
+    const giftCertificate = await fetchGiftCertificateUncached(id, storeHash);
 
     await updateGiftCertificateStatusRequest(giftCertificate, status, storeHash);
   } catch (error) {
@@ -82,7 +82,7 @@ export async function refillGiftCertificateBalance(
   }
 
   try {
-    const giftCertificate = await fetchGiftCertificate(id, storeHash);
+    const giftCertificate = await fetchGiftCertificateUncached(id, storeHash);
 
     if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
       return { success: false, message: "Only active or expired gift certificates can be refilled." };
@@ -128,7 +128,7 @@ export async function addToGiftCertificateBalance(
   }
 
   try {
-    const giftCertificate = await fetchGiftCertificate(id, storeHash);
+    const giftCertificate = await fetchGiftCertificateUncached(id, storeHash);
 
     if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
       return { success: false, message: "Only active or expired gift certificates can have balance added." };
@@ -177,11 +177,11 @@ export async function transferGiftCertificateBalanceToStoreCredit(
     return { success: false, message: NOT_AUTHORIZED_FOR_STORE_MESSAGE };
   }
 
-  let giftCertificate: Awaited<ReturnType<typeof fetchGiftCertificate>>;
-  let customer: Awaited<ReturnType<typeof fetchCustomersByEmail>>["items"][number];
+  let giftCertificate: Awaited<ReturnType<typeof fetchGiftCertificateUncached>>;
+  let customer: Awaited<ReturnType<typeof fetchCustomersByEmailUncached>>["items"][number];
 
   try {
-    giftCertificate = await fetchGiftCertificate(id, storeHash);
+    giftCertificate = await fetchGiftCertificateUncached(id, storeHash);
 
     if (giftCertificate.status !== "active") {
       return { success: false, message: "Only active gift certificates can be transferred to store credit." };
@@ -195,7 +195,7 @@ export async function transferGiftCertificateBalanceToStoreCredit(
       return { success: false, message: "Transfer amount cannot exceed the current gift certificate balance." };
     }
 
-    const { items: customers } = await fetchCustomersByEmail([giftCertificate.to_email], storeHash);
+    const { items: customers } = await fetchCustomersByEmailUncached([giftCertificate.to_email], storeHash);
     const foundCustomer = customers.find((item) => item.email.toLowerCase() === giftCertificate.to_email.toLowerCase());
 
     if (!foundCustomer) {
@@ -266,9 +266,9 @@ export async function transferGiftCertificateBalanceToStoreCredit(
     };
   }
 
-  // Both resources were mutated on the success path, so both tags need
-  // invalidating: the certificate's own balance/status, and this customer's
-  // store credit balance shown on their detail page.
+  // Both resources were mutated on the success path, so both sets of tags
+  // need invalidating: the certificate's own balance/status, and this
+  // customer's store credit balance shown on their detail page.
   updateTag(giftCertificateTag(id));
   updateTag(customerTag(customer.id));
 

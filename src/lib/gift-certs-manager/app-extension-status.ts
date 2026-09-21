@@ -1,17 +1,16 @@
-import { cacheLife, cacheTag } from "next/cache";
-import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/cache/cache-profiles";
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 
-// One shared tag per store (only one extension is ever registered). Exported
-// so the retry action can updateTag it the moment a retry succeeds.
-export function appExtensionStatusTag(storeHash: string): string {
-  return `app-extension-status:${storeHash}`;
-}
+// @cache-components-only:start
+import { cacheLife, cacheTag } from "next/cache";
+import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/cache/cache-profiles";
+// @cache-components-only:end
 
 async function fetchStoreExtensionStatus(storeHash: string): Promise<{ isRegistered: boolean }> {
+  // @cache-components-only:start
   "use cache: remote";
   cacheLife(cacheProfile(CACHE_PROFILE_EXTENDED));
-  cacheTag(appExtensionStatusTag(storeHash));
+  cacheTag(`app-extension-status:${storeHash}`);
+  // @cache-components-only:end
 
   const extensionId = await getCredentialsStore().getStoreExtension(storeHash);
 
@@ -19,8 +18,7 @@ async function fetchStoreExtensionStatus(storeHash: string): Promise<{ isRegiste
 }
 
 // Whether this app's App Extension is registered — decides whether
-// AppExtensionStatusBanner renders. Non-critical cosmetic data, so it's
-// cached with the longer "extended" lifetime rather than "standard".
+// AppExtensionStatusBanner renders.
 //
 // MOCK/STATIC never run an install flow, so storeHash undefined always
 // reports "registered" and the banner never renders outside MULTITENANT.

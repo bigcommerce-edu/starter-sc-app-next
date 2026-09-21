@@ -1,3 +1,5 @@
+import { CacheOptions } from "@/lib/cache/cache-profiles";
+
 export type ApiRequestParams = Record<string, string | number | boolean | undefined>;
 
 // The standard BigCommerce v3 list-endpoint envelope: a page of records plus
@@ -22,9 +24,9 @@ export interface V3ListResponse<TItem> {
 export interface ApiRequestOptions {
   params?: ApiRequestParams;
 
-  // TODO: Add an optional `cache` option so a caller can name the lifetime
-  // profile and tags a response should be stored under. Only meaningful when
-  // fetch-level caching is the implementation — the two are mutually exclusive.
+  // ONLY pass `cache` options to a fetch if `cacheComponents` is not being 
+  // used for the cache implementation! The two are mutually exclusive.
+  cache?: CacheOptions;
 }
 
 export interface ApiMutationOptions {

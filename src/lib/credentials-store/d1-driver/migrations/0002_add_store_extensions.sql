@@ -1,0 +1,1 @@
+-- TODO: Add the table that records each store's registered App Extension.

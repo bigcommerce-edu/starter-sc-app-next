@@ -22,6 +22,8 @@ function getConfiguredDriver(): CredentialsStoreDriver {
 // SqliteCredentialsStore, one open DB connection).
 const getCachedCredentialsStore = cache((driver: CredentialsStoreDriver): CredentialsStore => {
   switch (driver) {
+    // TODO: Add a D1 branch here, built by a factory rather than imported
+    // directly — its database handle is supplied by the platform.
     case "SQLITE":
       return new SqliteCredentialsStore();
     case "POSTGRES":

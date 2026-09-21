@@ -1,6 +1,17 @@
 import { getCredentialsStore } from "@/lib/credentials-store/get-credentials-store";
 
+// @cache-components-only:start
+import { cacheLife, cacheTag } from "next/cache";
+import { cacheProfile, CACHE_PROFILE_EXTENDED } from "@/lib/cache/cache-profiles";
+// @cache-components-only:end
+
 async function fetchStoreExtensionStatus(storeHash: string): Promise<{ isRegistered: boolean }> {
+  // @cache-components-only:start
+  "use cache: remote";
+  cacheLife(cacheProfile(CACHE_PROFILE_EXTENDED));
+  cacheTag(`app-extension-status:${storeHash}`);
+  // @cache-components-only:end
+
   const extensionId = await getCredentialsStore().getStoreExtension(storeHash);
 
   return { isRegistered: Boolean(extensionId) };

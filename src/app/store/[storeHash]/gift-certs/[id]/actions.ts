@@ -2,8 +2,8 @@
 
 import { updateTag } from "next/cache";
 import { ActionResult } from "@/lib/actions/action-result";
-import { CUSTOMERS_LIST_TAG, customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
-import { GIFT_CERTIFICATES_LIST_TAG, giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
+import { customerTag } from "@/lib/gift-certs-manager/customers/cache-tags";
+import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import { addToCustomerStoreCredit, fetchCustomersByEmailUncached } from "@/lib/gift-certs-manager/customers/customers-api";
 import {
   addToGiftCertificateBalance as addToGiftCertificateBalanceRequest,
@@ -61,7 +61,6 @@ export async function updateGiftCertificateStatus(
   }
 
   updateTag(giftCertificateTag(id));
-  updateTag(GIFT_CERTIFICATES_LIST_TAG);
 
   return { success: true, message: "Gift certificate status updated." };
 }
@@ -113,7 +112,6 @@ export async function refillGiftCertificateBalance(
   }
 
   updateTag(giftCertificateTag(id));
-  updateTag(GIFT_CERTIFICATES_LIST_TAG);
 
   return { success: true, message: "Gift certificate balance refilled." };
 }
@@ -152,7 +150,6 @@ export async function addToGiftCertificateBalance(
   }
 
   updateTag(giftCertificateTag(id));
-  updateTag(GIFT_CERTIFICATES_LIST_TAG);
 
   return { success: true, message: "Amount added to gift certificate balance." };
 }
@@ -250,7 +247,6 @@ export async function transferGiftCertificateBalanceToStoreCredit(
       // Only the certificate was mutated — the customer credit never
       // succeeded, so there's no customer tag to invalidate here.
       updateTag(giftCertificateTag(id));
-      updateTag(GIFT_CERTIFICATES_LIST_TAG);
 
       return {
         success: false,
@@ -261,7 +257,6 @@ export async function transferGiftCertificateBalanceToStoreCredit(
     }
 
     updateTag(giftCertificateTag(id));
-    updateTag(GIFT_CERTIFICATES_LIST_TAG);
 
     return {
       success: false,
@@ -275,9 +270,7 @@ export async function transferGiftCertificateBalanceToStoreCredit(
   // need invalidating: the certificate's own balance/status, and this
   // customer's store credit balance shown on their detail page.
   updateTag(giftCertificateTag(id));
-  updateTag(GIFT_CERTIFICATES_LIST_TAG);
   updateTag(customerTag(customer.id));
-  updateTag(CUSTOMERS_LIST_TAG);
 
   return { success: true, message: "Gift certificate balance transferred to store credit." };
 }

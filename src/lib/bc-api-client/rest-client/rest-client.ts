@@ -1,5 +1,6 @@
 import { ApiMutationOptions, ApiRequestOptions, ApiResponse, BcRestApiClient } from "@/lib/bc-api-client/rest-client/types";
 import { StoreApiCredentials } from "@/lib/bc-api-client/types";
+import { toFetchCacheOptions } from "@/lib/cache/cache-profiles";
 import { AppError } from "@/lib/errors/app-error";
 
 const API_BASE_URL = "https://api.bigcommerce.com";
@@ -88,8 +89,7 @@ export class RestApiClient implements BcRestApiClient {
           "X-Auth-Token": apiToken,
           Accept: "application/json",
         },
-        // TODO: Spread the caller's cache options into this fetch, so a
-        // request annotated with a profile and tags is stored accordingly.
+        ...toFetchCacheOptions(options.cache),
       });
     } catch (error) {
       throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });

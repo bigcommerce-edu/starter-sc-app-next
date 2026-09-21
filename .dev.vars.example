@@ -1,1 +1,21 @@
-# TODO: Example .dev.vars.example for a Cloudflare Workers deployment.
+# Template for .dev.vars:
+#
+#   cp .dev.vars.example .dev.vars
+#
+# Supplies the Worker's runtime env under `pnpm preview` (wrangler dev)
+# Mirror anything from .secrets.production here to exercise it locally, 
+# pointed at development credentials
+
+# Selects which .env mode the preview/deploy commands resolve the Worker's env
+# from. Leave as development here; production values belong in
+# .secrets.production.
+NEXTJS_ENV=development
+
+BIGCOMMERCE_CLIENT_ID=
+BIGCOMMERCE_CLIENT_SECRET=
+APP_ORIGIN=
+SESSION_SECRET=
+CREDENTIALS_ENCRYPTION_KEY=
+
+STATIC_STORE_HASH=
+STATIC_STORE_TOKEN=

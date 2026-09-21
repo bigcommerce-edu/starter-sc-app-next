@@ -1,13 +1,66 @@
 {
   "//": [
-    "TODO: Describe the fetch-level caching that replaces Cache Components.",
+    "Describes the fetch-level caching this app uses in place of Cache Components",
+    "on targets that can't run PPR. Read by swap-to-fetch-caching.mjs \u2014 see",
+    "docs/CACHE-IMPLEMENTATION-SWAP.md for the field reference and for how to",
+    "register a newly cached fetch.",
     "",
-    "TODO: searchDirs — the directories the removal pass scans for markers.",
-    "",
-    "TODO: fetchCaching — one entry per cacheable fetch, naming the file, the",
-    "function holding the call, its lifetime profile, and its cache tags.",
-    "",
-    "TODO: invalidations — per-file tag-invalidation handling, including the",
-    "companion list tags that only fetch caching needs."
+    "Removing Cache Components code needs no entry here: that side is driven",
+    "entirely by the @cache-components-only markers in the source."
+  ],
+  "searchDirs": [
+    "src/app/store/[storeHash]",
+    "src/components/gift-certs-manager",
+    "src/lib/gift-certs-manager"
+  ],
+  "fetchCaching": [
+    {
+      "file": "src/lib/gift-certs-manager/gift-certificates/gift-certificates-api.ts",
+      "function": "fetchGiftCertificatesPage",
+      "profile": "CACHE_PROFILE_STANDARD",
+      "tags": [
+        "GIFT_CERTIFICATES_LIST_TAG"
+      ]
+    },
+    {
+      "file": "src/lib/gift-certs-manager/gift-certificates/gift-certificates-api.ts",
+      "function": "fetchGiftCertificate",
+      "profile": "CACHE_PROFILE_STANDARD",
+      "tags": [
+        "giftCertificateTag(id)"
+      ]
+    }
+  ],
+  "invalidations": [
+    {
+      "file": "src/app/store/[storeHash]/gift-certs/[id]/actions.ts",
+      "//": [
+        "Both implementations invalidate with updateTag, so rewriteCalls is a",
+        "no-op kept only because applyInvalidations reads it unconditionally \u2014",
+        "the real work here is companionTags below. The list tags have no Cache",
+        "Components counterpart: a `use cache` boundary can tag itself with",
+        "per-record ids after its fetch resolves, but a fetch tag has to be known",
+        "before the request is issued, so listings carry only the shared tag and",
+        "every mutation has to invalidate it explicitly."
+      ],
+      "rewriteCalls": {
+        "from": "updateTag",
+        "to": "updateTag"
+      },
+      "companionTags": {
+        "giftCertificateTag": "GIFT_CERTIFICATES_LIST_TAG",
+        "customerTag": "CUSTOMERS_LIST_TAG"
+      },
+      "addImportSpecifiers": [
+        {
+          "from": "@/lib/gift-certs-manager/gift-certificates/cache-tags",
+          "specifier": "GIFT_CERTIFICATES_LIST_TAG"
+        },
+        {
+          "from": "@/lib/gift-certs-manager/customers/cache-tags",
+          "specifier": "CUSTOMERS_LIST_TAG"
+        }
+      ]
+    }
   ]
 }

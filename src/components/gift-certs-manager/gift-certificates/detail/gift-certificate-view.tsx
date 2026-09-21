@@ -32,8 +32,8 @@ export async function GiftCertificateView({
 
   // A missing id is a real 404 from BigCommerce's v2 single-resource
   // endpoint; the translation to notFound() happens here rather than in
-  // fetchGiftCertificate, which is also called from Server Actions where a
-  // 404 navigation would be wrong.
+  // fetchGiftCertificate, whose uncached counterpart is called from Server
+  // Actions where a 404 navigation would be wrong.
   let rawGiftCertificate;
 
   try {

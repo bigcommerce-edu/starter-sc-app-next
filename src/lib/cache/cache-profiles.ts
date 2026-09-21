@@ -18,6 +18,9 @@ function isCachingEnabled(): boolean {
 export const CACHE_PROFILE_STANDARD = "standard";
 export const CACHE_PROFILE_EXTENDED = "extended";
 
+// A request annotated with this profile must never be served from cache. 
+export const CACHE_PROFILE_NONE = "no-cache";
+
 // This is an admin-privileged app, so most fetches use a short lifetime —
 // changes made directly in the BigCommerce control panel, or by another
 // admin, shouldn't stay stale for long even where no cache tag invalidates
@@ -27,10 +30,14 @@ const STANDARD_PROFILE: CacheLifetimeProfile = { revalidate: 300, stale: 300, ex
 // For data that changes very infrequently
 const EXTENDED_PROFILE: CacheLifetimeProfile = { revalidate: 600, stale: 600, expire: 600 };
 
+// `null` for the no-cache profile, since there is no lifetime to express —
+// it is handled as its own case wherever a profile is consumed, rather than
+// being given a sentinel lifetime that might accidentally be honored.
 const PROFILES = {
   [CACHE_PROFILE_STANDARD]: STANDARD_PROFILE,
   [CACHE_PROFILE_EXTENDED]: EXTENDED_PROFILE,
-} as const satisfies Record<string, CacheLifetimeProfile>;
+  [CACHE_PROFILE_NONE]: null,
+} as const satisfies Record<string, CacheLifetimeProfile | null>;
 
 export type CacheProfile = keyof typeof PROFILES;
 
@@ -44,17 +51,26 @@ const CACHE_DISABLED_PROFILE: CacheLifetimeProfile = { revalidate: 0, stale: 0, 
 
 
 // ======= Fetch caching implementation =======
-// Marks a response as cacheable under the given tags and lifetime.
+// Marks a response as cacheable under the given tags and lifetime, or — with
+// CACHE_PROFILE_NONE — explicitly not cacheable at all.
 export interface CacheOptions {
   profile: CacheProfile;
-  tags: string[];
+  tags?: string[];
 }
 
-// Translates CacheOptions into the `next` fetch option Next.js reads. Returns
-// no options at all when there's nothing to cache or caching is off — fetch
-// caching is opt-in, so an unannotated request isn't cached. That's why call
-// sites can always pass their tags without checking CACHE_ENABLED themselves.
+// Translates CacheOptions into the `next` fetch option Next.js reads.
+//
+// Three cases, in order:
+//
+//   - CACHE_PROFILE_NONE: `cache: "no-store"`, an explicit instruction that
+//     this response must never be served from cache.
+//   - No options, or caching switched off: no fetch options at all.
+//   - Anything else: the profile's revalidate window and its tags.
 export function toFetchCacheOptions(cache: CacheOptions | undefined): RequestInit {
+  if (cache?.profile === CACHE_PROFILE_NONE) {
+    return { cache: "no-store" };
+  }
+
   if (!cache || !isCachingEnabled()) {
     return {};
   }
@@ -65,6 +81,14 @@ export function toFetchCacheOptions(cache: CacheOptions | undefined): RequestIni
 
 
 // The lifetime a given profile resolves to.
+//
+// CACHE_PROFILE_NONE has no lifetime of its own (its PROFILES entry is null),
+// so it resolves to the disabled profile — the same thing caching being
+// switched off produces.
 export function cacheProfile(profile: CacheProfile): CacheLifetimeProfile {
-  return isCachingEnabled() ? PROFILES[profile] : CACHE_DISABLED_PROFILE;
+  if (!isCachingEnabled()) {
+    return CACHE_DISABLED_PROFILE;
+  }
+
+  return PROFILES[profile] ?? CACHE_DISABLED_PROFILE;
 }

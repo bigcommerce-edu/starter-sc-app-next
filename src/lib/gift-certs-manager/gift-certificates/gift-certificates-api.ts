@@ -10,7 +10,7 @@ import {
 } from "@/lib/gift-certs-manager/gift-certificates/types";
 
 // @cache-components-only:drop-specifier cacheProfile
-import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+import { cacheProfile, CACHE_PROFILE_NONE, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 
 // @cache-components-only:start
 import { cacheLife, cacheTag } from "next/cache";
@@ -94,17 +94,30 @@ export async function fetchGiftCertificates(
   return { items: items.map(parseGiftCertificate), hasNextPage };
 }
 
-// Deliberately does not call notFound() on a 404 — shared by
-// GiftCertificateView (a page render, where notFound() is right) and
-// Server Actions (where a 404 means the certificate was deleted since page
-// load, which should be an ActionResult failure, not a navigation). See
-// GiftCertificateView for the 404-to-notFound() translation.
+// Deliberately does not call notFound() on a 404 — this and its uncached
+// counterpart below are shared by GiftCertificateView (a page render, where
+// notFound() is right) and Server Actions (where a 404 means the certificate
+// was deleted since page load, which should be an ActionResult failure, not a
+// navigation). See GiftCertificateView for the 404-to-notFound() translation.
 export async function fetchGiftCertificate(
   id: number | string,
   storeHash: string | undefined,
 ): Promise<GiftCertificate> {
   const apiClient = await getRestApiClient(storeHash);
   const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id), {
+  });
+
+  return parseGiftCertificate(record);
+}
+
+// Uncached counterpart to fetchGiftCertificate
+export async function fetchGiftCertificateUncached(
+  id: number | string,
+  storeHash: string | undefined,
+): Promise<GiftCertificate> {
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: record } = await apiClient.get<GiftCertificateWireRecord>(getGiftCertificatePath(id), {
+    cache: { profile: CACHE_PROFILE_NONE },
   });
 
   return parseGiftCertificate(record);

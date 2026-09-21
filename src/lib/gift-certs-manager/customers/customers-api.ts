@@ -1,5 +1,6 @@
 import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
-import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
+import { ApiRequestParams, V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
+import { CACHE_PROFILE_NONE } from "@/lib/cache/cache-profiles";
 import { CUSTOMERS_PATH, Customer, CustomersQuery } from "@/lib/gift-certs-manager/customers/types";
 import { AppError } from "@/lib/errors/app-error";
 
@@ -26,24 +27,58 @@ function parseCustomer(record: CustomerWireRecord): Customer {
   return { ...record, channel_ids: record.channel_ids ?? [], store_credit_amounts: record.store_credit_amounts ?? [] };
 }
 
+// Everything the two by-email lookups share: de-duplicating the addresses and
+// building the query. 
+function buildCustomersByEmailRequest(emails: string[]): { params?: ApiRequestParams } {
+  const uniqueEmails = [...new Set(emails.filter((email) => email))];
+
+  if (uniqueEmails.length === 0) {
+    return {};
+  }
+
+  return {
+    params: {
+      "email:in": uniqueEmails.join(","),
+      include: "storecredit",
+    },
+  };
+}
+
 // Looks up registered customer accounts by email — this data isn't returned
-// by the gift certificates endpoint itself. 
+// by the gift certificates endpoint itself.
 export async function fetchCustomersByEmail(
   emails: string[],
   storeHash: string | undefined,
 ): Promise<CustomersResult> {
-  const uniqueEmails = [...new Set(emails.filter((email) => email))];
+  const { params } = buildCustomersByEmailRequest(emails);
 
-  if (uniqueEmails.length === 0) {
+  if (!params) {
     return { items: [] };
   }
 
   const apiClient = await getRestApiClient(storeHash);
   const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
-    params: {
-      "email:in": uniqueEmails.join(","),
-      include: "storecredit",
-    },
+    params,
+  });
+
+  return { items: body.data.map(parseCustomer) };
+}
+
+// Uncached counterpart to fetchCustomersByEmail
+export async function fetchCustomersByEmailUncached(
+  emails: string[],
+  storeHash: string | undefined,
+): Promise<CustomersResult> {
+  const { params } = buildCustomersByEmailRequest(emails);
+
+  if (!params) {
+    return { items: [] };
+  }
+
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: body } = await apiClient.get<V3ListResponse<CustomerWireRecord>>(CUSTOMERS_PATH, {
+    cache: { profile: CACHE_PROFILE_NONE },
+    params,
   });
 
   return { items: body.data.map(parseCustomer) };

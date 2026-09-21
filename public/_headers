@@ -1,1 +1,2 @@
-# TODO: Headers applied to statically served assets on Cloudflare.
+/_next/static/*
+  Cache-Control: public,max-age=31536000,immutable

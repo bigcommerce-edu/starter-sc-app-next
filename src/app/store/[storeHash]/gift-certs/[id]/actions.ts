@@ -4,7 +4,7 @@ import { updateTag } from "next/cache";
 import { ActionResult } from "@/lib/actions/action-result";
 import { giftCertificateTag } from "@/lib/gift-certs-manager/gift-certificates/cache-tags";
 import {
-  fetchGiftCertificate,
+  fetchGiftCertificateUncached,
   refillGiftCertificateBalance as refillGiftCertificateBalanceRequest,
   updateGiftCertificateStatus as updateGiftCertificateStatusRequest,
 } from "@/lib/gift-certs-manager/gift-certificates/gift-certificates-api";
@@ -38,7 +38,7 @@ export async function updateGiftCertificateStatus(
   try {
     // The caller only supplies id/status — every other field comes from this
     // fresh fetch, never from client-supplied data.
-    const giftCertificate = await fetchGiftCertificate(id, storeHash);
+    const giftCertificate = await fetchGiftCertificateUncached(id, storeHash);
 
     await updateGiftCertificateStatusRequest(giftCertificate, status, storeHash);
   } catch (error) {
@@ -73,7 +73,7 @@ export async function refillGiftCertificateBalance(
   }
 
   try {
-    const giftCertificate = await fetchGiftCertificate(id, storeHash);
+    const giftCertificate = await fetchGiftCertificateUncached(id, storeHash);
 
     if (giftCertificate.status !== "active" && giftCertificate.status !== "expired") {
       return { success: false, message: "Only active or expired gift certificates can be refilled." };

@@ -88,6 +88,8 @@ export class RestApiClient implements BcRestApiClient {
           "X-Auth-Token": apiToken,
           Accept: "application/json",
         },
+        // TODO: Spread the caller's cache options into this fetch, so a
+        // request annotated with a profile and tags is stored accordingly.
       });
     } catch (error) {
       throw new AppError("UPSTREAM_API", "Could not reach BigCommerce.", { cause: error });

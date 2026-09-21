@@ -1,0 +1,13 @@
+{
+  "//": [
+    "TODO: Describe the fetch-level caching that replaces Cache Components.",
+    "",
+    "TODO: searchDirs — the directories the removal pass scans for markers.",
+    "",
+    "TODO: fetchCaching — one entry per cacheable fetch, naming the file, the",
+    "function holding the call, its lifetime profile, and its cache tags.",
+    "",
+    "TODO: invalidations — per-file tag-invalidation handling, including the",
+    "companion list tags that only fetch caching needs."
+  ]
+}

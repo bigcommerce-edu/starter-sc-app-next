@@ -43,6 +43,16 @@ const CACHE_DISABLED_PROFILE: CacheLifetimeProfile = { revalidate: 0, stale: 0, 
 // ======= End of Cache Components implementation =======
 
 
+// TODO: Add a profile name meaning "never serve this from cache", for callers
+// that must read current state rather than a cached copy.
+
+// TODO: Give that profile a null entry in PROFILES, since it has no lifetime,
+// and widen the satisfies constraint to allow it.
+
+// TODO: Define the CacheOptions shape (a profile plus optional tags) that the
+// REST client accepts, and a translator that turns it into the fetch options
+// Next.js reads — returning a no-store instruction for the no-cache profile.
+
 // What every `use cache` boundary passes to cacheLife
 export function cacheProfile(profile: CacheProfile): CacheLifetimeProfile {
   return isCachingEnabled() ? PROFILES[profile] : CACHE_DISABLED_PROFILE;

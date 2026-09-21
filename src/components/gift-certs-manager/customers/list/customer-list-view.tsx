@@ -6,9 +6,11 @@ import { decorateCustomersWithChannels } from "@/lib/gift-certs-manager/customer
 import { fetchCustomers } from "@/lib/gift-certs-manager/customers/customers-api";
 import { parseCustomersQuery } from "@/lib/gift-certs-manager/customers/query";
 
+// @cache-components-only:start
 import { cacheLife, cacheTag } from "next/cache";
 import { cacheProfile, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
 import { customerTag, CUSTOMERS_LIST_TAG } from "@/lib/gift-certs-manager/customers/cache-tags";
+// @cache-components-only:end
 
 // Beyond the shared list tag, this also tags the cache entry with every
 // customer id in the result set (added after the fetch resolves, once ids
@@ -23,23 +25,11 @@ export async function CustomerListView({
   searchParams: Record<string, string | string[] | undefined>;
   storeHash: string | undefined;
 }) {
-  // @cache-components-only:start
-  "use cache: remote";
-  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
-  cacheTag(CUSTOMERS_LIST_TAG);
-  // @cache-components-only:end
-
   const query = parseCustomersQuery(searchParams);
   const [{ items, totalItems }, { items: channels }] = await Promise.all([
     fetchCustomers(query, storeHash),
     fetchChannels(storeHash),
   ]);
-
-  // @cache-components-only:start
-  for (const item of items) {
-    cacheTag(customerTag(item.id));
-  }
-  // @cache-components-only:end
 
   const decoratedItems = await decorateCustomersWithChannels(items, storeHash, channels);
 

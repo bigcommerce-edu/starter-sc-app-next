@@ -1,0 +1,2 @@
+-- TODO: Create the credentials-store tables for D1, matching the shapes the
+-- other drivers use: stores, users, and the store/user link table.

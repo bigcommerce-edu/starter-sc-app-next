@@ -1,0 +1,3 @@
+// TODO: Example Wrangler configuration for this app's Worker — the bindings
+// it needs (assets, R2, D1, Durable Objects, images), plus the vars and
+// secret names it reads at runtime.

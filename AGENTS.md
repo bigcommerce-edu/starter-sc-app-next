@@ -108,12 +108,15 @@ Reference-only segments of the setup/boilerplate phase preceding `start`.
 | Lab 5 | The Postgres driver | `postgres` |
 | Enhancement | Uninstall and remove-user callbacks | `uninstall` |
 | Enhancement | Caching and memoization with Cache Components | `caching` |
+| Enhancement | Enable swapping Cache Components for fetch-level caching | `cache-swap` |
 | Enhancement | Rate-limit and timeout behavior | `rate-limit` |
 | Enhancement | Customers feature (list, detail, nav) | `customers` |
 | Enhancement | Gift certificate list filtering, balance actions, and account decoration/transfer-to-store-credit | `gift-certs-enh` |
 | Enhancement | GraphQL client and App Extension registration | `graphql-ext` |
 | Enhancement | Cross-origin BigCommerce control panel links | `cp-links` |
 | Enhancement | Opt-in Vercel + Postgres deployment scaffolding | `scaffold-vercel` |
+| Enhancement | Cloudflare Workers deployment with OpenNext | `cloudflare` |
+| Enhancement | Opt-in Cloudflare deployment scaffolding | `scaffold-cloudflare` |
 
 ### Lab Step Breakdown
 
@@ -188,6 +191,13 @@ pre: `caching-pre`, post: `caching-post`
 - Implement Suspense boundaries and fallbacks
 - Memoize various lookups per-request
 
+**Enhancement — Enable swapping Cache Components for fetch-level caching (`cache-swap`)** — 
+pre: `cache-swap-pre`, post: `cache-swap-post`
+
+- Support fetch-level cache options in the REST client
+- Add the cache implementation swap script and its manifest
+- Read current state in Server Actions with an uncached fetch
+
 **Enhancement — Rate-limit and timeout behavior (`rate-limit`)** —
 pre: `rate-limit-pre`, post: `rate-limit-post`
 
@@ -228,6 +238,19 @@ pre: `scaffold-vercel-pre`, post: `scaffold-vercel-post`
 - Add a scaffold command for opting into hosting-specific tooling
 - Scaffold Vercel plus Postgres deployment tooling
 
+**Enhancement — Cloudflare Workers deployment with OpenNext (`cloudflare`)** — 
+pre: `cloudflare-pre`, post: `cloudflare-post`
+
+- Install the Cloudflare deployment dependencies
+- Build the D1 credentials store driver
+- Swap Cache Components for fetch-level caching
+- Deploy to Cloudflare Workers with OpenNext
+
+**Enhancement — Opt-in Cloudflare deployment scaffolding (`scaffold-cloudflare`)** — 
+pre: `scaffold-cloudflare-pre`, post: `scaffold-cloudflare-post`
+
+- Move Cloudflare Workers deployment tooling into a scaffold command
+
 ## File Removal - Protected Paths
 
 When creating a clean orphan branch, protect these additional paths from
@@ -235,6 +258,43 @@ removal:
 
 * `.env.local`
 * `data/` (the gitignored local SQLite credentials file)
+* `.dev.vars` (the gitignored local Cloudflare Workers dev vars)
+* `.secrets.production` (the gitignored Cloudflare deployment secrets)
+
+## Never Commit Local Secrets
+
+These paths hold real credentials and must never be added to version control,
+on any branch, in any commit:
+
+* `.env.local`
+* `.env.production.local`
+* `.dev.vars`
+* `.secrets.production`
+
+The repository's `.gitignore` covers them, but **only from the commit that
+introduces those rules onward**. When rebuilding a progressive history the
+Cloudflare ignore rules do not exist until the Cloudflare enhancement, so
+every commit before that point is unprotected — and the working tree still
+holds the developer's real files.
+
+Because of that, **never use `git add -A`, `git add .`, or `git commit -a`
+while rebuilding or rebasing a history.** Stage explicit paths instead:
+
+```shell
+git add src/lib/example.ts docs/EXAMPLE.md
+```
+
+If a bulk add is genuinely unavoidable, verify the result before committing
+and untrack anything unintended:
+
+```shell
+git status --short
+git rm --cached .secrets.production .dev.vars
+```
+
+Deleting one of these files is equally damaging: the values usually cannot be
+regenerated. See the protected-paths list above before any operation that
+cleans the working tree.
 
 ## Framework Install Command and Dependencies Installation
 

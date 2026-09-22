@@ -1,7 +1,6 @@
 # Lab Tutorial: BigCommerce Single-Click App Starter
 
-> **Based on version 1.1.3** — this tutorial corresponds to the latest
-> progressive history tagged `1.1.3`.
+> **Based on version 1.2.0** 
 
 This document lists the lab exercises and their step-by-step diffs. Each
 main-lab step links to a comparison between the step's `*-pre` (TODO
@@ -203,6 +202,15 @@ unless something opted in. See the caching section of
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/caching-pre...caching-post?diff=split)
 
+### Enhancement: Enable swapping Cache Components for fetch-level caching
+
+Cache Components can't run on every hosting target. This enhancement adds a
+script that converts the app to fetch-level caching instead.
+
+[Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/cache-swap-post)
+
+[Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/cache-swap-pre...cache-swap-post?diff=split)
+
 ### Enhancement: Rate-limit and timeout behavior
 
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/rate-limit-post)
@@ -235,6 +243,30 @@ unless something opted in. See the caching section of
 
 ### Enhancement: Opt-in Vercel + Postgres deployment scaffolding
 
+Moves Vercel tooling behind a `pnpm scaffold vercel` command so the app itself
+carries no Vercel-specific configuration until a developer opts in.
+
 [Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/scaffold-vercel-post)
 
 [Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/scaffold-vercel-pre...scaffold-vercel-post?diff=split)
+
+### Enhancement: Cloudflare Workers deployment with OpenNext
+
+Builds the Cloudflare Workers deployment directly into the app: a D1-backed
+credentials store driver, the OpenNext adapter and Wrangler configuration,
+the deployment scripts, and the swap to fetch-level caching that Workers
+requires.
+
+[Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/cloudflare-post)
+
+[Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/cloudflare-pre...cloudflare-post?diff=split)
+
+### Enhancement: Opt-in Cloudflare deployment scaffolding
+
+Moves the Cloudflare tooling behind a `pnpm scaffold cloudflare` command, the
+same way the Vercel tooling works — so the app itself carries no
+Workers-specific configuration until a developer opts in.
+
+[Completed state](https://github.com/bigcommerce-edu/starter-sc-app-next/tree/scaffold-cloudflare-post)
+
+[Full diff](https://github.com/bigcommerce-edu/starter-sc-app-next/compare/scaffold-cloudflare-pre...scaffold-cloudflare-post?diff=split)

@@ -2,24 +2,26 @@
 
 ## Symptom
 
-Intermittently, navigating away from and back to a page with a BigDesign
-`Modal` (e.g. the gift certificates list page's filter modal) throws:
+Intermittently, navigating away from and back to any page that mounts a
+BigDesign `Modal` throws:
 
 ```
 Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node
 to be removed is not a child of this node.
 ```
 
-Reproduced by: open the gift certificates list page, navigate to a specific
-gift certificate, use "Back to Gift Certificates" to return to the list,
-then repeat with a different certificate. Which certificate, or how many
+Reproduced by: open a list page, navigate into a detail page, use the "Back
+to ..." link to return to the list, then repeat. Which record, or how many
 repetitions, doesn't matter — only that a fresh instance of the list page
-(and therefore a fresh `GiftCertificateFilters`/`Modal` instance) mounts and
-unmounts each time.
+(and therefore a fresh `Modal` instance) mounts and unmounts each time.
+
+Any component that renders a `Modal` is affected, not just the list
+filters — the balance and details tabs, the row actions menu, and the
+customers list all mount one.
 
 ## Root cause
 
-`@bigcommerce/big-design@3.2.0`'s `Modal` component (`dist/{es,cjs}/components/Modal/Modal.js`)
+`@bigcommerce/big-design@5.0.0`'s `Modal` component (`dist/{es,cjs}/components/Modal/Modal.js`)
 manages its portal container manually, outside React's own subtree:
 
 ```js
@@ -45,8 +47,8 @@ still attached to `document.body` at that point.
 
 This app's navigation pattern (`AppLink`s that push a new route rather than
 `router.back()`) means "back" navigation mounts a genuinely new instance of
-the list page's component tree on every visit, so a fresh
-`GiftCertificateFilters`/`Modal` pairing mounts and unmounts each time.
+the page's component tree on every visit, so a fresh `Modal` mounts and
+unmounts each time.
 Combined with React 19's rendering/commit timing, an old `Modal` instance's
 cleanup can fire after its container node has already been detached some
 other way, and the unconditional `removeChild` throws.
@@ -88,10 +90,10 @@ app's own code (not requiring a patch): row-level `AppLink` components
 (`src/components/ui/app-link.tsx`, wrapping `next/link`) attach a callback
 ref that mounts/unmounts a link-tracking instance on every row re-render.
 When a table's rows re-rendered via `router.push` (from sorting, pagination,
-or filtering) while a filters `Modal` lived as a *sibling* rather than
-inside the same always-mounted wrapper, the same class of DOM-reconciliation
-crash could occur. The fix there was to nest `GiftCertificateFilters` /
-`CustomerFilters` inside `PendingOverlay` (see its comments in
+or filtering) while a `Modal` lived as a *sibling* rather than inside the
+same always-mounted wrapper, the same class of DOM-reconciliation crash
+could occur. The fix there is to nest any filters component that renders a
+`Modal` inside `PendingOverlay` (see its comments in
 `src/components/ui/pending-overlay.tsx`), so nothing that re-renders during
 a client-side transition is a sibling of a portal-rendering component.
 

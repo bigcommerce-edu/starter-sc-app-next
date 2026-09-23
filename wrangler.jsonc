@@ -1,7 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "{{APP_NAME}}",
+  "name": "starter-sc-app-next",
+  "account_id": "23e18e2e50746cc45e853ef0023aa6f6",
   "compatibility_date": "2024-12-30",
   "compatibility_flags": [
     // Enable Node.js API
@@ -67,34 +68,34 @@
   // open-next.config.ts, which is the switch.
 
   // Incremental cache: the cached response payloads themselves.
-  "r2_buckets": [
-    {
-      "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "{{CACHE_BUCKET_NAME}}"
-    }
-  ],
+  // "r2_buckets": [
+  //   {
+  //     "binding": "NEXT_INC_CACHE_R2_BUCKET",
+  //     "bucket_name": "{{CACHE_BUCKET_NAME}}"
+  //   }
+  // ],
   // Two deliberately separate databases: high-churn cache bookkeeping, and the
   // app's system of record.
-  "d1_databases": [
-    {
-      // Maps cache tags to revalidation timestamps, which is what makes
-      // revalidateTag() work. Its `revalidations` table is created for you by
-      // the populate-cache step of `opennextjs-cloudflare deploy`/`preview`.
-      "binding": "NEXT_TAG_CACHE_D1",
-      "database_name": "{{TAG_CACHE_DB_NAME}}",
-      "database_id": "{{TAG_CACHE_DB_UUID}}"
-    },
-    {
-      // Backs the D1 credentials-store driver. This binding name is the app's
-      // own, and must match D1_BINDING_NAME in d1-driver/get-database.ts.
-      "binding": "CREDENTIALS_D1",
-      "database_name": "{{CREDENTIALS_DB_NAME}}",
-      "database_id": "{{CREDENTIALS_DB_UUID}}",
-      // Keeps schema next to the driver it belongs to, rather than in the
-      // default top-level ./migrations.
-      "migrations_dir": "src/lib/credentials-store/d1-driver/migrations"
-    }
-  ],
+  // "d1_databases": [
+  //   {
+  //     // Maps cache tags to revalidation timestamps, which is what makes
+  //     // revalidateTag() work. Its `revalidations` table is created for you by
+  //     // the populate-cache step of `opennextjs-cloudflare deploy`/`preview`.
+  //     "binding": "NEXT_TAG_CACHE_D1",
+  //     "database_name": "{{TAG_CACHE_DB_NAME}}",
+  //     "database_id": "{{TAG_CACHE_DB_UUID}}"
+  //   },
+  //   {
+  //     // Backs the D1 credentials-store driver. This binding name is the app's
+  //     // own, and must match D1_BINDING_NAME in d1-driver/get-database.ts.
+  //     "binding": "CREDENTIALS_D1",
+  //     "database_name": "{{CREDENTIALS_DB_NAME}}",
+  //     "database_id": "{{CREDENTIALS_DB_UUID}}",
+  //     // Keeps schema next to the driver it belongs to, rather than in the
+  //     // default top-level ./migrations.
+  //     "migrations_dir": "src/lib/credentials-store/d1-driver/migrations"
+  //   }
+  // ],
   // NEXT_CACHE_DO_QUEUE collapses a burst of revalidations for one stale route
   // into a single pass, calling back in through WORKER_SELF_REFERENCE above.
   // NEXT_CACHE_DO_PURGE buffers purge-by-tag calls and flushes them on an alarm.

@@ -1,0 +1,4 @@
+// The app's home page is a pass-through to the __TITLE__ section, so "/"
+// renders it without the section segment in the URL (MainNav's isIndex item).
+// Replace this with your own root page component if the home page should differ.
+export { default } from "@/app/store/[storeHash]/__FEATURE__/page";

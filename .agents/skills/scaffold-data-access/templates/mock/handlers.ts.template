@@ -1,0 +1,13 @@
+// TEMPLATE: src/lib/<feature>/things/mock/handlers.ts
+// Every mock handler this concept contributes to MockRestApiClient. Spread
+// into mockRouteHandlers in
+// src/lib/bc-api-client/rest-client/mock-rest-client/handler-registry.ts.
+// List the more specific patterns first: the mock client uses the first match.
+import { MockRouteHandler } from "@/lib/bc-api-client/rest-client/mock-rest-client/types";
+import { thingDetailMockHandler } from "@/lib/<feature>/things/mock/thing-detail-handler";
+import { thingsListMockHandler } from "@/lib/<feature>/things/mock/things-list-handler";
+
+export const thingsMockHandlers: MockRouteHandler[] = [
+  thingDetailMockHandler,
+  thingsListMockHandler,
+];

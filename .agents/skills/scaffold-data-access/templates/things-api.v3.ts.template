@@ -1,0 +1,175 @@
+// TEMPLATE: src/lib/<feature>/things/things-api.ts (BigCommerce v3 endpoint)
+// Cached reads, uncached counterparts for Server Actions, and mutations.
+// Every function takes the [storeHash] route param (undefined on root-level
+// MOCK/STATIC dev routes) and passes it straight to getRestApiClient — never
+// resolve credentials or pick a client here.
+import { getRestApiClient } from "@/lib/bc-api-client/get-rest-api-client";
+import { V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
+import { AppError } from "@/lib/errors/app-error";
+import { thingTag, THINGS_LIST_TAG } from "@/lib/<feature>/things/cache-tags";
+import { THINGS_PATH, Thing, ThingsQuery, ThingsResult, getThingPath } from "@/lib/<feature>/things/types";
+
+// @cache-components-only:drop-specifier cacheProfile
+import { cacheProfile, CACHE_PROFILE_NONE, CACHE_PROFILE_STANDARD } from "@/lib/cache/cache-profiles";
+
+// @cache-components-only:start
+import { cacheLife, cacheTag } from "next/cache";
+// @cache-components-only:end
+
+// ===== Wire format =====
+
+// The record exactly as BigCommerce sends it, expressed as the domain type
+// with only the differing fields overridden (e.g. decimal strings, nullable
+// arrays, fields only present with an include= param). Exported for mock
+// data. If nothing differs, drop this and parseThing and use Thing directly.
+export interface ThingWireRecord extends Omit<Thing, "date_created"> {
+  date_created: string;
+}
+
+// The one place wire records become domain records — every fetch maps
+// through it, so normalization never leaks into components.
+function parseThing(record: ThingWireRecord): Thing {
+  return { ...record };
+}
+
+// v3 single-resource endpoints wrap the record in a data envelope.
+interface V3SingleResponse<TItem> {
+  data: TItem;
+}
+
+// ===== Reads =====
+
+// The one place that translates UI sort columns to real API sort fields.
+const SORT_FIELD: Record<ThingsQuery["sortColumn"], string> = {
+  name: "name",
+  date_created: "date_created",
+};
+
+// v3 list endpoints use suffix-operator filters (e.g. "name:like", "id:in",
+// "date_created:min") and usually a single sort value with the direction
+// embedded. Check the endpoint's reference for its exact params — some take
+// separate sort/direction params instead.
+//
+// Exactly one apiClient.get per cached function, always with an options
+// object, so the cache-swap script can anchor on it (see
+// docs/CACHE-IMPLEMENTATION-SWAP.md).
+export async function fetchThings(query: ThingsQuery, storeHash: string | undefined): Promise<ThingsResult> {
+  // @cache-components-only:start
+  "use cache: remote";
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
+  cacheTag(THINGS_LIST_TAG);
+  // @cache-components-only:end
+
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: body } = await apiClient.get<V3ListResponse<ThingWireRecord>>(THINGS_PATH, {
+    params: {
+      // Only send a filter when it has a value.
+      ...(query.name && { "name:like": query.name }),
+      sort: `${SORT_FIELD[query.sortColumn]}:${query.direction.toLowerCase()}`,
+      page: query.page,
+      limit: query.limit,
+    },
+  });
+
+  // Tag each returned record once ids are known, so a mutation to one record
+  // invalidates every cached list page that contains it.
+  // @cache-components-only:start
+  for (const record of body.data) {
+    cacheTag(thingTag(record.id));
+  }
+  // @cache-components-only:end
+
+  return { items: body.data.map(parseThing), totalItems: body.meta.pagination.total };
+}
+
+// Single-resource path: a missing record is a real 404, which the REST client
+// throws as an UPSTREAM_API AppError with status 404 (isNotFoundError() in
+// lib/errors/app-error.ts recognizes it). Deliberately no notFound() here —
+// the same function serves page renders and Server Actions, so the caller
+// decides what "missing" means.
+export async function fetchThing(id: number | string, storeHash: string | undefined): Promise<Thing> {
+  // @cache-components-only:start
+  "use cache: remote";
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
+  cacheTag(thingTag(id));
+  // @cache-components-only:end
+
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: body } = await apiClient.get<V3SingleResponse<ThingWireRecord>>(getThingPath(id), {
+  });
+
+  return parseThing(body.data);
+}
+
+// ALTERNATIVE for endpoints with no single-resource path: look the record up
+// through the list path. A missing id is an empty list, not a 404, so return
+// undefined and let the caller decide.
+//
+// export async function fetchThing(id: number | string, storeHash: string | undefined): Promise<Thing | undefined> {
+//   const apiClient = await getRestApiClient(storeHash);
+//   const { data: body } = await apiClient.get<V3ListResponse<ThingWireRecord>>(THINGS_PATH, {
+//     params: { "id:in": id },
+//   });
+//
+//   const record = body.data[0];
+//
+//   return record ? parseThing(record) : undefined;
+// }
+
+// Uncached counterpart, for Server Actions: they must read current state
+// before mutating, never a cached copy. CACHE_PROFILE_NONE also forces
+// no-store under the fetch-level cache implementation.
+export async function fetchThingUncached(id: number | string, storeHash: string | undefined): Promise<Thing> {
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: body } = await apiClient.get<V3SingleResponse<ThingWireRecord>>(getThingPath(id), {
+    cache: { profile: CACHE_PROFILE_NONE },
+  });
+
+  return parseThing(body.data);
+}
+
+// ===== Mutations =====
+// Never cached. Not supported in MOCK mode (MockRestApiClient rejects
+// post/put/delete). Callers (Server Actions) handle authorization, error
+// messages, and updateTag() invalidation — not this layer.
+
+// Fields a create/update request may send, in wire format.
+export type ThingInput = Partial<Omit<ThingWireRecord, "id">>;
+
+export async function createThing(input: ThingInput, storeHash: string | undefined): Promise<Thing> {
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: body } = await apiClient.post<V3SingleResponse<ThingWireRecord>>(THINGS_PATH, {
+    body: input,
+  });
+
+  return parseThing(body.data);
+}
+
+// Check the endpoint's semantics: some v3 PUTs are partial updates of one
+// record (as here), others are bulk endpoints taking an array keyed by id and
+// returning a list — e.g. /v3/customers.
+export async function updateThing(
+  id: number | string,
+  input: ThingInput,
+  storeHash: string | undefined,
+): Promise<Thing> {
+  const apiClient = await getRestApiClient(storeHash);
+  const { data: body } = await apiClient.put<V3SingleResponse<ThingWireRecord>>(getThingPath(id), {
+    body: input,
+  });
+
+  if (!body?.data) {
+    throw new AppError("NOT_FOUND", "The record could not be found.", {
+      cause: `No thing returned for id "${id}" after a PUT.`,
+    });
+  }
+
+  return parseThing(body.data);
+}
+
+// DELETE typically responds 204 No Content, so there's nothing to parse.
+export async function deleteThing(id: number | string, storeHash: string | undefined): Promise<void> {
+  const apiClient = await getRestApiClient(storeHash);
+
+  await apiClient.delete(getThingPath(id));
+}

@@ -1,0 +1,29 @@
+// TEMPLATE: src/lib/<feature>/things/mock/thing-detail-handler.ts
+// Answers GET <THINGS_PATH>/{id}. Only for endpoints with a single-resource
+// path — a list-path lookup (id:in) is handled by the list handler instead.
+import { MockRouteHandler, MockRouteResponse } from "@/lib/bc-api-client/rest-client/mock-rest-client/types";
+import { AppError } from "@/lib/errors/app-error";
+import { mockThings } from "@/lib/<feature>/things/mock/mock-things";
+import { THINGS_PATH } from "@/lib/<feature>/things/types";
+
+function handleThingDetailRequest(id: string) {
+  const thing = mockThings.find((item) => String(item.id) === id);
+
+  // Same shape the real REST client throws for a 404, so callers' not-found
+  // handling (isNotFoundError) behaves identically in MOCK mode.
+  if (!thing) {
+    throw new AppError("UPSTREAM_API", "A BigCommerce API request failed.", {
+      cause: `Mock: no thing found with id "${id}".`,
+      status: 404,
+    });
+  }
+
+  // v3 single-resource envelope; return the bare record for a v2 endpoint.
+  return { data: thing };
+}
+
+export const thingDetailMockHandler: MockRouteHandler = {
+  // Anchored so it never shadows a sub-resource path (e.g. /things/1/images).
+  pattern: new RegExp(`^${THINGS_PATH}/([^/]+)$`),
+  handle: (match): MockRouteResponse => ({ data: handleThingDetailRequest(match[1]) }),
+};

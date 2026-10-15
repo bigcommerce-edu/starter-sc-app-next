@@ -4,6 +4,17 @@ A tutorial-shaped progressive history that teaches how to build a
 BigCommerce single-click installable app on Next.js, using a gift
 certificates manager as the worked example feature.
 
+## System Setup & Tools
+
+- Custom skills are natively managed in `.agents\skills`.
+- Ensure `.claude\skills` mirrors `.agents\skills`, if it doesn't already.
+- **Environment Setup:** 
+  - On macOS/Linux: Run `ln -s ../.agents/skills .claude/skills` (the target is relative to `.claude/`)
+  - On Windows (cmd): Run `mklink /J .claude\skills .agents\skills`
+  - On Windows (PowerShell): Run `cmd /c mklink /J .claude\skills .agents\skills`
+  - If linking fails due to policy: Copy the files directly from `.agents\skills` to `.claude\skills`.
+- Skills for developers using this repo as a starter: `bootstrap-app` (remove the example and bootstrap their own app) and `scaffold-data-access` (build data access layers in `src/lib/<feature>/`). See `docs/USING-AS-A-STARTER.md`.
+
 ## Terminology and Git Model
 
 This repository maintains two kinds of history **separately**:

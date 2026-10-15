@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.2.1
+
+_Based on Next.js 16.2.9_
+
+### Summary
+
+Adds two coding agent skills for developers using this repository as a
+starter, plus the documentation that introduces them. Carried over from
+`main`. No lab or enhancement was added, removed, or renumbered, no lab code
+changed, and no dependency versions changed.
+
+### Added
+
+- **`bootstrap-app` agent skill** (`.agents/skills/bootstrap-app/`). Removes
+  the gift certificates example, bootstraps a single starter page for the
+  developer's own feature, and replaces the lab project's docs with app docs.
+- **`scaffold-data-access` agent skill**
+  (`.agents/skills/scaffold-data-access/`). Scaffolds a data access layer in
+  `src/lib/<feature>/` for BigCommerce API resources, with optional mock
+  handlers, or adds operations to an existing one.
+- `.claude/skills`, a symlink to `.agents/skills` so Claude Code picks up
+  the skills.
+
+### Changed
+
+- `AGENTS.md` gains a "System Setup & Tools" section describing where the
+  skills live and how to mirror them into `.claude/skills`.
+- `README.md` and `docs/USING-AS-A-STARTER.md` describe the skills, including
+  a new "Using an AI Coding Agent Instead" section in the starter guide.
+
 ## 1.2.0
 
 _Based on Next.js 16.2.9_

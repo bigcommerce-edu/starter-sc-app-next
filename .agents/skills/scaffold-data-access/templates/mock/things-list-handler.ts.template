@@ -1,0 +1,81 @@
+// TEMPLATE: src/lib/<feature>/things/mock/things-list-handler.ts
+// Answers GET <THINGS_PATH> from mockThings, honoring the same filter, sort,
+// and pagination params fetchThings sends, and returning the same response
+// shape as the real endpoint — that's what makes MOCK mode predictive.
+import { MockRouteHandler, MockRouteResponse } from "@/lib/bc-api-client/rest-client/mock-rest-client/types";
+import { ApiRequestParams, V3ListResponse } from "@/lib/bc-api-client/rest-client/types";
+import { ThingWireRecord } from "@/lib/<feature>/things/things-api";
+import { mockThings } from "@/lib/<feature>/things/mock/mock-things";
+import { THINGS_PATH } from "@/lib/<feature>/things/types";
+
+function getStringParam(params: ApiRequestParams, key: string): string {
+  const value = params[key];
+
+  return typeof value === "string" ? value : "";
+}
+
+function getNumberParam(params: ApiRequestParams, key: string, fallback: number): number {
+  const value = Number(params[key]);
+
+  return Number.isInteger(value) && value > 0 ? value : fallback;
+}
+
+// v3 envelope. For a v2 endpoint, return the bare page slice instead (and an
+// empty array where the real endpoint would 204 — the REST client turns a 204
+// into undefined, which fetchThingsPage already treats as []).
+function paginate(items: ThingWireRecord[], currentPage: number, itemsPerPage: number): V3ListResponse<ThingWireRecord> {
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const data = items.slice(startIndex, startIndex + itemsPerPage);
+
+  return {
+    data,
+    meta: {
+      pagination: {
+        total: items.length,
+        count: data.length,
+        per_page: itemsPerPage,
+        current_page: currentPage,
+        total_pages: Math.max(1, Math.ceil(items.length / itemsPerPage)),
+      },
+    },
+  };
+}
+
+function handleThingsListRequest(params: ApiRequestParams): V3ListResponse<ThingWireRecord> {
+  // Only if fetchThing looks records up through the list path with id:in.
+  const idIn = getStringParam(params, "id:in")
+    .split(",")
+    .filter((value) => value !== "")
+    .map(Number)
+    .filter(Number.isInteger);
+
+  if (idIn.length > 0) {
+    const matches = mockThings.filter((thing) => idIn.includes(thing.id));
+
+    return paginate(matches, 1, Math.max(matches.length, 1));
+  }
+
+  const nameLike = getStringParam(params, "name:like").trim().toLowerCase();
+  const [sortField, sortDirection] = getStringParam(params, "sort").split(":");
+  const currentPage = getNumberParam(params, "page", 1);
+  const itemsPerPage = getNumberParam(params, "limit", 50);
+
+  const filtered = mockThings.filter((thing) => !nameLike || thing.name.toLowerCase().includes(nameLike));
+
+  // Read the sort field, not just the direction, so rows come back in the
+  // order the real endpoint would use.
+  const sorted = [...filtered].sort((a, b) => {
+    const comparison = sortField === "date_created"
+      ? a.date_created.localeCompare(b.date_created)
+      : a.name.localeCompare(b.name);
+
+    return sortDirection === "desc" ? -comparison : comparison;
+  });
+
+  return paginate(sorted, currentPage, itemsPerPage);
+}
+
+export const thingsListMockHandler: MockRouteHandler = {
+  pattern: new RegExp(`^${THINGS_PATH}$`),
+  handle: (_match, params): MockRouteResponse => ({ data: handleThingsListRequest(params) }),
+};

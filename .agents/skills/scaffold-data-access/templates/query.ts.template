@@ -1,0 +1,68 @@
+// TEMPLATE: src/lib/<feature>/things/query.ts
+// Parses a list page's URL search params into a typed, validated ThingsQuery
+// (falling back to defaults for anything missing or invalid), and builds
+// search params back from one — omitting defaults, so URLs stay short.
+// Only needed for list operations driven by URL state.
+import { SortDirection, ThingsQuery, ThingsSortColumn } from "@/lib/<feature>/things/types";
+
+export const DEFAULT_QUERY: ThingsQuery = {
+  name: "",
+  sortColumn: "name",
+  direction: "ASC",
+  page: 1,
+  limit: 10,
+};
+
+type RawSearchParams = Record<string, string | string[] | undefined>;
+
+function getParam(searchParams: RawSearchParams, key: string): string | undefined {
+  const value = searchParams[key];
+
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export function parseThingsQuery(searchParams: RawSearchParams): ThingsQuery {
+  const name = getParam(searchParams, "name") ?? DEFAULT_QUERY.name;
+
+  // Enumerated values are allow-listed, never cast — anything unexpected
+  // falls back to the default.
+  const sortColumnParam = getParam(searchParams, "sortColumn");
+  const sortColumn: ThingsSortColumn = sortColumnParam === "date_created" ? "date_created" : DEFAULT_QUERY.sortColumn;
+
+  const directionParam = getParam(searchParams, "direction");
+  const direction: SortDirection = directionParam === "DESC" ? "DESC" : DEFAULT_QUERY.direction;
+
+  const pageParam = Number(getParam(searchParams, "page"));
+  const page = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : DEFAULT_QUERY.page;
+
+  const limitParam = Number(getParam(searchParams, "limit"));
+  const limit = Number.isInteger(limitParam) && limitParam > 0 ? limitParam : DEFAULT_QUERY.limit;
+
+  return { name, sortColumn, direction, page, limit };
+}
+
+export function buildThingsSearchParams(query: ThingsQuery): URLSearchParams {
+  const params = new URLSearchParams();
+
+  if (query.name) {
+    params.set("name", query.name);
+  }
+
+  if (query.sortColumn !== DEFAULT_QUERY.sortColumn) {
+    params.set("sortColumn", query.sortColumn);
+  }
+
+  if (query.direction !== DEFAULT_QUERY.direction) {
+    params.set("direction", query.direction);
+  }
+
+  if (query.page !== DEFAULT_QUERY.page) {
+    params.set("page", String(query.page));
+  }
+
+  if (query.limit !== DEFAULT_QUERY.limit) {
+    params.set("limit", String(query.limit));
+  }
+
+  return params;
+}

@@ -1,0 +1,9 @@
+// TEMPLATE: src/lib/<feature>/things/cache-tags.ts
+// Per-id tag for detail fetches (so one record's mutation doesn't invalidate
+// another's cache), plus one shared tag for list fetches. Prefix with a short,
+// unique concept name so tags never collide across concepts.
+export function thingTag(id: number | string): string {
+  return `thing:${id}`;
+}
+
+export const THINGS_LIST_TAG = "thing:list";

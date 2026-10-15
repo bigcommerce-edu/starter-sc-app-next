@@ -71,6 +71,10 @@ This starter app clearly separates its example use case from core libraries that
 
 If you just want to get started building your own app on this foundation, follow [docs/USING-AS-A-STARTER.md](docs/USING-AS-A-STARTER.md) for a guide on what to remove and update.
 
+Alternatively, an AI coding agent can do this for you with the `boostrap-app` skill:
+
+See [Using an AI Coding Agent Instead](docs/USING-AS-A-STARTER.md#using-an-ai-coding-agent-instead).
+
 ## The Gift Certificates Manager Example
 
 The included feature is a working admin UI for a store's gift certificates,
@@ -119,3 +123,10 @@ hosting providers. See the dedicated guides:
 
 - [Vercel Deployment Guide](./docs/VERCEL-DEPLOYMENT.md)
 - [Cloudflare Deployment Guide](./docs/CLOUDFLARE-DEPLOYMENT.md)
+
+## Agent Skills
+
+This repo features skills that guide an AI agent for performing various tasks:
+
+* `bootstrap-app` removes the example and sets up a starter page for your own feature.
+* `scaffold-data-access` builds data access layers for the BigCommerce endpoints you need.

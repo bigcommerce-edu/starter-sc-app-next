@@ -14,6 +14,24 @@ Read [ARCHITECTURE.md](./ARCHITECTURE.md) alongside this guide. It explains
 *why* each layer is built the way it is; this guide is about what to do with
 them.
 
+## Using an AI Coding Agent Instead
+
+The steps in this guide can also be carried out by an AI coding agent, using
+two agent skills that ship with the repository. They follow this guide's
+recommendations, so the manual steps below still describe what they do and
+remain the reference for reviewing the results.
+
+| Skill | What it does |
+| --- | --- |
+| `bootstrap-app` | Removes the gift certificates example, adds a single starter page for your own feature, and replaces the lab project's docs with docs for your app. Runs in three phases (remove, bootstrap, docs), with a recommended commit after each. |
+| `scaffold-data-access` | Creates a data access layer in `src/lib/<feature>/` for the BigCommerce endpoints you name, or adds operations to an existing one. Follows the conventions in [A Data Access Layer in `lib`](#a-data-access-layer-in-lib) and asks whether to add [mock handlers](#mock-data-handlers-and-the-registry). |
+
+To use one, invoke it by name (e.g. `/bootstrap-app` in Claude Code) or
+describe the task, e.g. "remove the gift certificates example and bootstrap
+my app" or "add a data access layer for products." Each skill asks for what
+it needs and asks before committing unless you've already authorized
+commits. Review its changes as you would any other code.
+
 ## The Short Version
 
 | Area | What to do |
@@ -264,6 +282,10 @@ page decide.
 Server Actions return `ActionResult` (`{ success, message }`) for every
 expected failure rather than throwing, since Next strips a thrown Server
 Action error's message to a generic digest in production.
+
+The `scaffold-data-access` agent skill generates a layer that follows these
+conventions, including the optional mock handlers described below. See
+[Using an AI Coding Agent Instead](#using-an-ai-coding-agent-instead).
 
 ### Mock Data Handlers and the Registry
 

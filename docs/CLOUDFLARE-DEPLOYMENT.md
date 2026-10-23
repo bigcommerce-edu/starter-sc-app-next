@@ -350,7 +350,7 @@ In `.secrets.production`, set:
 Generate each secret separately:
 
 ```shell
-node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
+openssl rand -base64 32
 ```
 
 Use fresh values rather than reusing your local ones, and treat them as

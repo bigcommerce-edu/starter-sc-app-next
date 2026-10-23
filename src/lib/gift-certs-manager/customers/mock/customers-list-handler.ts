@@ -59,7 +59,12 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
   }
 
   const nameLike = getStringParam(params, "name:like").trim().toLowerCase();
-  const emailFilter = getStringParam(params, "email:in").trim().toLowerCase();
+  // email:in is a comma-separated list, matching the real endpoint — the
+  // by-email account lookups send every certificate's address in one request.
+  const emailIn = getStringParam(params, "email:in")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter((email) => email !== "");
   const dateCreatedMin = getStringParam(params, "date_created:min");
   const dateCreatedMax = getStringParam(params, "date_created:max");
 
@@ -79,7 +84,7 @@ function handleCustomersListRequest(params: ApiRequestParams): V3ListResponse<Cu
       return false;
     }
 
-    if (emailFilter && customer.email.toLowerCase() !== emailFilter) {
+    if (emailIn.length > 0 && !emailIn.includes(customer.email.toLowerCase())) {
       return false;
     }
 

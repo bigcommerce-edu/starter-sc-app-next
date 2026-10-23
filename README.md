@@ -71,7 +71,7 @@ This starter app clearly separates its example use case from core libraries that
 
 If you just want to get started building your own app on this foundation, follow [docs/USING-AS-A-STARTER.md](docs/USING-AS-A-STARTER.md) for a guide on what to remove and update.
 
-Alternatively, an AI coding agent can do this for you with the `boostrap-app` skill:
+Alternatively, an AI coding agent can do this for you with the `bootstrap-app` skill:
 
 See [Using an AI Coding Agent Instead](docs/USING-AS-A-STARTER.md#using-an-ai-coding-agent-instead).
 

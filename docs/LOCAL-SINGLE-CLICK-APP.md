@@ -201,7 +201,7 @@ the full commentary on each one.
 Generate the two secrets with:
 
 ```shell
-node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
+openssl rand -base64 32
 ```
 
 Run it once per variable so they get different values. `SESSION_SECRET`

@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.2.2
+
+_Based on Next.js 16.2.9_
+
+### Summary
+
+Fixes the customers mock data's `email:in` filter and standardizes how the
+setup docs generate secrets. Carried over from `main`. No lab or enhancement
+was added, removed, or renumbered, and no dependency versions changed.
+
+### Fixed
+
+- **Customers mock `email:in` filter**
+  (`src/lib/gift-certs-manager/customers/mock/customers-list-handler.ts`).
+  The mock now treats `email:in` as a comma-separated list, matching the real
+  endpoint, so the by-email account lookups (which send every certificate's
+  address in one request) match each address instead of none. Folded into the
+  customers enhancement, with a matching note on the
+  `handleCustomersListRequest` TODO.
+
+### Changed
+
+- `docs/LOCAL-SINGLE-CLICK-APP.md`, `docs/VERCEL-DEPLOYMENT.md`, and
+  `docs/CLOUDFLARE-DEPLOYMENT.md` generate secrets with
+  `openssl rand -base64 32` instead of a Node one-liner.
+
 ## 1.2.1
 
 _Based on Next.js 16.2.9_

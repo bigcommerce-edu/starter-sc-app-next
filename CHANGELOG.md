@@ -1,5 +1,44 @@
 # Changelog
 
+## 1.2.3
+
+_Based on Next.js 16.2.9_
+
+### Summary
+
+Adds a coding agent skill for the hosting scaffolds and the cache swap, and
+corrects docs that had drifted from the swap's actual behavior. Carried over
+from `main`. No lab or enhancement was added, removed, or renumbered, no lab
+code changed, and no dependency versions changed.
+
+### Added
+
+- **`scaffold-hosting` agent skill** (`.agents/skills/scaffold-hosting/`).
+  Runs `pnpm scaffold vercel` or `pnpm scaffold cloudflare`, or only the
+  cache swap. A read-only preflight first reports custom caching the swap
+  can't handle, and whether the tree is already swapped or half-swapped, and
+  the skill asks before fixing anything. It can rehearse the swap in a
+  temporary git worktree, and verifies the result afterwards.
+  Provider-specific checks are registered in
+  `scripts/profiles/manifest.json`, so a new hosting profile is a manifest
+  entry plus an optional module.
+
+### Changed
+
+- `docs/CACHE-IMPLEMENTATION-SWAP.md`: the swap's leftover check doesn't
+  cover `updateTag()`, runs after files are rewritten, and only scans
+  `searchDirs`. "Invalidating a New Tag" now says to leave `updateTag()`
+  unmarked unless its tag exists only on a Cache Components boundary.
+- `docs/USING-AS-A-STARTER.md`: the cached-read example now uses markers and
+  `cacheProfile()`, and the cache profiles are described as living in
+  `lib/cache/cache-profiles.ts` rather than `next.config.ts`.
+- `docs/CLOUDFLARE-DEPLOYMENT.md`: the D1 tag cache description says
+  `updateTag()` instead of `revalidateTag()`.
+- `docs/CLOUDFLARE-DEPLOYMENT.md` and `docs/VERCEL-DEPLOYMENT.md` each gain a
+  "Using an AI Coding Agent Instead" sub-section in step 1.
+- `AGENTS.md`, `README.md`, and the `bootstrap-app` skill mention
+  `scaffold-hosting`.
+
 ## 1.2.2
 
 _Based on Next.js 16.2.9_

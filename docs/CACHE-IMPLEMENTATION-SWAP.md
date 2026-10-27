@@ -63,8 +63,19 @@ The mapping in `scripts/cache-swap/fetch-cache-manifest.json` expresses the entr
 ### Nothing Cache Components-Only May Survive
 
 After both halves run, the swap scans `searchDirs` again and fails if it finds
-any API that only works under Cache Components — `"use cache"`, `cacheLife()`,
-`cacheTag()`, or `updateTag()`.
+any API that only works under Cache Components: `"use cache"`, `cacheLife()`,
+or `cacheTag()`. The scan matches text, so a comment mentioning one of them
+fails it too.
+
+Two limits are worth knowing:
+
+* The check runs *after* the swap has rewritten files. A leftover, or a
+  manifest entry that no longer matches, leaves the tree half-swapped.
+* It only scans `searchDirs`. Cache Components code in any other directory
+  isn't removed and isn't reported.
+
+The `scaffold-hosting` agent skill checks for both before it runs the swap
+(see [Running the Swap](#running-the-swap)).
 
 ## The Manifest
 
@@ -152,7 +163,18 @@ node --input-type=module -e "import { swapToFetchCaching } from './scripts/cache
 It's idempotent: a second run finds no markers, reports that the app is already
 swapped, and changes nothing.
 
-Two things it does **not** do:
+Using an AI coding agent, the `scaffold-hosting` skill can run the swap for
+you, alone or as part of the Cloudflare scaffold. Before anything is written,
+it checks for:
+
+* Custom caching the swap can't handle
+* A manifest that no longer matches the source
+* A tree that's already swapped or half-swapped
+
+It reports what it finds, offers to fix it, and verifies the result
+afterwards.
+
+Two things the cache swap does **not** do:
 
 * Set `cacheComponents: false` in `next.config.ts`. That belongs to the
   hosting profile, since it's the flag that makes the swap necessary.
@@ -234,13 +256,15 @@ follow the guidelines below.
 
 ### Invalidating a New Tag
 
-1. Wrap the `updateTag()` call in markers. It has no fetch-level counterpart:
-   the swap rewrites invalidations from the manifest, not from your call.
+1. Leave the `updateTag()` call unmarked if the tag is also on a fetch.
+   `updateTag` works under both implementations, so the swap keeps it.
+   Wrap it in markers only when its tag exists solely on a Cache Components
+   boundary with no fetch-level counterpart.
 
 2. If the mutation should also invalidate a list tag under fetch caching, add
-   the tag function to `companionTags` in the `invalidations` entry. Keying on
-   the function name rather than the full expression means it keeps working
-   when the argument changes.
+   the tag function to `companionTags` in the file's `invalidations` entry. Keying on the function name
+   rather than the full expression means it keeps working when the argument
+   changes.
 
 ### Before You Commit
 

@@ -259,20 +259,35 @@ For cached reads, the convention is:
 
 ```ts
 async function fetchThings(query: ThingsQuery, storeHash: string | undefined) {
+  // @cache-components-only:start
   "use cache: remote";
-  cacheLife("standard");
+  cacheLife(cacheProfile(CACHE_PROFILE_STANDARD));
   cacheTag(THINGS_LIST_TAG);
+  // @cache-components-only:end
 
   const apiClient = await getRestApiClient(storeHash);
-  // ...fetch, then tag each returned record's own id
+  const { data } = await apiClient.get<Thing[]>(THINGS_PATH, {
+    // ...params
+  });
+
+  // ...then tag each returned record's own id, inside its own marker block
 }
 ```
 
 Tag with both a shared list tag and a per-record tag (added after the fetch
 resolves, once ids are known), and call `updateTag` from your mutations so a
-write is visible immediately instead of waiting out the `cacheLife`. Two
-`cacheLife` profiles are configured in `next.config.ts`: `standard` (5 min)
-and `extended` (10 min, for slower-changing data).
+write is visible immediately instead of waiting out the profile's lifetime.
+The lifetime profiles live in `lib/cache/cache-profiles.ts`, alongside the
+`CACHE_ENABLED` switch that turns caching on: `CACHE_PROFILE_STANDARD` (5 min)
+and `CACHE_PROFILE_EXTENDED` (10 min, for slower-changing data). Select one
+with `cacheProfile()` rather than passing a profile name to `cacheLife`
+directly, so caching switched off resolves to a no-reuse lifetime.
+
+The `@cache-components-only` markers, and a matching entry in
+`scripts/cache-swap/fetch-cache-manifest.json`, are what let the app be
+swapped to fetch-level caching for hosts that can't run Cache Components.
+If you might deploy to one, follow the checklist in
+[CACHE-IMPLEMENTATION-SWAP.md](./CACHE-IMPLEMENTATION-SWAP.md#checklist-adding-caching-without-breaking-the-swap).
 
 Data-access functions that might not find a record should return `undefined`
 or throw rather than calling `notFound()` themselves — the same function gets
@@ -377,6 +392,11 @@ If your host's build runs migrations, keep that script keyed on its own
 connection-string variables rather than on `DATA_MODE` or
 `CREDENTIALS_STORE_DRIVER` — that way it no-ops harmlessly for anyone using
 a different driver instead of failing their build.
+
+The `scaffold-hosting` agent skill only knows the profiles registered in
+`.agents/skills/scaffold-hosting/scripts/profiles/manifest.json`. To support a
+new one, add an entry there and, for checks beyond the cache swap, a module
+beside `cloudflare.mjs` and `vercel.mjs`.
 
 ## The Four-Step Development Strategy
 

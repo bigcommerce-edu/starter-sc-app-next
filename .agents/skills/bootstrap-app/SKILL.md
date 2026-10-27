@@ -233,7 +233,8 @@ don't do them unprompted:
 * **Cache swap**: register each new cached fetch in
   `scripts/cache-swap/fetch-cache-manifest.json`, and add any new directory
   with `@cache-components-only` markers to its `searchDirs`. See
-  `docs/CACHE-IMPLEMENTATION-SWAP.md`.
+  `docs/CACHE-IMPLEMENTATION-SWAP.md`. The `scaffold-hosting` skill
+  checks for anything missed before it runs the swap.
 * **Branding**: in `.env.local`, set `DEVELOPER_NAME`, `SUPPORT_*`, and
   `DEVELOPER_LOGO_FILENAME`. Also update `package.json` `version`.
 * **Placeholders**: fill in anything left as a placeholder in

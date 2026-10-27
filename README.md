@@ -130,3 +130,4 @@ This repo features skills that guide an AI agent for performing various tasks:
 
 * `bootstrap-app` removes the example and sets up a starter page for your own feature.
 * `scaffold-data-access` builds data access layers for the BigCommerce endpoints you need.
+* `scaffold-hosting` checks for caching the cache swap can't handle, then runs and verifies the Vercel or Cloudflare hosting scaffold, or only the cache swap.

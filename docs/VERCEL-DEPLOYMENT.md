@@ -68,6 +68,19 @@ set, not on `DATA_MODE`. With neither set yet, it logs a skip and exits
 successfully, which is what makes the `MOCK`-mode first deploy below work
 before any database exists.
 
+### Using an AI Coding Agent Instead
+
+This step can also be carried out by an AI coding agent, using the
+`scaffold-hosting` agent skill that ships with the repository. It runs
+`pnpm scaffold vercel`, verifies the scripts and `.env.vercel.example` it
+produces, and walks through the remaining steps in this guide. The steps
+above still describe what it does and remain the reference for reviewing the
+results.
+
+To use it, invoke it by name (e.g. `/scaffold-hosting` in Claude Code) or
+describe the task, e.g. "scaffold the Vercel deployment tooling." It asks
+before committing unless you've already authorized commits.
+
 ## 2. Deploy in MOCK Mode
 
 1. In the [Vercel dashboard](https://vercel.com/new), import your Git

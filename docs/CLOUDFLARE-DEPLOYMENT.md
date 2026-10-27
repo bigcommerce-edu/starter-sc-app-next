@@ -22,7 +22,8 @@ there's no single storage primitive that does all of it well:
   themselves. Object storage is the right fit: payloads are large-ish, written
   once, and read many times.
 * **D1** — the cache tag store. Maps each cache tag to the timestamp it was
-  last revalidated, which is what makes on-demand `revalidateTag()` work. This
+  last revalidated, which is what makes on-demand invalidation with
+  `updateTag()` work. This
   is a small, high-churn relational workload, so SQLite-backed D1 fits where R2
   would not.
 * **Durable Objects** — the revalidation queue (`DOQueueHandler`) and the
@@ -123,6 +124,38 @@ After the scaffold, install dependencies:
 ```shell
 pnpm install
 ```
+
+### Using an AI Coding Agent Instead
+
+This step can also be carried out by an AI coding agent, using the
+`scaffold-hosting` agent skill that ships with the repository. It runs
+`pnpm scaffold cloudflare`, verifies the result, and walks through the
+remaining steps in this guide. The steps above still describe what it does
+and remain the reference for reviewing the results.
+
+The skill is especially worth using if you've added caching of your own
+since starting from this app. The cache swap only handles caching that
+follows the conventions in
+[CACHE-IMPLEMENTATION-SWAP.md](./CACHE-IMPLEMENTATION-SWAP.md#checklist-adding-caching-without-breaking-the-swap),
+and a mismatch is only detected after files have been rewritten, leaving the
+app half-swapped. Before anything is written, the skill checks for:
+
+* Cache Components code the swap won't remove, such as an unmarked
+  `cacheTag()` or a cached function outside the swap's `searchDirs`
+* cached fetches with no usable entry in
+  `scripts/cache-swap/fetch-cache-manifest.json`, which would silently lose
+  their caching
+* a tree that's already swapped or half-swapped, and fetch-level caching
+  added alongside Cache Components
+
+It reports what it finds and asks before analyzing or fixing anything. It
+can also rehearse the swap in a temporary git worktree, so you can review the
+result and see it typecheck and lint before your own tree changes.
+
+To use it, invoke it by name (e.g. `/scaffold-hosting` in Claude Code) or
+describe the task, e.g. "scaffold the Cloudflare deployment tooling." It asks
+before committing, and before running each `wrangler` command that creates
+resources, unless you've already authorized them.
 
 ### Create `wrangler.jsonc`
 
